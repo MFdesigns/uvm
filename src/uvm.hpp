@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-#include <filesystem>
 #include <cstdint>
+#include <filesystem>
 
 class UVM {
-    public:
+  public:
     UVM(std::filesystem::path p);
     ~UVM();
-    private:
+
+  private:
     std::filesystem::path SourcePath;
     uint32_t SourceSize = 0;
     uint8_t* SourceBuffer = nullptr;

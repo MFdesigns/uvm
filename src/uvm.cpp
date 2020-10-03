@@ -17,7 +17,7 @@
 #include "uvm.hpp"
 #include <fstream>
 
-UVM::UVM(std::filesystem::path p): SourcePath(p) {
+UVM::UVM(std::filesystem::path p) : SourcePath(p) {
     readSource();
 }
 

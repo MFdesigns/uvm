@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include <iostream>
-#include <filesystem>
 #include "uvm.hpp"
+#include <filesystem>
+#include <iostream>
 
 void printCLIUsage() {
     std::cout << "usage: uvm <path>\n";
