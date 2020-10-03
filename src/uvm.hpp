@@ -14,28 +14,16 @@
  * limitations under the License.
  */
 
-#include <iostream>
 #include <filesystem>
-#include "uvm.hpp"
+#include <cstdint>
 
-void printCLIUsage() {
-    std::cout << "usage: uvm <path>\n";
-}
-
-int main(int argc, char* argv[]) {
-    // Check if minimal CLI arguments are provided
-    if (argc < 2) {
-        printCLIUsage();
-        return -1;
-    }
-
-    // Check if target UX file exists
-    char* sourcePath = argv[1];
-    std::filesystem::path p{sourcePath};
-    if (!std::filesystem::exists(p)) {
-        std::cout << "Target file '" << p.string() << "' does not exist\n";
-        return -1;
-    }
-
-    UVM vmInstance{p};
-}
+class UVM {
+    public:
+    UVM(std::filesystem::path p);
+    ~UVM();
+    private:
+    std::filesystem::path SourcePath;
+    uint32_t SourceSize = 0;
+    uint8_t* SourceBuffer = nullptr;
+    void readSource();
+};

@@ -14,28 +14,27 @@
  * limitations under the License.
  */
 
-#include <iostream>
-#include <filesystem>
 #include "uvm.hpp"
+#include <fstream>
 
-void printCLIUsage() {
-    std::cout << "usage: uvm <path>\n";
+UVM::UVM(std::filesystem::path p): SourcePath(p) {
+    readSource();
 }
 
-int main(int argc, char* argv[]) {
-    // Check if minimal CLI arguments are provided
-    if (argc < 2) {
-        printCLIUsage();
-        return -1;
-    }
+UVM::~UVM() {
+    delete[] SourceBuffer;
+}
 
-    // Check if target UX file exists
-    char* sourcePath = argv[1];
-    std::filesystem::path p{sourcePath};
-    if (!std::filesystem::exists(p)) {
-        std::cout << "Target file '" << p.string() << "' does not exist\n";
-        return -1;
-    }
+void UVM::readSource() {
+    // Read source file into buffer
+    std::ifstream stream{SourcePath};
 
-    UVM vmInstance{p};
+    // Get buffer size
+    stream.seekg(0, std::ios::end);
+    SourceSize = stream.tellg();
+    stream.seekg(0, std::ios::beg);
+
+    // Allocate new buffer of file size and read complete file to buffer
+    SourceBuffer = new uint8_t[SourceSize];
+    stream.read((char*)SourceBuffer, SourceSize);
 }
