@@ -75,7 +75,7 @@ bool validateHeader(HeaderInfo* info, uint32_t sourceSize, uint8_t* source) {
 }
 
 UVM::UVM(std::filesystem::path p)
-    : SourcePath(std::move(p)), HInfo(new HeaderInfo{}) {}
+    : SourcePath(std::move(p)), HInfo(std::make_unique<HeaderInfo>()) {}
 
 UVM::~UVM() {
     delete[] SourceBuffer;
@@ -83,7 +83,7 @@ UVM::~UVM() {
 
 bool UVM::init() {
     readSource();
-    bool validHeader = validateHeader(HInfo, SourceSize, SourceBuffer);
+    bool validHeader = validateHeader(HInfo.get(), SourceSize, SourceBuffer);
     if (!validHeader) {
         return false;
     }

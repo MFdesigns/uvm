@@ -16,6 +16,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <memory>
 
 struct HeaderInfo {
     uint8_t Version = 0;
@@ -33,6 +34,7 @@ class UVM {
     std::filesystem::path SourcePath;
     uint32_t SourceSize = 0;
     uint8_t* SourceBuffer = nullptr;
-    HeaderInfo* HInfo = nullptr;
+    std::unique_ptr<HeaderInfo> HInfo;
+    // HeaderInfo* HInfo = nullptr;
     void readSource();
 };
