@@ -84,8 +84,9 @@ UVM::~UVM() {
 bool UVM::init() {
     readSource();
     bool validHeader = validateHeader(HInfo, SourceSize, SourceBuffer);
-    if (!validateHeader)
+    if (!validHeader) {
         return false;
+    }
 
     return true;
 }
