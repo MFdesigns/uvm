@@ -38,4 +38,5 @@ int main(int argc, char* argv[]) {
     }
 
     UVM vmInstance{p};
+    vmInstance.init();
 }

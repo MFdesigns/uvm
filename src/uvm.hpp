@@ -17,14 +17,22 @@
 #include <cstdint>
 #include <filesystem>
 
+struct HeaderInfo {
+    uint8_t Version = 0;
+    uint8_t Mode = 0;
+    uint64_t StartAddress = 0;
+};
+
 class UVM {
   public:
     UVM(std::filesystem::path p);
     ~UVM();
+    bool init();
 
   private:
     std::filesystem::path SourcePath;
     uint32_t SourceSize = 0;
     uint8_t* SourceBuffer = nullptr;
+    HeaderInfo* HInfo = nullptr;
     void readSource();
 };
