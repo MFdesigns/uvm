@@ -15,30 +15,11 @@
  */
 
 #include "section.hpp"
-#include <cstdint>
-#include <filesystem>
-#include <memory>
-#include <vector>
 
-struct HeaderInfo {
-    uint8_t Version = 0;
-    uint8_t Mode = 0;
-    uint64_t StartAddress = 0;
-};
-
-class UVM {
-  public:
-    UVM(std::filesystem::path p);
-    ~UVM();
-    bool init();
-
-  private:
-    std::filesystem::path SourcePath;
-    uint32_t SourceSize = 0;
-    uint8_t* SourceBuffer = nullptr;
-    std::unique_ptr<HeaderInfo> HInfo;
-    std::vector<MemSection> Sections;
-    std::vector<MemBuffer> Buffers;
-    // HeaderInfo* HInfo = nullptr;
-    void readSource();
-};
+MemSection::MemSection(uint64_t startAddress,
+                       uint64_t size,
+                       uint64_t nameAddress,
+                       SectionType type,
+                       std::unique_ptr<MemPermission> perms)
+    : VStartAddress(startAddress), Size(size), VNameAddress(nameAddress),
+      Type(type), Perms(std::move(perms)) {}
