@@ -221,7 +221,7 @@ bool parseSectionTable(std::vector<MemSection>& sections, MemBuffer* buffer) {
         }
 
         sections.emplace_back(startAddress, secSize, secNameAddress, memType,
-                              std::move(memPerm));
+                              std::move(memPerm), buffer);
         cursor += SEC_TABLE_ENTRY_SIZE;
     }
 

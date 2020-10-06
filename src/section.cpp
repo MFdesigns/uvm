@@ -20,9 +20,10 @@ MemSection::MemSection(uint64_t startAddress,
                        uint64_t size,
                        uint64_t nameAddress,
                        SectionType type,
-                       std::unique_ptr<MemPermission> perms)
+                       std::unique_ptr<MemPermission> perms,
+                       MemBuffer* buffer)
     : VStartAddress(startAddress), Size(size), VNameAddress(nameAddress),
-      Type(type), Perms(std::move(perms)) {}
+      Type(type), Perms(std::move(perms)), PhysicalBuffer(buffer) {}
 
 MemBuffer::MemBuffer(uint64_t size, uint8_t* buffer)
     : Size(size), Buffer(buffer) {}

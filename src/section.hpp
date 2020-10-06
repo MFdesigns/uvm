@@ -31,19 +31,6 @@ struct MemPermission {
     bool Execute = false;
 };
 
-struct MemSection {
-    MemSection(uint64_t startAddress,
-               uint64_t size,
-               uint64_t nameAddress,
-               SectionType type,
-               std::unique_ptr<MemPermission> perms);
-    uint64_t VStartAddress = 0;
-    uint64_t Size = 0;
-    uint64_t VNameAddress = 0;
-    SectionType Type;
-    std::unique_ptr<MemPermission> Perms;
-};
-
 class MemBuffer {
   public:
     MemBuffer(uint64_t size, uint8_t* buffer);
@@ -54,4 +41,19 @@ class MemBuffer {
   private:
     uint64_t Size;
     std::unique_ptr<uint8_t[]> Buffer;
+};
+
+struct MemSection {
+    MemSection(uint64_t startAddress,
+               uint64_t size,
+               uint64_t nameAddress,
+               SectionType type,
+               std::unique_ptr<MemPermission> perms,
+               MemBuffer* PhysicalBuffer);
+    uint64_t VStartAddress = 0;
+    uint64_t Size = 0;
+    uint64_t VNameAddress = 0;
+    SectionType Type;
+    std::unique_ptr<MemPermission> Perms;
+    MemBuffer* PhysicalBuffer = nullptr; // Non owning pointer
 };
