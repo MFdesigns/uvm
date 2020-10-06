@@ -233,12 +233,12 @@ UVM::UVM(std::filesystem::path p)
 
 bool UVM::init() {
     readSource();
-    bool validHeader = validateHeader(HInfo.get(), Source.get());
+    bool validHeader = validateHeader(HInfo.get(), Source);
     if (!validHeader) {
         return false;
     }
 
-    bool validSectionTable = parseSectionTable(Sections, Source.get());
+    bool validSectionTable = parseSectionTable(Sections, Source);
     if (!validSectionTable) {
         return false;
     }
@@ -263,5 +263,5 @@ void UVM::readSource() {
     uint8_t* buffer = new uint8_t[size];
     stream.read((char*)buffer, size);
 
-    Source = std::make_unique<MemBuffer>(size, buffer);
+    Source = &Buffers.emplace_back(size, buffer);
 }

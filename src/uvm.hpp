@@ -35,7 +35,7 @@ class UVM {
 
   private:
     std::filesystem::path SourcePath;
-    std::unique_ptr<MemBuffer> Source;
+    MemBuffer* Source = nullptr; // Non owning pointer
     std::unique_ptr<HeaderInfo> HInfo;
     std::vector<MemSection> Sections;
     std::vector<MemBuffer> Buffers;
