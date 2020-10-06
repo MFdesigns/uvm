@@ -243,6 +243,10 @@ bool UVM::init() {
         return false;
     }
 
+    // Allocate stack and initialize to 0
+    uint8_t* stack = new uint8_t[UVM_STACK_SIZE]();
+    Buffers.emplace_back(UVM_STACK_SIZE, stack);
+
     return true;
 }
 

@@ -20,6 +20,8 @@
 #include <memory>
 #include <vector>
 
+constexpr uint64_t UVM_STACK_SIZE = 4096;
+
 struct HeaderInfo {
     uint8_t Version = 0;
     uint8_t Mode = 0;
