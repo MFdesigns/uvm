@@ -44,7 +44,14 @@ struct MemSection {
     std::unique_ptr<MemPermission> Perms;
 };
 
-struct MemBuffer {
+class MemBuffer {
+  public:
+    MemBuffer(uint64_t size, uint8_t* buffer);
+    MemBuffer(MemBuffer&& memBuffer) noexcept;
+    uint8_t* getBuffer() const;
+    uint64_t getSize() const;
+
+  private:
     uint64_t Size;
-    std::unique_ptr<uint8_t> Buffer;
+    std::unique_ptr<uint8_t[]> Buffer;
 };

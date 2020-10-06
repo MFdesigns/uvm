@@ -19,7 +19,9 @@
 #include <fstream>
 #include <iostream>
 
-bool validateHeader(HeaderInfo* info, uint32_t sourceSize, uint8_t* source) {
+bool validateHeader(HeaderInfo* info, MemBuffer* source) {
+    uint8_t* sourceBuffer = source->getBuffer();
+    uint64_t sourceSize = source->getSize();
     // Check if source file has minimal size to contain a valid header
     constexpr uint32_t MIN_HEADER_SIZE = 0x60;
     if (sourceSize < MIN_HEADER_SIZE) {
@@ -30,7 +32,7 @@ bool validateHeader(HeaderInfo* info, uint32_t sourceSize, uint8_t* source) {
 
     // Validate magic number
     constexpr uint32_t MAGIC = 0x50504953; // Magic 'SIPP' in big endianness
-    uint32_t* sourceMagic = (uint32_t*)source;
+    uint32_t* sourceMagic = (uint32_t*)sourceBuffer;
     if (*sourceMagic != MAGIC) {
         std::cout << "[Error] Invalid magic number inside header\n";
         return false;
@@ -38,7 +40,7 @@ bool validateHeader(HeaderInfo* info, uint32_t sourceSize, uint8_t* source) {
 
     // Check version
     constexpr uint64_t VERSION_OFFSET = 0x04;
-    uint8_t version = source[VERSION_OFFSET];
+    uint8_t version = sourceBuffer[VERSION_OFFSET];
     if (version != 1) {
         std::cout << "[Error] Unsupported file version '" << (uint16_t)version
                   << "'\n";
@@ -48,7 +50,7 @@ bool validateHeader(HeaderInfo* info, uint32_t sourceSize, uint8_t* source) {
 
     // Check mode
     constexpr uint64_t MODE_OFFSET = 0x05;
-    uint8_t mode = source[MODE_OFFSET];
+    uint8_t mode = sourceBuffer[MODE_OFFSET];
     switch (mode) {
     case 0x1: // Release
     case 0x2: // Debug
@@ -61,7 +63,7 @@ bool validateHeader(HeaderInfo* info, uint32_t sourceSize, uint8_t* source) {
 
     // Validate start address
     constexpr uint64_t START_ADDR_OFFSET = 0x08;
-    uint64_t* startAddress = (uint64_t*)&source[START_ADDR_OFFSET];
+    uint64_t* startAddress = (uint64_t*)&sourceBuffer[START_ADDR_OFFSET];
     // Check if start address point inside source buffer. More in depth
     // validation will be performed later once the section table has been parsed
     if (*startAddress > (uint64_t)sourceSize) {
@@ -109,9 +111,9 @@ bool parseSectionPermission(uint8_t perms, MemPermission* memPerms) {
     return true;
 }
 
-bool parseSectionTable(std::vector<MemSection>& sections,
-                       uint64_t size,
-                       uint8_t* buffer) {
+bool parseSectionTable(std::vector<MemSection>& sections, MemBuffer* buffer) {
+    uint64_t size = buffer->getSize();
+    uint8_t* sourceBuffer = buffer->getBuffer();
     constexpr uint64_t SEC_TABLE_OFFSET = 0x60;
 
     // Range check if section table size is given
@@ -122,7 +124,7 @@ bool parseSectionTable(std::vector<MemSection>& sections,
     }
 
     constexpr uint64_t SEC_TABLE_ENTRY_SIZE = 0x1A;
-    uint32_t* tableSize = (uint32_t*)&buffer[SEC_TABLE_OFFSET];
+    uint32_t* tableSize = (uint32_t*)&sourceBuffer[SEC_TABLE_OFFSET];
 
     // Range check given section table size
     if (SEC_TABLE_OFFSET + sizeof(uint32_t) + *tableSize > size) {
@@ -146,8 +148,8 @@ bool parseSectionTable(std::vector<MemSection>& sections,
     uint64_t tableEnd = SEC_TABLE_OFFSET + sizeof(uint32_t) + *tableSize;
     bool validSectionTable = true;
     while (cursor < tableEnd && validSectionTable) {
-        uint8_t type = buffer[cursor];
-        uint8_t perms = buffer[cursor + 1];
+        uint8_t type = sourceBuffer[cursor];
+        uint8_t perms = sourceBuffer[cursor + 1];
 
         auto memType = SectionType::STATIC;
 
@@ -178,7 +180,8 @@ bool parseSectionTable(std::vector<MemSection>& sections,
         // Parse start address and perform basic validation
         constexpr uint64_t SEC_START_ADDR_OFFSET = 0x02;
         uint64_t startAddress = 0;
-        std::memcpy(&startAddress, &buffer[cursor + SEC_START_ADDR_OFFSET], 8);
+        std::memcpy(&startAddress,
+                    &sourceBuffer[cursor + SEC_START_ADDR_OFFSET], 8);
         // Check if start address points into file buffer. More validation will
         // be performed at a later stage
         if (startAddress > size) {
@@ -191,7 +194,7 @@ bool parseSectionTable(std::vector<MemSection>& sections,
         // Parse section size and perform basic validation
         constexpr uint64_t SEC_SIZE_OFFSET = 0x0A;
         uint64_t secSize = 0;
-        std::memcpy(&secSize, &buffer[cursor + SEC_SIZE_OFFSET], 8);
+        std::memcpy(&secSize, &sourceBuffer[cursor + SEC_SIZE_OFFSET], 8);
         // Check if section size points into file buffer. More validation will
         // be performed at a later stage. Check for 64bit integer overflow
         // before validating section size
@@ -206,7 +209,8 @@ bool parseSectionTable(std::vector<MemSection>& sections,
         // Parse section size and perform basic validation
         constexpr uint64_t SEC_NAME_OFFSET = 0x12;
         uint64_t secNameAddress = 0;
-        std::memcpy(&secNameAddress, &buffer[cursor + SEC_NAME_OFFSET], 8);
+        std::memcpy(&secNameAddress, &sourceBuffer[cursor + SEC_NAME_OFFSET],
+                    8);
         // Check if section name points into file buffer. More validation will
         // be performed at a later stage
         if (secNameAddress > size) {
@@ -227,19 +231,14 @@ bool parseSectionTable(std::vector<MemSection>& sections,
 UVM::UVM(std::filesystem::path p)
     : SourcePath(std::move(p)), HInfo(std::make_unique<HeaderInfo>()) {}
 
-UVM::~UVM() {
-    delete[] SourceBuffer;
-}
-
 bool UVM::init() {
     readSource();
-    bool validHeader = validateHeader(HInfo.get(), SourceSize, SourceBuffer);
+    bool validHeader = validateHeader(HInfo.get(), Source.get());
     if (!validHeader) {
         return false;
     }
 
-    bool validSectionTable =
-        parseSectionTable(Sections, SourceSize, SourceBuffer);
+    bool validSectionTable = parseSectionTable(Sections, Source.get());
     if (!validSectionTable) {
         return false;
     }
@@ -253,10 +252,12 @@ void UVM::readSource() {
 
     // Get buffer size
     stream.seekg(0, std::ios::end);
-    SourceSize = stream.tellg();
+    uint64_t size = stream.tellg();
     stream.seekg(0, std::ios::beg);
 
     // Allocate new buffer of file size and read complete file to buffer
-    SourceBuffer = new uint8_t[SourceSize];
-    stream.read((char*)SourceBuffer, SourceSize);
+    uint8_t* buffer = new uint8_t[size];
+    stream.read((char*)buffer, size);
+
+    Source = std::make_unique<MemBuffer>(size, buffer);
 }

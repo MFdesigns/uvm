@@ -29,16 +29,13 @@ struct HeaderInfo {
 class UVM {
   public:
     UVM(std::filesystem::path p);
-    ~UVM();
     bool init();
 
   private:
     std::filesystem::path SourcePath;
-    uint32_t SourceSize = 0;
-    uint8_t* SourceBuffer = nullptr;
+    std::unique_ptr<MemBuffer> Source;
     std::unique_ptr<HeaderInfo> HInfo;
     std::vector<MemSection> Sections;
     std::vector<MemBuffer> Buffers;
-    // HeaderInfo* HInfo = nullptr;
     void readSource();
 };

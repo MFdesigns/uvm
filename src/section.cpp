@@ -23,3 +23,17 @@ MemSection::MemSection(uint64_t startAddress,
                        std::unique_ptr<MemPermission> perms)
     : VStartAddress(startAddress), Size(size), VNameAddress(nameAddress),
       Type(type), Perms(std::move(perms)) {}
+
+MemBuffer::MemBuffer(uint64_t size, uint8_t* buffer)
+    : Size(size), Buffer(buffer) {}
+
+MemBuffer::MemBuffer(MemBuffer&& memBuffer) noexcept
+    : Size(memBuffer.Size), Buffer(std::move(memBuffer.Buffer)) {}
+
+uint8_t* MemBuffer::getBuffer() const {
+    return Buffer.get();
+}
+
+uint64_t MemBuffer::getSize() const {
+    return Size;
+}
