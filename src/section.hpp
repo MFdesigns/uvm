@@ -25,11 +25,9 @@ enum class SectionType {
     CODE = 0x5,
 };
 
-struct MemPermission {
-    bool Write = false;
-    bool Read = false;
-    bool Execute = false;
-};
+constexpr uint8_t PERM_READ_MASK = 0b1000'0000;
+constexpr uint8_t PERM_WRITE_MASK = 0b0100'0000;
+constexpr uint8_t PERM_EXE_MASK = 0b0010'0000;
 
 class MemBuffer {
   public:
@@ -48,12 +46,12 @@ struct MemSection {
                uint64_t size,
                uint64_t nameAddress,
                SectionType type,
-               std::unique_ptr<MemPermission> perms,
+               uint8_t perms,
                MemBuffer* PhysicalBuffer);
     uint64_t VStartAddress = 0;
     uint64_t Size = 0;
     uint64_t VNameAddress = 0;
     SectionType Type;
-    std::unique_ptr<MemPermission> Perms;
+    uint8_t Perms;
     MemBuffer* PhysicalBuffer = nullptr; // Non owning pointer
 };

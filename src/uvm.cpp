@@ -87,25 +87,12 @@ bool parseSectionType(uint8_t type, SectionType& secType) {
     return true;
 }
 
-bool parseSectionPermission(uint8_t perms, MemPermission* memPerms) {
-    constexpr uint8_t READ_MASK = 0b1000'0000;
-    constexpr uint8_t WRITE_MASK = 0b0100'0000;
-    constexpr uint8_t EXE_MASK = 0b0010'0000;
+bool validateSectionPermission(uint8_t perms) {
     constexpr uint8_t UNKNOW_MASK =
-        (uint8_t) ~(READ_MASK | WRITE_MASK | EXE_MASK);
+        (uint8_t) ~(PERM_READ_MASK | PERM_WRITE_MASK | PERM_EXE_MASK);
 
     if ((perms & UNKNOW_MASK) != 0) {
         return false;
-    }
-
-    if ((perms & READ_MASK) != 0) {
-        memPerms->Read = true;
-    }
-    if ((perms & WRITE_MASK) != 0) {
-        memPerms->Write = true;
-    }
-    if ((perms & EXE_MASK) != 0) {
-        memPerms->Execute = true;
     }
 
     return true;
@@ -153,12 +140,6 @@ bool parseSectionTable(std::vector<MemSection>& sections, MemBuffer* buffer) {
 
         auto memType = SectionType::STATIC;
 
-        // Use unique pointer here to prevent a memory leak which happens if the
-        // following code continues the loop prematurely. Ownership of this will
-        // be transfered to MemSection if the section is sucessfully parsed.
-        std::unique_ptr<MemPermission> memPerm =
-            std::make_unique<MemPermission>();
-
         // Validate section type
         bool validType = parseSectionType(type, memType);
         if (!validType) {
@@ -169,7 +150,7 @@ bool parseSectionTable(std::vector<MemSection>& sections, MemBuffer* buffer) {
         }
 
         // Validate section permission and create permission struct
-        bool validPerms = parseSectionPermission(perms, memPerm.get());
+        bool validPerms = validateSectionPermission(perms);
         if (!validPerms) {
             std::cout << "[Error] Invalid section permission 0x" << std::hex
                       << (uint16_t)perms << '\n';
@@ -221,7 +202,7 @@ bool parseSectionTable(std::vector<MemSection>& sections, MemBuffer* buffer) {
         }
 
         sections.emplace_back(startAddress, secSize, secNameAddress, memType,
-                              std::move(memPerm), buffer);
+                              perms, buffer);
         cursor += SEC_TABLE_ENTRY_SIZE;
     }
 
