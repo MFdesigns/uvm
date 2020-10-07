@@ -21,6 +21,7 @@
 #include <memory>
 #include <vector>
 
+constexpr uint64_t UVM_START_ADDR = 0;
 constexpr uint64_t UVM_STACK_SIZE = 4096;
 
 struct HeaderInfo {
@@ -33,10 +34,17 @@ class UVM {
   public:
     UVM(std::filesystem::path p);
     bool init();
+    bool findMemSection(uint64_t vStartAddr,
+                        uint32_t size,
+                        MemSection** memSec) const;
+    bool getMem(uint64_t vStartAddr,
+                uint32_t size,
+                uint8_t perms,
+                uint8_t** ptr) const;
 
   private:
     std::filesystem::path SourcePath;
-    MemBuffer* Source = nullptr; // Non owning pointer
+    uint32_t SourceBuffIndex = 0;
     std::unique_ptr<HeaderInfo> HInfo;
     std::vector<MemSection> Sections;
     std::vector<MemBuffer> Buffers;

@@ -16,17 +16,21 @@
 
 #include "section.hpp"
 
+bool comparePerms(uint8_t permA, uint8_t permB) {
+    return (permA & permB) == permB;
+}
+
 MemSection::MemSection(uint64_t startAddress,
                        uint64_t size,
                        uint64_t nameAddress,
                        SectionType type,
                        uint8_t perms,
-                       MemBuffer* buffer)
+                       uint32_t buffer)
     : VStartAddress(startAddress), Size(size), VNameAddress(nameAddress),
-      Type(type), Perms(perms), PhysicalBuffer(buffer) {}
+      Type(type), Perms(perms), BufferIndex(buffer) {}
 
-MemBuffer::MemBuffer(uint64_t size, uint8_t* buffer)
-    : Size(size), Buffer(buffer) {}
+MemBuffer::MemBuffer(uint64_t vStartAddress, uint64_t size, uint8_t* buffer)
+    : VStartAddress(vStartAddress), Size(size), Buffer(buffer) {}
 
 MemBuffer::MemBuffer(MemBuffer&& memBuffer) noexcept
     : Size(memBuffer.Size), Buffer(std::move(memBuffer.Buffer)) {}
@@ -37,4 +41,8 @@ uint8_t* MemBuffer::getBuffer() const {
 
 uint64_t MemBuffer::getSize() const {
     return Size;
+}
+
+uint64_t MemBuffer::getStartAddr() const {
+    return VStartAddress;
 }

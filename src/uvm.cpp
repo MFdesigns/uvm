@@ -98,7 +98,9 @@ bool validateSectionPermission(uint8_t perms) {
     return true;
 }
 
-bool parseSectionTable(std::vector<MemSection>& sections, MemBuffer* buffer) {
+bool parseSectionTable(std::vector<MemSection>& sections,
+                       MemBuffer* buffer,
+                       uint32_t buffIndex) {
     uint64_t size = buffer->getSize();
     uint8_t* sourceBuffer = buffer->getBuffer();
     constexpr uint64_t SEC_TABLE_OFFSET = 0x60;
@@ -202,7 +204,7 @@ bool parseSectionTable(std::vector<MemSection>& sections, MemBuffer* buffer) {
         }
 
         sections.emplace_back(startAddress, secSize, secNameAddress, memType,
-                              perms, buffer);
+                              perms, buffIndex);
         cursor += SEC_TABLE_ENTRY_SIZE;
     }
 
@@ -214,19 +216,65 @@ UVM::UVM(std::filesystem::path p)
 
 bool UVM::init() {
     readSource();
-    bool validHeader = validateHeader(HInfo.get(), Source);
+    bool validHeader = validateHeader(HInfo.get(), &Buffers[SourceBuffIndex]);
     if (!validHeader) {
         return false;
     }
 
-    bool validSectionTable = parseSectionTable(Sections, Source);
+    bool validSectionTable =
+        parseSectionTable(Sections, &Buffers[SourceBuffIndex], SourceBuffIndex);
     if (!validSectionTable) {
         return false;
     }
 
-    // Allocate stack and initialize to 0
+    // Allocate stack and initialize to 0. Stack start immediately after source
+    // file buffer
     uint8_t* stack = new uint8_t[UVM_STACK_SIZE]();
-    Buffers.emplace_back(UVM_STACK_SIZE, stack);
+    Buffers.emplace_back(Buffers[SourceBuffIndex].getSize(), UVM_STACK_SIZE,
+                         stack);
+
+    return true;
+}
+
+bool UVM::findMemSection(uint64_t vStartAddr,
+                         uint32_t size,
+                         MemSection** memSec) const {
+    uint64_t vEndAddr = vStartAddr + size;
+    bool found = false;
+    uint32_t memSecIndex = 0;
+    while (memSecIndex < Sections.size() && !found) {
+        const MemSection* sec = &Sections[memSecIndex];
+        if (vStartAddr >= sec->VStartAddress &&
+            vEndAddr <= sec->VStartAddress + sec->Size) {
+            found = true;
+            *memSec = (MemSection*)sec;
+        }
+        memSecIndex++;
+    }
+
+    return found;
+}
+
+bool UVM::getMem(uint64_t vStartAddr,
+                 uint32_t size,
+                 uint8_t perms,
+                 uint8_t** ptr) const {
+    // Find memory section which contains the address range
+    MemSection* section = nullptr;
+    bool foundSec = findMemSection(vStartAddr, size, &section);
+    if (!foundSec) {
+        return false;
+    }
+
+    if (!comparePerms(section->Perms, perms)) {
+        return false;
+    }
+
+    // Get physical buffer address
+    const MemBuffer* memBuffer = &Buffers[section->BufferIndex];
+    uint64_t bufferOffset = vStartAddr - memBuffer->getStartAddr();
+    uint8_t* buffer = memBuffer->getBuffer();
+    *ptr = &buffer[bufferOffset];
 
     return true;
 }
@@ -244,5 +292,6 @@ void UVM::readSource() {
     uint8_t* buffer = new uint8_t[size];
     stream.read((char*)buffer, size);
 
-    Source = &Buffers.emplace_back(size, buffer);
+    Buffers.emplace_back(UVM_START_ADDR, size, buffer);
+    SourceBuffIndex = Buffers.size() - 1;
 }
