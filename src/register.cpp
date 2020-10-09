@@ -197,6 +197,10 @@ uint64_t RegisterManager::internalGetIP() const {
     return IP.I64;
 }
 
+void RegisterManager::internalSetIP(uint64_t val) {
+    IP.I64 = val;
+}
+
 void RegisterManager::internalSetSP(uint64_t val) {
     SP.I64 = val;
 }

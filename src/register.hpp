@@ -78,6 +78,7 @@ class RegisterManager {
     // Internal functions can only be used by the VM internally and are not
     // allowed to be called by Bytecode directly
     uint64_t internalGetIP() const;
+    void internalSetIP(uint64_t val);
     void internalSetSP(uint64_t val);
     void internalSetBP(uint64_t val);
 

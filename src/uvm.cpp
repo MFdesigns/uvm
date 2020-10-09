@@ -212,7 +212,8 @@ bool parseSectionTable(std::vector<MemSection>& sections,
 }
 
 UVM::UVM(std::filesystem::path p)
-    : SourcePath(std::move(p)), HInfo(std::make_unique<HeaderInfo>()) {}
+    : SourcePath(std::move(p)), HInfo(std::make_unique<HeaderInfo>()),
+      RM(std::make_unique<RegisterManager>()) {}
 
 bool UVM::init() {
     readSource();
@@ -227,11 +228,22 @@ bool UVM::init() {
         return false;
     }
 
-    // Allocate stack and initialize to 0. Stack start immediately after source
-    // file buffer
+    // Allocate stack initialize to 0 and add stack section. Stack starts
+    // immediately after source file buffer
     uint8_t* stack = new uint8_t[UVM_STACK_SIZE]();
-    Buffers.emplace_back(Buffers[SourceBuffIndex].getSize(), UVM_STACK_SIZE,
-                         stack);
+    uint64_t stackStartAddress = Buffers[SourceBuffIndex].getSize() + 1;
+    Buffers.emplace_back(stackStartAddress, UVM_STACK_SIZE, stack);
+
+    // TODO: Add section name address
+    uint32_t stackBuffIndex = Buffers.size() - 1;
+    Sections.emplace_back(stackStartAddress, UVM_STACK_SIZE, 0,
+                          SectionType::STACK, PERM_READ_MASK | PERM_WRITE_MASK,
+                          stackBuffIndex);
+
+    // Setup start address and stack pointer
+    // TODO: Validate start address
+    RM->internalSetIP(HInfo->StartAddress);
+    RM->internalSetSP(stackStartAddress);
 
     return true;
 }

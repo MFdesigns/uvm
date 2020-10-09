@@ -23,6 +23,7 @@ enum class SectionType {
     DEBUG = 0x3,
     STATIC = 0x4,
     CODE = 0x5,
+    STACK = 0x6,
 };
 
 constexpr uint8_t PERM_READ_MASK = 0b1000'0000;

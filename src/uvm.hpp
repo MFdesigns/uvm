@@ -15,6 +15,7 @@
  */
 
 #pragma once
+#include "register.hpp"
 #include "section.hpp"
 #include <cstdint>
 #include <filesystem>
@@ -46,6 +47,7 @@ class UVM {
     std::filesystem::path SourcePath;
     uint32_t SourceBuffIndex = 0;
     std::unique_ptr<HeaderInfo> HInfo;
+    std::unique_ptr<RegisterManager> RM;
     std::vector<MemSection> Sections;
     std::vector<MemBuffer> Buffers;
     void readSource();
