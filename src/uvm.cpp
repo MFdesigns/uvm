@@ -16,6 +16,7 @@
 
 #include "uvm.hpp"
 #include "instr/memory.hpp"
+#include "instr/syscall.hpp"
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -252,13 +253,13 @@ bool UVM::init() {
 bool UVM::findMemSection(uint64_t vStartAddr,
                          uint32_t size,
                          MemSection** memSec) const {
-    uint64_t vEndAddr = vStartAddr + size;
+    uint64_t vEndAddr = vStartAddr + (size - 1);
     bool found = false;
     uint32_t memSecIndex = 0;
     while (memSecIndex < Sections.size() && !found) {
         const MemSection* sec = &Sections[memSecIndex];
         if (vStartAddr >= sec->VStartAddress &&
-            vEndAddr <= sec->VStartAddress + sec->Size) {
+            vEndAddr <= sec->VStartAddress + (sec->Size - 1)) {
             found = true;
             *memSec = (MemSection*)sec;
         }
@@ -324,12 +325,15 @@ bool UVM::run() {
     constexpr uint8_t OP_LOAD_I16_IR = 0x12;
     constexpr uint8_t OP_LOAD_I32_IR = 0x13;
     constexpr uint8_t OP_LOAD_I64_IR = 0x14;
+
     constexpr uint8_t OP_COPY_I8_RO = 0x21;
     constexpr uint8_t OP_COPY_I16_RO = 0x22;
     constexpr uint8_t OP_COPY_I32_RO = 0x23;
     constexpr uint8_t OP_COPY_I64_RO = 0x24;
     constexpr uint8_t OP_COPY_IT_IR_IR = 0x25;
     constexpr uint8_t OP_COPY_IT_RO_RO = 0x26;
+
+    constexpr uint8_t OP_SYS = 0x40;
     constexpr uint8_t OP_EXIT = 0x50;
 
     uint8_t op = 0;
@@ -340,6 +344,7 @@ bool UVM::run() {
 
         // Get opcode byte
         uint8_t* opRef = nullptr;
+        // Handle invalid memory access
         getMem(RM->internalGetIP(), 1, PERM_EXE_MASK, &opRef);
         op = *opRef;
 
@@ -397,7 +402,15 @@ bool UVM::run() {
             break;
 
         /********************************
-            EXIT INSTRUCTIONS
+            SYSCALL
+        ********************************/
+        case OP_SYS:
+            instrWidth = 2;
+            runtimeError = !Instr::syscall(this, RM.get());
+            break;
+
+        /********************************
+            EXIT
         ********************************/
         case OP_EXIT:
             continue;
