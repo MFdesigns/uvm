@@ -39,8 +39,7 @@ bool internalPrint(UVM* vm, RegisterManager* rm) {
 bool Instr::syscall(UVM* vm, RegisterManager* rm) {
     // Load complete instruction
     uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->getMem(rm->internalGetIP(), 2, PERM_EXE_MASK, &buff);
+    bool memAccess = vm->getMem(rm->internalGetIP(), 2, PERM_EXE_MASK, &buff);
     if (!memAccess) {
         return false;
     }
@@ -50,11 +49,11 @@ bool Instr::syscall(UVM* vm, RegisterManager* rm) {
     uint8_t syscallType = buff[1];
     bool callSuccess = true;
     switch (syscallType) {
-        case SYS_PRINT:
+    case SYS_PRINT:
         callSuccess = internalPrint(vm, rm);
         break;
-        default:
-            return false;
+    default:
+        return false;
     }
 
     if (!callSuccess) {
