@@ -15,6 +15,7 @@
  */
 
 #include "uvm.hpp"
+#include "instr/memory.hpp"
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -291,6 +292,16 @@ bool UVM::getMem(uint64_t vStartAddr,
     return true;
 }
 
+bool UVM::memWrite(void* source, uint64_t vStartAddr, uint32_t size) {
+    uint8_t* dest = nullptr;
+    if (!getMem(vStartAddr, size, PERM_WRITE_MASK, &dest)) {
+        return false;
+    }
+
+    std::memcpy(dest, source, size);
+    return true;
+}
+
 void UVM::readSource() {
     // Read source file into buffer
     std::ifstream stream{SourcePath};
@@ -306,4 +317,69 @@ void UVM::readSource() {
 
     Buffers.emplace_back(UVM_START_ADDR, size, buffer);
     SourceBuffIndex = Buffers.size() - 1;
+}
+
+bool UVM::run() {
+    constexpr uint8_t OP_COPY_I8_RO = 0x21;
+    constexpr uint8_t OP_COPY_I16_RO = 0x22;
+    constexpr uint8_t OP_COPY_I32_RO = 0x23;
+    constexpr uint8_t OP_COPY_I64_RO = 0x24;
+    constexpr uint8_t OP_COPY_IT_IR_IR = 0x25;
+    constexpr uint8_t OP_COPY_IT_RO_RO = 0x26;
+    constexpr uint8_t OP_EXIT = 0x50;
+
+    uint8_t op = 0;
+    bool runtimeError = false;
+
+    while (op != OP_EXIT && !runtimeError) {
+        uint32_t instrWidth = 1;
+
+        // Get opcode byte
+        uint8_t* opRef = nullptr;
+        getMem(RM->internalGetIP(), 1, PERM_EXE_MASK, &opRef);
+        op = *opRef;
+
+        switch (op) {
+        /********************************
+            COPY INSTRUCTIONS
+        ********************************/
+        case OP_COPY_I8_RO:
+            instrWidth = 8;
+            runtimeError =
+                !Instr::copyIntToRO(this, RM.get(), instrWidth, IntType::I8);
+            break;
+        case OP_COPY_I16_RO:
+            instrWidth = 9;
+            runtimeError =
+                !Instr::copyIntToRO(this, RM.get(), instrWidth, IntType::I16);
+            break;
+        case OP_COPY_I32_RO:
+            instrWidth = 11;
+            runtimeError =
+                !Instr::copyIntToRO(this, RM.get(), instrWidth, IntType::I32);
+            break;
+        case OP_COPY_I64_RO:
+            instrWidth = 15;
+            runtimeError =
+                !Instr::copyIntToRO(this, RM.get(), instrWidth, IntType::I64);
+            break;
+        case OP_COPY_IT_IR_IR:
+            instrWidth = 4;
+            runtimeError = !Instr::copyIRegToIReg(this, RM.get());
+            break;
+
+        /********************************
+            EXIT INSTRUCTIONS
+        ********************************/
+        case OP_EXIT:
+            continue;
+        default:
+            std::cout << "[Runtime] Unknow opcode 0x" << std::hex << (uint16_t)op << '\n';
+            runtimeError = true;
+            continue;
+        }
+        RM->internalSetIP(RM->internalGetIP() + instrWidth);
+    }
+
+    return !runtimeError;
 }

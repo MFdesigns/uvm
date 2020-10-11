@@ -38,5 +38,14 @@ int main(int argc, char* argv[]) {
     }
 
     UVM vmInstance{p};
-    vmInstance.init();
+    bool initSuccess = vmInstance.init();
+    if (!initSuccess) {
+        return -1;
+    }
+
+    bool exit = vmInstance.run();
+    if (!exit) {
+        std::cout << "VM exited with an error\n";
+        return -1;
+    }
 }

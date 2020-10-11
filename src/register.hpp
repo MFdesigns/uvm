@@ -74,10 +74,17 @@ class RegisterManager {
     bool getIntReg(uint8_t id, IntType type, IntVal* outVal) const;
     bool setFloatReg(uint8_t id, UVMFloat* val);
     bool getFloatReg(uint8_t id, FloatType type, FloatVal* outVal) const;
+    bool evalRegOffset(uint8_t* buff, uint64_t* address) const;
 
     // Internal functions can only be used by the VM internally and are not
     // allowed to be called by Bytecode directly
     uint64_t internalGetIP() const;
+    uint64_t internalGetSP() const;
+    uint64_t internalGetBP() const;
+
+    // Important: this getter does not perform a range check on id
+    uint64_t internalGetGP(uint8_t id) const;
+
     void internalSetIP(uint64_t val);
     void internalSetSP(uint64_t val);
     void internalSetBP(uint64_t val);
@@ -85,6 +92,7 @@ class RegisterManager {
   private:
     bool validateIntRegAccess(uint8_t id, IntVal** targetReg) const;
     bool validateFloatRegAccess(uint8_t id, FloatVal** targetReg) const;
+    bool validateRegOffsetReg(uint8_t id, uint64_t* val) const;
     IntVal IP;
     IntVal SP;
     IntVal BP;

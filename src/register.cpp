@@ -15,6 +15,7 @@
  */
 
 #include "register.hpp"
+#include <cstring>
 #include <iostream>
 
 UVMInt::UVMInt(IntType type, IntVal val) : Type(type), Val(val) {}
@@ -193,8 +194,95 @@ bool RegisterManager::getFloatReg(uint8_t id,
     return true;
 }
 
+bool RegisterManager::evalRegOffset(uint8_t* buff, uint64_t* address) const {
+    constexpr uint8_t RO_IR = 0x40;          // <iR>
+    constexpr uint8_t RO_IR_P_I32 = 0x50;    // <iR> + <i32>
+    constexpr uint8_t RO_IR_M_I32 = 0x70;    // <iR> - <i32>
+    constexpr uint8_t RO_IR_P_IR_I16 = 0x46; // <iR1> + <iR2> * <i16>
+    constexpr uint8_t RO_IR_M_IR_I16 = 0x66; // <iR1> + <iR2> * <i16>
+
+    uint8_t layout = buff[0];
+    uint8_t iRegA = buff[1];
+
+    // First register in register offset can only be ip, sp, bp or r0-r15
+    uint64_t iRegAVal = 0;
+    if (!validateRegOffsetReg(iRegA, &iRegAVal)) {
+        std::cout << "[Runtime] Invalid register in register offset "
+                  << std::hex << iRegA << " (iR1)\n";
+        return false;
+    }
+
+    // Extract possible i16 and i32 values
+    uint32_t imm32 = 0;
+    uint16_t imm16 = 0;
+    std::memcpy(&imm32, &buff[2], 4);
+    std::memcpy(&imm16, &buff[3], 2);
+
+    // Calculate register offset address
+    if (layout == RO_IR) {
+        *address = iRegAVal;
+    } else if (layout == RO_IR_P_I32) {
+        *address = iRegAVal + imm32;
+    } else if (layout == RO_IR_M_I32) {
+        *address = iRegAVal - imm32;
+    } else if (layout == RO_IR_P_IR_I16 || layout == RO_IR_M_IR_I16) {
+        uint8_t iRegB = buff[2];
+        uint64_t iRegBVal = 0;
+        if (!validateRegOffsetReg(iRegB, &iRegBVal)) {
+            std::cout << "[Runtime] Invalid register in register offset "
+                      << std::hex << iRegB << " (iR2)\n";
+            return false;
+        }
+
+        if (layout == RO_IR_P_IR_I16) {
+            *address = iRegAVal + iRegBVal * imm16;
+        } else {
+            *address = iRegAVal - iRegBVal * imm16;
+        }
+    } else {
+        return false;
+    }
+
+    return true;
+}
+
+bool RegisterManager::validateRegOffsetReg(uint8_t id, uint64_t* val) const {
+    if (id >= REG_GP_START && id <= REG_GP_END) {
+        *val = internalGetGP(id);
+        return true;
+    }
+
+    switch (id) {
+    case REG_INSTR_PTR:
+        *val = internalGetIP();
+        break;
+    case REG_STACK_PTR:
+        *val = internalGetSP();
+        break;
+    case REG_BASE_PTR:
+        *val = internalGetBP();
+        break;
+    default:
+        return false;
+    }
+
+    return true;
+}
+
 uint64_t RegisterManager::internalGetIP() const {
     return IP.I64;
+}
+
+uint64_t RegisterManager::internalGetSP() const {
+    return SP.I64;
+}
+
+uint64_t RegisterManager::internalGetBP() const {
+    return BP.I64;
+}
+
+uint64_t RegisterManager::internalGetGP(uint8_t id) const {
+    return GP[id - REG_GP_START].I64;
 }
 
 void RegisterManager::internalSetIP(uint64_t val) {

@@ -42,6 +42,8 @@ class UVM {
                 uint32_t size,
                 uint8_t perms,
                 uint8_t** ptr) const;
+    bool memWrite(void* source, uint64_t vStartAddr, uint32_t size);
+    bool run();
 
   private:
     std::filesystem::path SourcePath;
