@@ -101,3 +101,41 @@ bool Instr::copyIRegToIReg(UVM* vm, RegisterManager* rm) {
 
     return true;
 }
+
+bool Instr::loadIntToIReg(UVM* vm,
+                          RegisterManager* rm,
+                          uint32_t width,
+                          IntType type) {
+    // Load complete instruction
+    uint8_t* buff = nullptr;
+    bool memAccess =
+        vm->getMem(rm->internalGetIP(), width, PERM_EXE_MASK, &buff);
+    if (!memAccess) {
+        return false;
+    }
+
+    IntVal val;
+    switch (type) {
+    case IntType::I8:
+        val.I8 = buff[1];
+        break;
+    case IntType::I16:
+        std::memcpy(&val.I16, &buff[1], 2);
+        break;
+    case IntType::I32:
+        std::memcpy(&val.I32, &buff[1], 4);
+        break;
+    case IntType::I64:
+        std::memcpy(&val.I64, &buff[1], 8);
+        break;
+    }
+
+    // Target register is at the last byte in instruction
+    UVMInt intVal{type, val};
+    uint8_t reg = buff[width - 1];
+    if (!rm->setIntReg(reg, &intVal)) {
+        return false;
+    }
+
+    return true;
+}

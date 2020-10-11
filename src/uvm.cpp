@@ -320,6 +320,10 @@ void UVM::readSource() {
 }
 
 bool UVM::run() {
+    constexpr uint8_t OP_LOAD_I8_IR = 0x11;
+    constexpr uint8_t OP_LOAD_I16_IR = 0x12;
+    constexpr uint8_t OP_LOAD_I32_IR = 0x13;
+    constexpr uint8_t OP_LOAD_I64_IR = 0x14;
     constexpr uint8_t OP_COPY_I8_RO = 0x21;
     constexpr uint8_t OP_COPY_I16_RO = 0x22;
     constexpr uint8_t OP_COPY_I32_RO = 0x23;
@@ -340,6 +344,30 @@ bool UVM::run() {
         op = *opRef;
 
         switch (op) {
+        /********************************
+            LOAD INSTRUCTIONS
+        ********************************/
+        case OP_LOAD_I8_IR:
+            instrWidth = 3;
+            runtimeError =
+                !Instr::loadIntToIReg(this, RM.get(), instrWidth, IntType::I8);
+            break;
+        case OP_LOAD_I16_IR:
+            instrWidth = 4;
+            runtimeError =
+                !Instr::loadIntToIReg(this, RM.get(), instrWidth, IntType::I16);
+            break;
+        case OP_LOAD_I32_IR:
+            instrWidth = 6;
+            runtimeError =
+                !Instr::loadIntToIReg(this, RM.get(), instrWidth, IntType::I32);
+            break;
+        case OP_LOAD_I64_IR:
+            instrWidth = 10;
+            runtimeError =
+                !Instr::loadIntToIReg(this, RM.get(), instrWidth, IntType::I64);
+            break;
+
         /********************************
             COPY INSTRUCTIONS
         ********************************/
