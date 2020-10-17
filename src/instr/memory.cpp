@@ -319,3 +319,32 @@ bool Instr::storeIRegToRO(UVM* vm, RegisterManager* rm) {
 
     return true;
 }
+
+bool Instr::leaROToIReg(UVM* vm, RegisterManager* rm) {
+    // Load complete instruction
+    constexpr uint32_t INSTR_WIDTH = 8;
+    uint8_t* buff = nullptr;
+    bool memAccess =
+        vm->getMem(rm->internalGetIP(), INSTR_WIDTH, PERM_EXE_MASK, &buff);
+    if (!memAccess) {
+        return false;
+    }
+
+    uint8_t iReg = buff[7];
+
+    constexpr uint32_t RO_OFFSET = 1;
+    uint64_t roAddress = 0;
+    if (!rm->evalRegOffset(&buff[RO_OFFSET], &roAddress)) {
+        return false;
+    }
+
+    IntVal val;
+    val.I64 = roAddress;
+    UVMInt addrInt{IntType::I64, val};
+    bool setSuccess = rm->setIntReg(iReg, &addrInt);
+    if (!setSuccess) {
+        return false;
+    }
+
+    return true;
+}
