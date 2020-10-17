@@ -195,11 +195,9 @@ bool RegisterManager::getFloatReg(uint8_t id,
 }
 
 bool RegisterManager::evalRegOffset(uint8_t* buff, uint64_t* address) const {
-    constexpr uint8_t RO_IR = 0x40;          // <iR>
-    constexpr uint8_t RO_IR_P_I32 = 0x50;    // <iR> + <i32>
-    constexpr uint8_t RO_IR_M_I32 = 0x70;    // <iR> - <i32>
-    constexpr uint8_t RO_IR_P_IR_I16 = 0x46; // <iR1> + <iR2> * <i16>
-    constexpr uint8_t RO_IR_M_IR_I16 = 0x66; // <iR1> + <iR2> * <i16>
+    constexpr uint8_t RO_IR = 0x4F;          // <iR>
+    constexpr uint8_t RO_IR_I32 = 0x2F;    // <iR> + <i32>
+    constexpr uint8_t RO_IR_IR_I16 = 0x1F; // <iR1> + <iR2> * <i16>
 
     uint8_t layout = buff[0];
     uint8_t iRegA = buff[1];
@@ -221,11 +219,13 @@ bool RegisterManager::evalRegOffset(uint8_t* buff, uint64_t* address) const {
     // Calculate register offset address
     if (layout == RO_IR) {
         *address = iRegAVal;
-    } else if (layout == RO_IR_P_I32) {
-        *address = iRegAVal + imm32;
-    } else if (layout == RO_IR_M_I32) {
-        *address = iRegAVal - imm32;
-    } else if (layout == RO_IR_P_IR_I16 || layout == RO_IR_M_IR_I16) {
+    } else if (layout == RO_IR_I32) {
+        if (layout >> 7 == 0) {
+            *address = iRegAVal + imm32;
+        } else {
+            *address = iRegAVal - imm32;
+        }
+    } else if (layout == RO_IR_IR_I16) {
         uint8_t iRegB = buff[2];
         uint64_t iRegBVal = 0;
         if (!validateRegOffsetReg(iRegB, &iRegBVal)) {
@@ -234,7 +234,7 @@ bool RegisterManager::evalRegOffset(uint8_t* buff, uint64_t* address) const {
             return false;
         }
 
-        if (layout == RO_IR_P_IR_I16) {
+        if (layout >> 7 == 0) {
             *address = iRegAVal + iRegBVal * imm16;
         } else {
             *address = iRegAVal - iRegBVal * imm16;
