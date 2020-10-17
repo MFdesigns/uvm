@@ -102,6 +102,62 @@ bool Instr::copyIRegToIReg(UVM* vm, RegisterManager* rm) {
     return true;
 }
 
+bool Instr::copyROToRO(UVM* vm, RegisterManager* rm) {
+    // Load complete instruction
+    constexpr uint32_t INSTR_WIDTH = 14;
+    uint8_t* buff = nullptr;
+    bool memAccess =
+        vm->getMem(rm->internalGetIP(), INSTR_WIDTH, PERM_EXE_MASK, &buff);
+    if (!memAccess) {
+        return false;
+    }
+
+    uint8_t type = buff[1];
+    IntType intType = IntType::I32;
+    if (!parseIntType(type, &intType)) {
+        return false;
+    }
+
+    uint32_t readSize = 0;
+    switch (intType) {
+    case IntType::I8:
+        readSize = 1;
+        break;
+    case IntType::I16:
+        readSize = 2;
+        break;
+    case IntType::I32:
+        readSize = 4;
+        break;
+    case IntType::I64:
+        readSize = 8;
+        break;
+    }
+
+    constexpr uint32_t RO_OFFSET_A = 2;
+    constexpr uint32_t RO_OFFSET_B = 8;
+
+    uint64_t roAddrA = 0;
+    uint64_t roAddrB = 0;
+    if (!rm->evalRegOffset(&buff[RO_OFFSET_A], &roAddrA) ||
+        !rm->evalRegOffset(&buff[RO_OFFSET_B], &roAddrB)) {
+        return false;
+    }
+
+    uint8_t* readBuff = nullptr;
+    bool readSuccess = vm->getMem(roAddrA, readSize, PERM_READ_MASK, &readBuff);
+    if (!readSuccess) {
+        return false;
+    }
+
+    bool writeSuccess = vm->memWrite(readBuff, roAddrB, readSize);
+    if (!writeSuccess) {
+        return false;
+    }
+
+    return true;
+}
+
 bool Instr::loadIntToIReg(UVM* vm,
                           RegisterManager* rm,
                           uint32_t width,

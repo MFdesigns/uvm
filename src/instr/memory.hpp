@@ -21,6 +21,7 @@
 namespace Instr {
 bool copyIntToRO(UVM* vm, RegisterManager* rm, uint32_t width, IntType type);
 bool copyIRegToIReg(UVM* vm, RegisterManager* rm);
+bool copyROToRO(UVM* vm, RegisterManager* rm);
 bool loadIntToIReg(UVM* vm, RegisterManager* rm, uint32_t width, IntType type);
 bool loadROToIReg(UVM* vm, RegisterManager* rm, uint32_t width);
 } // namespace Instr

@@ -405,6 +405,10 @@ bool UVM::run() {
             instrWidth = 4;
             runtimeError = !Instr::copyIRegToIReg(this, RM.get());
             break;
+        case OP_COPY_IT_RO_RO:
+            instrWidth = 14;
+            runtimeError = !Instr::copyROToRO(this, RM.get());
+            break;
 
         /********************************
             SYSCALL
