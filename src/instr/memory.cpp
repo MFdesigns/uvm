@@ -266,3 +266,56 @@ bool Instr::loadROToIReg(UVM* vm, RegisterManager* rm, uint32_t width) {
 
     return true;
 }
+
+bool Instr::storeIRegToRO(UVM* vm, RegisterManager* rm) {
+    // Load complete instruction
+    constexpr uint32_t INSTR_WIDTH = 9;
+    uint8_t* buff = nullptr;
+    bool memAccess =
+        vm->getMem(rm->internalGetIP(), INSTR_WIDTH, PERM_EXE_MASK, &buff);
+    if (!memAccess) {
+        return false;
+    }
+
+    uint8_t type = buff[1];
+    uint8_t iReg = buff[2];
+    constexpr uint32_t RO_OFFSET = 3;
+
+    IntType intType = IntType::I32;
+    if (!parseIntType(type, &intType)) {
+        return false;
+    }
+
+    IntVal intReg{};
+    if (!rm->getIntReg(iReg, intType, &intReg)) {
+        return false;
+    }
+
+    uint64_t roAddress = 0;
+    if (!rm->evalRegOffset(&buff[RO_OFFSET], &roAddress)) {
+        return false;
+    }
+
+    uint32_t writeSize = 0;
+    switch (intType) {
+    case IntType::I8:
+        writeSize = 1;
+        break;
+    case IntType::I16:
+        writeSize = 2;
+        break;
+    case IntType::I32:
+        writeSize = 4;
+        break;
+    case IntType::I64:
+        writeSize = 8;
+        break;
+    }
+
+    bool writeSuccess = vm->memWrite(&intReg, roAddress, writeSize);
+    if (!writeSuccess) {
+        return false;
+    }
+
+    return true;
+}

@@ -321,6 +321,8 @@ void UVM::readSource() {
 }
 
 bool UVM::run() {
+    constexpr uint8_t OP_STORE_IT_IR_RO = 0x08;
+
     constexpr uint8_t OP_LOAD_I8_IR = 0x11;
     constexpr uint8_t OP_LOAD_I16_IR = 0x12;
     constexpr uint8_t OP_LOAD_I32_IR = 0x13;
@@ -350,6 +352,14 @@ bool UVM::run() {
         op = *opRef;
 
         switch (op) {
+        /********************************
+            STORE INSTRUCTION
+        ********************************/
+        case OP_STORE_IT_IR_RO:
+            instrWidth = 9;
+            runtimeError = !Instr::storeIRegToRO(this, RM.get());
+            break;
+
         /********************************
             LOAD INSTRUCTIONS
         ********************************/
