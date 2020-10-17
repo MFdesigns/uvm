@@ -195,7 +195,7 @@ bool RegisterManager::getFloatReg(uint8_t id,
 }
 
 bool RegisterManager::evalRegOffset(uint8_t* buff, uint64_t* address) const {
-    constexpr uint8_t RO_IR = 0x4F;          // <iR>
+    constexpr uint8_t RO_IR = 0x4F;        // <iR>
     constexpr uint8_t RO_IR_I32 = 0x2F;    // <iR> + <i32>
     constexpr uint8_t RO_IR_IR_I16 = 0x1F; // <iR1> + <iR2> * <i16>
 

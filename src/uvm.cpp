@@ -325,6 +325,7 @@ bool UVM::run() {
     constexpr uint8_t OP_LOAD_I16_IR = 0x12;
     constexpr uint8_t OP_LOAD_I32_IR = 0x13;
     constexpr uint8_t OP_LOAD_I64_IR = 0x14;
+    constexpr uint8_t OP_LOAD_IT_RO_IR = 0x15;
 
     constexpr uint8_t OP_COPY_I8_RO = 0x21;
     constexpr uint8_t OP_COPY_I16_RO = 0x22;
@@ -372,6 +373,10 @@ bool UVM::run() {
             runtimeError =
                 !Instr::loadIntToIReg(this, RM.get(), instrWidth, IntType::I64);
             break;
+        case OP_LOAD_IT_RO_IR:
+            instrWidth = 9;
+            runtimeError = !Instr::loadROToIReg(this, RM.get(), instrWidth);
+            break;
 
         /********************************
             COPY INSTRUCTIONS
@@ -415,7 +420,8 @@ bool UVM::run() {
         case OP_EXIT:
             continue;
         default:
-            std::cout << "[Runtime] Unknow opcode 0x" << std::hex << (uint16_t)op << '\n';
+            std::cout << "[Runtime] Unknow opcode 0x" << std::hex
+                      << (uint16_t)op << '\n';
             runtimeError = true;
             continue;
         }

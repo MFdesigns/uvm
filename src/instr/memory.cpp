@@ -139,3 +139,74 @@ bool Instr::loadIntToIReg(UVM* vm,
 
     return true;
 }
+
+bool Instr::loadROToIReg(UVM* vm, RegisterManager* rm, uint32_t width) {
+    // Load complete instruction
+    uint8_t* buff = nullptr;
+    bool memAccess =
+        vm->getMem(rm->internalGetIP(), width, PERM_EXE_MASK, &buff);
+    if (!memAccess) {
+        return false;
+    }
+
+    constexpr uint32_t RO_OFFSET = 2;
+    uint8_t type = buff[1];
+    uint8_t iReg = buff[8];
+
+    IntType intType = IntType::I32;
+    if (!parseIntType(type, &intType)) {
+        return false;
+    }
+
+    uint64_t roAddress = 0;
+    if (!rm->evalRegOffset(&buff[RO_OFFSET], &roAddress)) {
+        return false;
+    }
+
+    uint32_t readSize = 0;
+    switch (intType) {
+    case IntType::I8:
+        readSize = 1;
+        break;
+    case IntType::I16:
+        readSize = 2;
+        break;
+    case IntType::I32:
+        readSize = 4;
+        break;
+    case IntType::I64:
+        readSize = 8;
+        break;
+    }
+
+    uint8_t* readBuff = nullptr;
+    bool readSuccess =
+        vm->getMem(roAddress, readSize, PERM_READ_MASK, &readBuff);
+    if (!readSuccess) {
+        return false;
+    }
+
+    IntVal intVal;
+    switch (intType) {
+    case IntType::I8:
+        intVal.I8 = readBuff[0];
+        break;
+    case IntType::I16:
+        std::memcpy(&intVal.I16, &readBuff[0], 2);
+        break;
+    case IntType::I32:
+        std::memcpy(&intVal.I32, &readBuff[0], 4);
+        break;
+    case IntType::I64:
+        std::memcpy(&intVal.I64, &readBuff[0], 8);
+        break;
+    }
+
+    UVMInt val{intType, intVal};
+    bool setIntRegSuccess = rm->setIntReg(iReg, &val);
+    if (!setIntRegSuccess) {
+        return false;
+    }
+
+    return true;
+}
