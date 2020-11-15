@@ -219,13 +219,13 @@ bool RegisterManager::evalRegOffset(uint8_t* buff, uint64_t* address) const {
     // Calculate register offset address
     if (layout == RO_IR) {
         *address = iRegAVal;
-    } else if (layout == RO_IR_I32) {
+    } else if ((layout & RO_IR_I32) == RO_IR_I32) {
         if (layout >> 7 == 0) {
             *address = iRegAVal + imm32;
         } else {
             *address = iRegAVal - imm32;
         }
-    } else if (layout == RO_IR_IR_I16) {
+    } else if ((layout & RO_IR_IR_I16) == RO_IR_IR_I16) {
         uint8_t iRegB = buff[2];
         uint64_t iRegBVal = 0;
         if (!validateRegOffsetReg(iRegB, &iRegBVal)) {
