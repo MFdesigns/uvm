@@ -1,32 +1,32 @@
-/**
- * Copyright 2020 Michel Fäh
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// ======================================================================== //
+// Copyright 2020 Michel Fäh
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// ======================================================================== //
 
 #include "uvm.hpp"
-#include "instr/memory.hpp"
+#include "instr/memory_manip.hpp"
 #include "instr/syscall.hpp"
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include "memory.hpp"
 
 bool validateHeader(HeaderInfo* info, MemBuffer* source) {
     uint8_t* sourceBuffer = source->getBuffer();
-    uint64_t sourceSize = source->getSize();
     // Check if source file has minimal size to contain a valid header
     constexpr uint32_t MIN_HEADER_SIZE = 0x60;
-    if (sourceSize < MIN_HEADER_SIZE) {
+    if (source->Size < MIN_HEADER_SIZE) {
         std::cout << "[Error] Invalid file header: header size smaller than "
                      "required to be a valid header\n";
         return false;
@@ -34,7 +34,7 @@ bool validateHeader(HeaderInfo* info, MemBuffer* source) {
 
     // Validate magic number
     constexpr uint32_t MAGIC = 0x50504953; // Magic 'SIPP' in big endianness
-    uint32_t* sourceMagic = (uint32_t*)sourceBuffer;
+    uint32_t* sourceMagic = reinterpret_cast<uint32_t*>(sourceBuffer);
     if (*sourceMagic != MAGIC) {
         std::cout << "[Error] Invalid magic number inside header\n";
         return false;
@@ -68,7 +68,7 @@ bool validateHeader(HeaderInfo* info, MemBuffer* source) {
     uint64_t* startAddress = (uint64_t*)&sourceBuffer[START_ADDR_OFFSET];
     // Check if start address point inside source buffer. More in depth
     // validation will be performed later once the section table has been parsed
-    if (*startAddress > (uint64_t)sourceSize) {
+    if (*startAddress > (uint64_t)source->Size) {
         std::cout << "[Error] Invalid start address: Address points outside of "
                      "source file "
                   << std::hex << "0x" << *startAddress << " \n";
@@ -103,7 +103,7 @@ bool validateSectionPermission(uint8_t perms) {
 bool parseSectionTable(std::vector<MemSection>& sections,
                        MemBuffer* buffer,
                        uint32_t buffIndex) {
-    uint64_t size = buffer->getSize();
+    uint64_t size = buffer->Size;
     uint8_t* sourceBuffer = buffer->getBuffer();
     constexpr uint64_t SEC_TABLE_OFFSET = 0x60;
 
@@ -205,8 +205,7 @@ bool parseSectionTable(std::vector<MemSection>& sections,
             continue;
         }
 
-        sections.emplace_back(startAddress, secSize, secNameAddress, memType,
-                              perms, buffIndex);
+        sections.emplace_back(memType, perms, startAddress, secSize, buffIndex);
         cursor += SEC_TABLE_ENTRY_SIZE;
     }
 
@@ -215,91 +214,35 @@ bool parseSectionTable(std::vector<MemSection>& sections,
 
 UVM::UVM(std::filesystem::path p)
     : SourcePath(std::move(p)), HInfo(std::make_unique<HeaderInfo>()),
-      RM(std::make_unique<RegisterManager>()) {}
+      RM(), MMU() {}
 
 bool UVM::init() {
     readSource();
-    bool validHeader = validateHeader(HInfo.get(), &Buffers[SourceBuffIndex]);
+    bool validHeader = validateHeader(HInfo.get(), &MMU.Buffers[SourceBuffIndex]);
     if (!validHeader) {
         return false;
     }
 
     bool validSectionTable =
-        parseSectionTable(Sections, &Buffers[SourceBuffIndex], SourceBuffIndex);
+        parseSectionTable(MMU.Sections, &MMU.Buffers[SourceBuffIndex], SourceBuffIndex);
     if (!validSectionTable) {
         return false;
     }
 
     // Allocate stack initialize to 0 and add stack section. Stack starts
     // immediately after source file buffer
-    uint8_t* stack = new uint8_t[UVM_STACK_SIZE]();
-    uint64_t stackStartAddress = Buffers[SourceBuffIndex].getSize() + 1;
-    Buffers.emplace_back(stackStartAddress, UVM_STACK_SIZE, stack);
+    uint64_t stackStartAddress = MMU.Buffers[SourceBuffIndex].Size + 1;
+    MMU.Buffers.emplace_back(stackStartAddress, UVM_STACK_SIZE);
 
     // TODO: Add section name address
-    uint32_t stackBuffIndex = Buffers.size() - 1;
-    Sections.emplace_back(stackStartAddress, UVM_STACK_SIZE, 0,
-                          SectionType::STACK, PERM_READ_MASK | PERM_WRITE_MASK,
-                          stackBuffIndex);
+    uint32_t stackBuffIndex = MMU.Buffers.size() - 1;
+    MMU.Sections.emplace_back(SectionType::STACK, PERM_READ_MASK | PERM_WRITE_MASK, stackStartAddress, UVM_STACK_SIZE, stackBuffIndex);
 
     // Setup start address and stack pointer
     // TODO: Validate start address
-    RM->internalSetIP(HInfo->StartAddress);
-    RM->internalSetSP(stackStartAddress);
+    RM.internalSetIP(HInfo->StartAddress);
+    RM.internalSetSP(stackStartAddress);
 
-    return true;
-}
-
-bool UVM::findMemSection(uint64_t vStartAddr,
-                         uint32_t size,
-                         MemSection** memSec) const {
-    uint64_t vEndAddr = vStartAddr + (size - 1);
-    bool found = false;
-    uint32_t memSecIndex = 0;
-    while (memSecIndex < Sections.size() && !found) {
-        const MemSection* sec = &Sections[memSecIndex];
-        if (vStartAddr >= sec->VStartAddress &&
-            vEndAddr <= sec->VStartAddress + (sec->Size - 1)) {
-            found = true;
-            *memSec = (MemSection*)sec;
-        }
-        memSecIndex++;
-    }
-
-    return found;
-}
-
-bool UVM::getMem(uint64_t vStartAddr,
-                 uint32_t size,
-                 uint8_t perms,
-                 uint8_t** ptr) const {
-    // Find memory section which contains the address range
-    MemSection* section = nullptr;
-    bool foundSec = findMemSection(vStartAddr, size, &section);
-    if (!foundSec) {
-        return false;
-    }
-
-    if (!comparePerms(section->Perms, perms)) {
-        return false;
-    }
-
-    // Get physical buffer address
-    const MemBuffer* memBuffer = &Buffers[section->BufferIndex];
-    uint64_t bufferOffset = vStartAddr - memBuffer->getStartAddr();
-    uint8_t* buffer = memBuffer->getBuffer();
-    *ptr = &buffer[bufferOffset];
-
-    return true;
-}
-
-bool UVM::memWrite(void* source, uint64_t vStartAddr, uint32_t size) {
-    uint8_t* dest = nullptr;
-    if (!getMem(vStartAddr, size, PERM_WRITE_MASK, &dest)) {
-        return false;
-    }
-
-    std::memcpy(dest, source, size);
     return true;
 }
 
@@ -312,12 +255,11 @@ void UVM::readSource() {
     uint64_t size = stream.tellg();
     stream.seekg(0, std::ios::beg);
 
-    // Allocate new buffer of file size and read complete file to buffer
-    uint8_t* buffer = new uint8_t[size];
-    stream.read((char*)buffer, size);
+    SourceBuffIndex = MMU.addBuffer(UVM_START_ADDR, size);
 
-    Buffers.emplace_back(UVM_START_ADDR, size, buffer);
-    SourceBuffIndex = Buffers.size() - 1;
+    // Allocate new buffer of file size and read complete file to buffer
+    uint8_t* buffer = MMU.Buffers[SourceBuffIndex].getBuffer();
+    stream.read((char*)buffer, size);
 }
 
 bool UVM::run() {
@@ -330,7 +272,7 @@ bool UVM::run() {
         // Get opcode byte
         uint8_t* opRef = nullptr;
         // Handle invalid memory access
-        getMem(RM->internalGetIP(), 1, PERM_EXE_MASK, &opRef);
+        MMU.readPhysicalMem(RM.internalGetIP(), 1, PERM_EXE_MASK, &opRef);
         op = *opRef;
 
         switch (op) {
@@ -339,7 +281,7 @@ bool UVM::run() {
         ********************************/
         case OP_STORE_IT_IR_RO:
             instrWidth = 9;
-            runtimeError = !Instr::storeIRegToRO(this, RM.get());
+            runtimeError = !Instr::storeIRegToRO(this, &RM);
             break;
 
         /********************************
@@ -347,7 +289,7 @@ bool UVM::run() {
         ********************************/
         case OP_LEA_RO_IR:
             instrWidth = 8;
-            runtimeError = !Instr::leaROToIReg(this, RM.get());
+            runtimeError = !Instr::leaROToIReg(this, &RM);
             break;
 
         /********************************
@@ -356,26 +298,26 @@ bool UVM::run() {
         case OP_LOAD_I8_IR:
             instrWidth = 3;
             runtimeError =
-                !Instr::loadIntToIReg(this, RM.get(), instrWidth, IntType::I8);
+                !Instr::loadIntToIReg(this, &RM, instrWidth, IntType::I8);
             break;
         case OP_LOAD_I16_IR:
             instrWidth = 4;
             runtimeError =
-                !Instr::loadIntToIReg(this, RM.get(), instrWidth, IntType::I16);
+                !Instr::loadIntToIReg(this, &RM, instrWidth, IntType::I16);
             break;
         case OP_LOAD_I32_IR:
             instrWidth = 6;
             runtimeError =
-                !Instr::loadIntToIReg(this, RM.get(), instrWidth, IntType::I32);
+                !Instr::loadIntToIReg(this, &RM, instrWidth, IntType::I32);
             break;
         case OP_LOAD_I64_IR:
             instrWidth = 10;
             runtimeError =
-                !Instr::loadIntToIReg(this, RM.get(), instrWidth, IntType::I64);
+                !Instr::loadIntToIReg(this, &RM, instrWidth, IntType::I64);
             break;
         case OP_LOAD_IT_RO_IR:
             instrWidth = 9;
-            runtimeError = !Instr::loadROToIReg(this, RM.get(), instrWidth);
+            runtimeError = !Instr::loadROToIReg(this, &RM, instrWidth);
             break;
 
         /********************************
@@ -384,30 +326,30 @@ bool UVM::run() {
         case OP_COPY_I8_RO:
             instrWidth = 8;
             runtimeError =
-                !Instr::copyIntToRO(this, RM.get(), instrWidth, IntType::I8);
+                !Instr::copyIntToRO(this, &RM, instrWidth, IntType::I8);
             break;
         case OP_COPY_I16_RO:
             instrWidth = 9;
             runtimeError =
-                !Instr::copyIntToRO(this, RM.get(), instrWidth, IntType::I16);
+                !Instr::copyIntToRO(this, &RM, instrWidth, IntType::I16);
             break;
         case OP_COPY_I32_RO:
             instrWidth = 11;
             runtimeError =
-                !Instr::copyIntToRO(this, RM.get(), instrWidth, IntType::I32);
+                !Instr::copyIntToRO(this, &RM, instrWidth, IntType::I32);
             break;
         case OP_COPY_I64_RO:
             instrWidth = 15;
             runtimeError =
-                !Instr::copyIntToRO(this, RM.get(), instrWidth, IntType::I64);
+                !Instr::copyIntToRO(this, &RM, instrWidth, IntType::I64);
             break;
         case OP_COPY_IT_IR_IR:
             instrWidth = 4;
-            runtimeError = !Instr::copyIRegToIReg(this, RM.get());
+            runtimeError = !Instr::copyIRegToIReg(this, &RM);
             break;
         case OP_COPY_IT_RO_RO:
             instrWidth = 14;
-            runtimeError = !Instr::copyROToRO(this, RM.get());
+            runtimeError = !Instr::copyROToRO(this, &RM);
             break;
 
         /********************************
@@ -415,7 +357,7 @@ bool UVM::run() {
         ********************************/
         case OP_SYS:
             instrWidth = 2;
-            runtimeError = !Instr::syscall(this, RM.get());
+            runtimeError = !Instr::syscall(this, &RM);
             break;
 
         /********************************
@@ -429,7 +371,7 @@ bool UVM::run() {
             runtimeError = true;
             continue;
         }
-        RM->internalSetIP(RM->internalGetIP() + instrWidth);
+        RM.internalSetIP(RM.internalGetIP() + instrWidth);
     }
 
     return !runtimeError;

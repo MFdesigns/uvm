@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "memory.hpp"
+#include "memory_manip.hpp"
 #include "../register.hpp"
 #include <cstring>
 
@@ -25,7 +25,7 @@ bool Instr::copyIntToRO(UVM* vm,
     // Load complete instruction
     uint8_t* buff = nullptr;
     bool memAccess =
-        vm->getMem(rm->internalGetIP(), width, PERM_EXE_MASK, &buff);
+        vm->MMU.readPhysicalMem(rm->internalGetIP(), width, PERM_EXE_MASK, &buff);
     if (!memAccess) {
         return false;
     }
@@ -61,7 +61,7 @@ bool Instr::copyIntToRO(UVM* vm,
         return false;
     }
 
-    bool writeSuccess = vm->memWrite(&val.I64, roAddress, intSize);
+    bool writeSuccess = vm->MMU.writePhysicalMem(&val.I64, roAddress, intSize);
     if (!writeSuccess) {
         return false;
     }
@@ -74,7 +74,7 @@ bool Instr::copyIRegToIReg(UVM* vm, RegisterManager* rm) {
     constexpr uint32_t INSTR_SIZE = 4;
     uint8_t* buff = nullptr;
     bool memAccess =
-        vm->getMem(rm->internalGetIP(), INSTR_SIZE, PERM_EXE_MASK, &buff);
+        vm->MMU.readPhysicalMem(rm->internalGetIP(), INSTR_SIZE, PERM_EXE_MASK, &buff);
     if (!memAccess) {
         return false;
     }
@@ -107,7 +107,7 @@ bool Instr::copyROToRO(UVM* vm, RegisterManager* rm) {
     constexpr uint32_t INSTR_WIDTH = 14;
     uint8_t* buff = nullptr;
     bool memAccess =
-        vm->getMem(rm->internalGetIP(), INSTR_WIDTH, PERM_EXE_MASK, &buff);
+        vm->MMU.readPhysicalMem(rm->internalGetIP(), INSTR_WIDTH, PERM_EXE_MASK, &buff);
     if (!memAccess) {
         return false;
     }
@@ -145,12 +145,12 @@ bool Instr::copyROToRO(UVM* vm, RegisterManager* rm) {
     }
 
     uint8_t* readBuff = nullptr;
-    bool readSuccess = vm->getMem(roAddrA, readSize, PERM_READ_MASK, &readBuff);
+    bool readSuccess = vm->MMU.readPhysicalMem(roAddrA, readSize, PERM_READ_MASK, &readBuff);
     if (!readSuccess) {
         return false;
     }
 
-    bool writeSuccess = vm->memWrite(readBuff, roAddrB, readSize);
+    bool writeSuccess = vm->MMU.writePhysicalMem(readBuff, roAddrB, readSize);
     if (!writeSuccess) {
         return false;
     }
@@ -165,7 +165,7 @@ bool Instr::loadIntToIReg(UVM* vm,
     // Load complete instruction
     uint8_t* buff = nullptr;
     bool memAccess =
-        vm->getMem(rm->internalGetIP(), width, PERM_EXE_MASK, &buff);
+        vm->MMU.readPhysicalMem(rm->internalGetIP(), width, PERM_EXE_MASK, &buff);
     if (!memAccess) {
         return false;
     }
@@ -200,7 +200,7 @@ bool Instr::loadROToIReg(UVM* vm, RegisterManager* rm, uint32_t width) {
     // Load complete instruction
     uint8_t* buff = nullptr;
     bool memAccess =
-        vm->getMem(rm->internalGetIP(), width, PERM_EXE_MASK, &buff);
+        vm->MMU.readPhysicalMem(rm->internalGetIP(), width, PERM_EXE_MASK, &buff);
     if (!memAccess) {
         return false;
     }
@@ -237,7 +237,7 @@ bool Instr::loadROToIReg(UVM* vm, RegisterManager* rm, uint32_t width) {
 
     uint8_t* readBuff = nullptr;
     bool readSuccess =
-        vm->getMem(roAddress, readSize, PERM_READ_MASK, &readBuff);
+        vm->MMU.readPhysicalMem(roAddress, readSize, PERM_READ_MASK, &readBuff);
     if (!readSuccess) {
         return false;
     }
@@ -272,7 +272,7 @@ bool Instr::storeIRegToRO(UVM* vm, RegisterManager* rm) {
     constexpr uint32_t INSTR_WIDTH = 9;
     uint8_t* buff = nullptr;
     bool memAccess =
-        vm->getMem(rm->internalGetIP(), INSTR_WIDTH, PERM_EXE_MASK, &buff);
+        vm->MMU.readPhysicalMem(rm->internalGetIP(), INSTR_WIDTH, PERM_EXE_MASK, &buff);
     if (!memAccess) {
         return false;
     }
@@ -312,7 +312,7 @@ bool Instr::storeIRegToRO(UVM* vm, RegisterManager* rm) {
         break;
     }
 
-    bool writeSuccess = vm->memWrite(&intReg, roAddress, writeSize);
+    bool writeSuccess = vm->MMU.writePhysicalMem(&intReg, roAddress, writeSize);
     if (!writeSuccess) {
         return false;
     }
@@ -325,7 +325,7 @@ bool Instr::leaROToIReg(UVM* vm, RegisterManager* rm) {
     constexpr uint32_t INSTR_WIDTH = 8;
     uint8_t* buff = nullptr;
     bool memAccess =
-        vm->getMem(rm->internalGetIP(), INSTR_WIDTH, PERM_EXE_MASK, &buff);
+        vm->MMU.readPhysicalMem(rm->internalGetIP(), INSTR_WIDTH, PERM_EXE_MASK, &buff);
     if (!memAccess) {
         return false;
     }

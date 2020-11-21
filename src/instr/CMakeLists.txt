@@ -1,5 +1,5 @@
 add_library(instr
-    memory.cpp memory.hpp
+    memory_manip.cpp memory_manip.hpp
     syscall.cpp syscall.hpp
 )
 

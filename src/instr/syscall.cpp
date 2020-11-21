@@ -26,7 +26,7 @@ bool internalPrint(UVM* vm, RegisterManager* rm) {
     rm->getIntReg(0x06, IntType::I32, &r1);
 
     uint8_t* buff = nullptr;
-    if (!vm->getMem(r0.I64, r1.I32, PERM_READ_MASK, &buff)) {
+    if (!vm->MMU.readPhysicalMem(r0.I64, r1.I32, PERM_READ_MASK, &buff)) {
         return false;
     }
 
@@ -39,7 +39,7 @@ bool internalPrint(UVM* vm, RegisterManager* rm) {
 bool Instr::syscall(UVM* vm, RegisterManager* rm) {
     // Load complete instruction
     uint8_t* buff = nullptr;
-    bool memAccess = vm->getMem(rm->internalGetIP(), 2, PERM_EXE_MASK, &buff);
+    bool memAccess = vm->MMU.readPhysicalMem(rm->internalGetIP(), 2, PERM_EXE_MASK, &buff);
     if (!memAccess) {
         return false;
     }
