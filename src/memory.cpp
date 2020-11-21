@@ -22,7 +22,8 @@
  * @param startAddr Virtual start address of memory buffer
  * @param size Size in bytes of memory section
  */
-MemBuffer::MemBuffer(uint64_t startAddr, uint32_t size) : VStartAddr(startAddr), Size(size) {
+MemBuffer::MemBuffer(uint64_t startAddr, uint32_t size)
+    : VStartAddr(startAddr), Size(size) {
     PhysicalBuffer = std::make_unique<uint8_t[]>(size);
 }
 
@@ -50,8 +51,13 @@ uint8_t* MemBuffer::getBuffer() const {
  * @param size Section size
  * @param buffIndex Index into buffer vector
  */
-MemSection::MemSection(SectionType type, uint8_t perm, uint64_t startAddr, uint32_t size, uint32_t buffIndex): Type(type), Perm(perm), VStartAddr(startAddr), Size(size), BufferIndex(buffIndex) {}
-
+MemSection::MemSection(SectionType type,
+                       uint8_t perm,
+                       uint64_t startAddr,
+                       uint32_t size,
+                       uint32_t buffIndex)
+    : Type(type), Perm(perm), VStartAddr(startAddr), Size(size),
+      BufferIndex(buffIndex) {}
 
 /**
  * Finds a section which contains the given memory range
@@ -61,8 +67,9 @@ MemSection::MemSection(SectionType type, uint8_t perm, uint64_t startAddr, uint3
  */
 MemSection* MemManager::findSection(uint64_t vAddr, uint32_t size) const {
     MemSection* sec = nullptr;
-    for (const MemSection& memSec: Sections) {
-        if (vAddr >= memSec.VStartAddr && vAddr + size <= memSec.VStartAddr + memSec.Size) {
+    for (const MemSection& memSec : Sections) {
+        if (vAddr >= memSec.VStartAddr &&
+            vAddr + size <= memSec.VStartAddr + memSec.Size) {
             sec = const_cast<MemSection*>(&memSec);
         }
     }
@@ -70,17 +77,19 @@ MemSection* MemManager::findSection(uint64_t vAddr, uint32_t size) const {
 }
 
 bool MemManager::readPhysicalMem(uint64_t vAddr,
-                 uint32_t size,
-                 uint8_t perms,
-                 uint8_t** ptr) const {
+                                 uint32_t size,
+                                 uint8_t perms,
+                                 uint8_t** ptr) const {
     MemSection* section = findSection(vAddr, size);
     if (section == nullptr) {
-        std::cout << "[Error] Failed reading memory at address 0x" << std::hex << vAddr << "\n\tmemory not owned by programm";
+        std::cout << "[Error] Failed reading memory at address 0x" << std::hex
+                  << vAddr << "\n\tmemory not owned by programm";
         return false;
     }
 
     if ((section->Perm & perms) != perms) {
-        std::cout << "[Error] Failed reading memory at address 0x" << std::hex << vAddr << "\n\tmissing read permission";
+        std::cout << "[Error] Failed reading memory at address 0x" << std::hex
+                  << vAddr << "\n\tmissing read permission";
         return false;
     }
 
@@ -96,7 +105,8 @@ bool MemManager::readPhysicalMem(uint64_t vAddr,
 bool MemManager::writePhysicalMem(void* source, uint64_t vAddr, uint32_t size) {
     uint8_t* dest = nullptr;
     if (!readPhysicalMem(vAddr, size, PERM_WRITE_MASK, &dest)) {
-        std::cout << "[Error] Failed writing to memory at address 0x" << std::hex << vAddr << '\n';
+        std::cout << "[Error] Failed writing to memory at address 0x"
+                  << std::hex << vAddr << '\n';
         return false;
     }
 

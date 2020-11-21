@@ -16,8 +16,8 @@
 
 #pragma once
 #include <cstdint>
-#include <vector>
 #include <memory>
+#include <vector>
 
 constexpr uint8_t PERM_READ_MASK = 0b1000'0000;
 constexpr uint8_t PERM_WRITE_MASK = 0b0100'0000;
@@ -33,7 +33,7 @@ enum class SectionType {
 };
 
 class MemBuffer {
-public:
+  public:
     MemBuffer(uint64_t startAddr, uint32_t size);
     MemBuffer(MemBuffer&& memBuffer) noexcept;
     /** Virtual start address of physical buffer */
@@ -41,15 +41,20 @@ public:
     /** Size of buffer in bytes */
     const uint32_t Size = 0;
     uint8_t* getBuffer() const;
-private:
+
+  private:
     /** Physical buffer */
     std::unique_ptr<uint8_t[]> PhysicalBuffer;
 };
 
 // TODO: What about section name strings?
 class MemSection {
-public:
-    MemSection(SectionType type, uint8_t perm, uint64_t startAddr, uint32_t size, uint32_t buffIndex);
+  public:
+    MemSection(SectionType type,
+               uint8_t perm,
+               uint64_t startAddr,
+               uint32_t size,
+               uint32_t buffIndex);
     const SectionType Type;
     /** Section permissions */
     const uint8_t Perm = 0;
@@ -62,12 +67,12 @@ public:
 };
 
 class MemManager {
-public:
+  public:
     MemSection* findSection(uint64_t vAddr, uint32_t size) const;
     bool readPhysicalMem(uint64_t vAddr,
-                 uint32_t size,
-                 uint8_t perms,
-                 uint8_t** ptr) const;
+                         uint32_t size,
+                         uint8_t perms,
+                         uint8_t** ptr) const;
     bool writePhysicalMem(void* source, uint64_t vAddr, uint32_t size);
     uint32_t addBuffer(uint64_t vAddr, uint32_t size);
     uint8_t* getBuffer(uint32_t index);

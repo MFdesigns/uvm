@@ -17,10 +17,10 @@
 #include "uvm.hpp"
 #include "instr/memory_manip.hpp"
 #include "instr/syscall.hpp"
+#include "memory.hpp"
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include "memory.hpp"
 
 bool validateHeader(HeaderInfo* info, MemBuffer* source) {
     uint8_t* sourceBuffer = source->getBuffer();
@@ -213,18 +213,19 @@ bool parseSectionTable(std::vector<MemSection>& sections,
 }
 
 UVM::UVM(std::filesystem::path p)
-    : SourcePath(std::move(p)), HInfo(std::make_unique<HeaderInfo>()),
-      RM(), MMU() {}
+    : SourcePath(std::move(p)), HInfo(std::make_unique<HeaderInfo>()), RM(),
+      MMU() {}
 
 bool UVM::init() {
     readSource();
-    bool validHeader = validateHeader(HInfo.get(), &MMU.Buffers[SourceBuffIndex]);
+    bool validHeader =
+        validateHeader(HInfo.get(), &MMU.Buffers[SourceBuffIndex]);
     if (!validHeader) {
         return false;
     }
 
-    bool validSectionTable =
-        parseSectionTable(MMU.Sections, &MMU.Buffers[SourceBuffIndex], SourceBuffIndex);
+    bool validSectionTable = parseSectionTable(
+        MMU.Sections, &MMU.Buffers[SourceBuffIndex], SourceBuffIndex);
     if (!validSectionTable) {
         return false;
     }
@@ -236,7 +237,9 @@ bool UVM::init() {
 
     // TODO: Add section name address
     uint32_t stackBuffIndex = MMU.Buffers.size() - 1;
-    MMU.Sections.emplace_back(SectionType::STACK, PERM_READ_MASK | PERM_WRITE_MASK, stackStartAddress, UVM_STACK_SIZE, stackBuffIndex);
+    MMU.Sections.emplace_back(
+        SectionType::STACK, PERM_READ_MASK | PERM_WRITE_MASK, stackStartAddress,
+        UVM_STACK_SIZE, stackBuffIndex);
 
     // Setup start address and stack pointer
     // TODO: Validate start address

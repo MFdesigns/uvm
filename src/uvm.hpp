@@ -15,12 +15,12 @@
 // ======================================================================== //
 
 #pragma once
+#include "memory.hpp"
 #include "register.hpp"
 #include <cstdint>
 #include <filesystem>
 #include <memory>
 #include <vector>
-#include "memory.hpp"
 
 constexpr uint64_t UVM_START_ADDR = 0;
 constexpr uint64_t UVM_STACK_SIZE = 4096;
