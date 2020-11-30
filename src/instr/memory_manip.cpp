@@ -187,7 +187,6 @@ bool Instr::popIReg(UVM* vm) {
 
     uint8_t reg = buff[2];
 
-    IntVal stackVal;
     UVMDataSize dataSize = UVMDataSize::BYTE;
     switch (intType) {
     case IntType::I8:
@@ -204,7 +203,8 @@ bool Instr::popIReg(UVM* vm) {
         break;
     }
 
-    uint32_t stackStatus = vm->MMU.stackPop(&stackVal, dataSize);
+    IntVal stackVal;
+    uint32_t stackStatus = vm->MMU.stackPop(&stackVal.I64, dataSize);
     if (stackStatus != 0) {
         std::cout << "Stack error: 0x" << std::hex << stackStatus << '\n';
         return false;
