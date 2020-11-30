@@ -15,6 +15,7 @@
 // ======================================================================== //
 
 #include "memory_manip.hpp"
+#include <cstring>
 #include <iostream>
 
 /**
@@ -185,7 +186,7 @@ bool MemManager::writePhysicalMem(void* source, uint64_t vAddr, uint32_t size) {
         return false;
     }
 
-    std::memcpy(dest, source, size);
+    memcpy(dest, source, size);
     return true;
 }
 
@@ -431,8 +432,8 @@ bool MemManager::evalRegOffset(uint8_t* buff, uint64_t* address) {
     // Extract possible i16 and i32 values
     uint32_t imm32 = 0;
     uint16_t imm16 = 0;
-    std::memcpy(&imm32, &buff[2], 4);
-    std::memcpy(&imm16, &buff[3], 2);
+    memcpy(&imm32, &buff[2], 4);
+    memcpy(&imm16, &buff[3], 2);
 
     // Calculate register offset address
     if (layout == RO_IR) {
