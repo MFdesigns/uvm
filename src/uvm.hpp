@@ -16,16 +16,21 @@
 
 #pragma once
 #include "memory.hpp"
-#include "register.hpp"
 #include <cstdint>
 #include <filesystem>
 #include <memory>
 #include <vector>
 
 constexpr uint64_t UVM_START_ADDR = 0;
-constexpr uint64_t UVM_STACK_SIZE = 4096;
 
 // Instruction opcodes
+constexpr uint8_t OP_PUSH_I8 = 0x01;
+constexpr uint8_t OP_PUSH_I16 = 0x02;
+constexpr uint8_t OP_PUSH_I32 = 0x03;
+constexpr uint8_t OP_PUSH_I64 = 0x04;
+constexpr uint8_t OP_PUSH_IT_IR = 0x05;
+constexpr uint8_t OP_POP_IT = 0x06;
+constexpr uint8_t OP_POP_IT_IR = 0x07;
 constexpr uint8_t OP_STORE_IT_IR_RO = 0x08;
 constexpr uint8_t OP_LEA_RO_IR = 0x10;
 constexpr uint8_t OP_LOAD_I8_IR = 0x11;
@@ -53,7 +58,6 @@ class UVM {
     UVM(std::filesystem::path p);
     bool init();
     bool run();
-    RegisterManager RM;
     MemManager MMU;
 
   private:

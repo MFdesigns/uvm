@@ -213,8 +213,7 @@ bool parseSectionTable(std::vector<MemSection>& sections,
 }
 
 UVM::UVM(std::filesystem::path p)
-    : SourcePath(std::move(p)), HInfo(std::make_unique<HeaderInfo>()), RM(),
-      MMU() {}
+    : SourcePath(std::move(p)), HInfo(std::make_unique<HeaderInfo>()), MMU() {}
 
 bool UVM::init() {
     readSource();
@@ -230,21 +229,11 @@ bool UVM::init() {
         return false;
     }
 
-    // Allocate stack initialize to 0 and add stack section. Stack starts
-    // immediately after source file buffer
-    uint64_t stackStartAddress = MMU.Buffers[SourceBuffIndex].Size + 1;
-    MMU.Buffers.emplace_back(stackStartAddress, UVM_STACK_SIZE);
+    uint64_t vStackStart = MMU.Buffers[SourceBuffIndex].Size + 1;
+    MMU.initStack(vStackStart);
 
-    // TODO: Add section name address
-    uint32_t stackBuffIndex = MMU.Buffers.size() - 1;
-    MMU.Sections.emplace_back(
-        SectionType::STACK, PERM_READ_MASK | PERM_WRITE_MASK, stackStartAddress,
-        UVM_STACK_SIZE, stackBuffIndex);
-
-    // Setup start address and stack pointer
     // TODO: Validate start address
-    RM.internalSetIP(HInfo->StartAddress);
-    RM.internalSetSP(stackStartAddress);
+    MMU.IP = HInfo->StartAddress;
 
     return true;
 }
@@ -275,24 +264,44 @@ bool UVM::run() {
         // Get opcode byte
         uint8_t* opRef = nullptr;
         // Handle invalid memory access
-        MMU.readPhysicalMem(RM.internalGetIP(), 1, PERM_EXE_MASK, &opRef);
+        MMU.readPhysicalMem(MMU.IP, 1, PERM_EXE_MASK, &opRef);
         op = *opRef;
 
         switch (op) {
         /********************************
-            STORE INSTRUCTION
+            PUSH INSTRUCTIONS
         ********************************/
-        case OP_STORE_IT_IR_RO:
+        case OP_PUSH_I8:
+            instrWidth = 2;
+            runtimeError = !Instr::pushInt(this, instrWidth, IntType::I8);
+            break;
+        case OP_PUSH_I16:
+            instrWidth = 3;
+            runtimeError = !Instr::pushInt(this, instrWidth, IntType::I16);
+            break;
+        case OP_PUSH_I32:
+            instrWidth = 5;
+            runtimeError = !Instr::pushInt(this, instrWidth, IntType::I32);
+            break;
+        case OP_PUSH_I64:
             instrWidth = 9;
-            runtimeError = !Instr::storeIRegToRO(this, &RM);
+            runtimeError = !Instr::pushInt(this, instrWidth, IntType::I64);
+            break;
+        case OP_PUSH_IT_IR:
+            instrWidth = 3;
+            runtimeError = !Instr::pushIReg(this);
             break;
 
         /********************************
-            LEA INSTRUCTION
+            POP INSTRUCTIONS
         ********************************/
-        case OP_LEA_RO_IR:
-            instrWidth = 8;
-            runtimeError = !Instr::leaROToIReg(this, &RM);
+        case OP_POP_IT:
+            instrWidth = 2;
+            runtimeError = !Instr::pop(this);
+            break;
+        case OP_POP_IT_IR:
+            instrWidth = 3;
+            runtimeError = !Instr::popIReg(this);
             break;
 
         /********************************
@@ -300,27 +309,34 @@ bool UVM::run() {
         ********************************/
         case OP_LOAD_I8_IR:
             instrWidth = 3;
-            runtimeError =
-                !Instr::loadIntToIReg(this, &RM, instrWidth, IntType::I8);
+            runtimeError = !Instr::loadIntToIReg(this, instrWidth, IntType::I8);
             break;
         case OP_LOAD_I16_IR:
             instrWidth = 4;
             runtimeError =
-                !Instr::loadIntToIReg(this, &RM, instrWidth, IntType::I16);
+                !Instr::loadIntToIReg(this, instrWidth, IntType::I16);
             break;
         case OP_LOAD_I32_IR:
             instrWidth = 6;
             runtimeError =
-                !Instr::loadIntToIReg(this, &RM, instrWidth, IntType::I32);
+                !Instr::loadIntToIReg(this, instrWidth, IntType::I32);
             break;
         case OP_LOAD_I64_IR:
             instrWidth = 10;
             runtimeError =
-                !Instr::loadIntToIReg(this, &RM, instrWidth, IntType::I64);
+                !Instr::loadIntToIReg(this, instrWidth, IntType::I64);
             break;
         case OP_LOAD_IT_RO_IR:
             instrWidth = 9;
-            runtimeError = !Instr::loadROToIReg(this, &RM, instrWidth);
+            runtimeError = !Instr::loadROToIReg(this, instrWidth);
+            break;
+
+        /********************************
+            STORE INSTRUCTION
+        ********************************/
+        case OP_STORE_IT_IR_RO:
+            instrWidth = 9;
+            runtimeError = !Instr::storeIRegToRO(this);
             break;
 
         /********************************
@@ -328,31 +344,35 @@ bool UVM::run() {
         ********************************/
         case OP_COPY_I8_RO:
             instrWidth = 8;
-            runtimeError =
-                !Instr::copyIntToRO(this, &RM, instrWidth, IntType::I8);
+            runtimeError = !Instr::copyIntToRO(this, instrWidth, IntType::I8);
             break;
         case OP_COPY_I16_RO:
             instrWidth = 9;
-            runtimeError =
-                !Instr::copyIntToRO(this, &RM, instrWidth, IntType::I16);
+            runtimeError = !Instr::copyIntToRO(this, instrWidth, IntType::I16);
             break;
         case OP_COPY_I32_RO:
             instrWidth = 11;
-            runtimeError =
-                !Instr::copyIntToRO(this, &RM, instrWidth, IntType::I32);
+            runtimeError = !Instr::copyIntToRO(this, instrWidth, IntType::I32);
             break;
         case OP_COPY_I64_RO:
             instrWidth = 15;
-            runtimeError =
-                !Instr::copyIntToRO(this, &RM, instrWidth, IntType::I64);
+            runtimeError = !Instr::copyIntToRO(this, instrWidth, IntType::I64);
             break;
         case OP_COPY_IT_IR_IR:
             instrWidth = 4;
-            runtimeError = !Instr::copyIRegToIReg(this, &RM);
+            runtimeError = !Instr::copyIRegToIReg(this);
             break;
         case OP_COPY_IT_RO_RO:
             instrWidth = 14;
-            runtimeError = !Instr::copyROToRO(this, &RM);
+            runtimeError = !Instr::copyROToRO(this);
+            break;
+
+        /********************************
+            LEA INSTRUCTION
+        ********************************/
+        case OP_LEA_RO_IR:
+            instrWidth = 8;
+            runtimeError = !Instr::leaROToIReg(this);
             break;
 
         /********************************
@@ -360,7 +380,7 @@ bool UVM::run() {
         ********************************/
         case OP_SYS:
             instrWidth = 2;
-            runtimeError = !Instr::syscall(this, &RM);
+            runtimeError = !Instr::syscall(this);
             break;
 
         /********************************
@@ -374,7 +394,8 @@ bool UVM::run() {
             runtimeError = true;
             continue;
         }
-        RM.internalSetIP(RM.internalGetIP() + instrWidth);
+        // TODO: Check IP perm
+        MMU.IP += instrWidth;
     }
 
     return !runtimeError;
