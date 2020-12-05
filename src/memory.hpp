@@ -21,6 +21,8 @@
 #include <vector>
 
 constexpr uint64_t UVM_STACK_SIZE = 4096;
+constexpr size_t HEAP_BLOCK_SIZE = 1024;
+constexpr uint64_t UVM_NULLPTR = 0;
 
 // Stack error codes
 constexpr uint32_t ERR_STACK_OVERFLOW = 0xE0;
@@ -131,6 +133,17 @@ class MemSection {
     const uint32_t BufferIndex = 0;
 };
 
+class HeapBlock {
+  public:
+    HeapBlock(size_t size, uint64_t start);
+    HeapBlock(HeapBlock&& heapBlock);
+    size_t Size = 0;
+    uint64_t VStart = 0;
+    size_t Capacity = 0;
+    size_t Freed = 0;
+    std::unique_ptr<uint8_t[]> Buffer;
+};
+
 bool parseIntType(uint8_t type, IntType* intType);
 bool parseFloatType(uint8_t type, FloatType* floatType);
 
@@ -138,6 +151,7 @@ class MemManager {
   public:
     std::vector<MemSection> Sections;
     std::vector<MemBuffer> Buffers;
+    std::vector<HeapBlock> Heap;
 
     uint32_t StackBufferIndex = 0;
     uint64_t VStackStart = 0;
@@ -170,4 +184,10 @@ class MemManager {
     uint32_t getFloatReg(uint8_t id, FloatVal& val);
 
     bool evalRegOffset(uint8_t* buff, uint64_t* address);
+
+    uint64_t allocHeap(size_t size);
+    bool deallocHeap(uint64_t vAddr);
+
+  private:
+    uint64_t HeapPointer = 0;
 };

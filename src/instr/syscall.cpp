@@ -56,12 +56,35 @@ bool Instr::syscall(UVM* vm) {
     }
 
     constexpr uint8_t SYS_PRINT = 0x1;
+    constexpr uint8_t SYS_ALLOC = 0x41;
+    constexpr uint8_t SYS_DEALLOC = 0x44;
+    constexpr uint8_t REG_R0 = 0x5;
 
     uint8_t syscallType = buff[1];
     bool callSuccess = true;
     switch (syscallType) {
     case SYS_PRINT:
         callSuccess = internalPrint(vm);
+        break;
+    case SYS_ALLOC: {
+        IntVal allocSize;
+        if (vm->MMU.getIntReg(REG_R0, allocSize) != 0) {
+            return false;
+        }
+
+        IntVal allocAddr;
+        allocAddr.I64 = vm->MMU.allocHeap(allocSize.I32);
+
+        if (allocAddr.I64 == UVM_NULLPTR) {
+            return false;
+        }
+
+        if (vm->MMU.setIntReg(REG_R0, allocAddr, IntType::I64) != 0) {
+            return false;
+        }
+    } break;
+    case SYS_DEALLOC:
+        // TODO: Implement dealloc
         break;
     default:
         return false;

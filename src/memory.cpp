@@ -17,6 +17,7 @@
 #include "memory_manip.hpp"
 #include <cstring>
 #include <iostream>
+#include <vector>
 
 /**
  * Constructs a new MemBuffer
@@ -158,22 +159,44 @@ bool MemManager::readPhysicalMem(uint64_t vAddr,
                                  uint8_t** ptr) const {
     MemSection* section = findSection(vAddr, size);
     if (section == nullptr) {
-        std::cout << "[Error] Failed reading memory at address 0x" << std::hex
-                  << vAddr << "\n\tmemory not owned by programm\n";
-        return false;
-    }
+        // If address was not found in static memeory try search in the heap
+        HeapBlock* hb = nullptr;
+        for (size_t i = 0; i < Heap.size(); i++) {
+            uint64_t hbStart = Heap[i].VStart;
+            uint64_t hbEnd = hbStart + Heap[i].Size;
+            if (vAddr >= hbStart && vAddr <= hbEnd) {
+                if (vAddr + size > hbEnd) {
+                    std::cout << "[Error] Cannot read memory range which spans "
+                                 "across multiple HeapBlocks\n";
+                    return false;
+                }
+                hb = const_cast<HeapBlock*>(&Heap[i]);
+            }
+        }
 
-    if ((section->Perm & perms) != perms) {
-        std::cout << "[Error] Failed reading memory at address 0x" << std::hex
-                  << vAddr << "\n\tmissing read permission\n";
-        return false;
-    }
+        if (hb == nullptr) {
+            std::cout << "[Error] Failed reading memory at address 0x"
+                      << std::hex << vAddr
+                      << "\n\tmemory not owned by programm\n";
+            return false;
+        }
 
-    // Get physical buffer address
-    const MemBuffer* memBuffer = &Buffers[section->BufferIndex];
-    uint64_t bufferOffset = vAddr - memBuffer->VStartAddr;
-    uint8_t* buffer = reinterpret_cast<uint8_t*>(memBuffer->getBuffer());
-    *ptr = &buffer[bufferOffset];
+        size_t hbIndex = vAddr - hb->VStart;
+        uint8_t* hbPtr = &hb->Buffer.get()[hbIndex];
+        *ptr = hbPtr;
+    } else {
+        if ((section->Perm & perms) != perms) {
+            std::cout << "[Error] Failed reading memory at address 0x"
+                      << std::hex << vAddr << "\n\tmissing read permission\n";
+            return false;
+        }
+
+        // Get physical buffer address
+        const MemBuffer* memBuffer = &Buffers[section->BufferIndex];
+        uint64_t bufferOffset = vAddr - memBuffer->VStartAddr;
+        uint8_t* buffer = reinterpret_cast<uint8_t*>(memBuffer->getBuffer());
+        *ptr = &buffer[bufferOffset];
+    }
 
     return true;
 }
@@ -213,6 +236,9 @@ void MemManager::initStack(uint64_t vAddr) {
     SP = vAddr;
     VStackStart = vAddr;
     VStackEnd = vAddr + UVM_STACK_SIZE;
+
+    // Set the start address of the heap memory range
+    HeapPointer = VStackEnd + 1;
 }
 
 /**
@@ -460,6 +486,119 @@ bool MemManager::evalRegOffset(uint8_t* buff, uint64_t* address) {
         }
     } else {
         return false;
+    }
+
+    return true;
+}
+
+/**
+ * Constructs a new HeapBlock
+ * @param size Size of heap block
+ * @param start Virtual start address
+ */
+HeapBlock::HeapBlock(size_t size, uint64_t start)
+    : Size(size), VStart(start), Capacity(size),
+      Buffer(std::make_unique<uint8_t[]>(size)) {}
+
+/**
+ * Move constructor of HeapBlock
+ * @param heapBlock HeapBlock to be moved
+ */
+HeapBlock::HeapBlock(HeapBlock&& heapBlock) {
+    Size = heapBlock.Size;
+    VStart = heapBlock.VStart;
+    Capacity = heapBlock.Capacity;
+    Freed = heapBlock.Freed;
+    Buffer = std::move(heapBlock.Buffer);
+}
+
+/**
+ * Allocates a new HeapBlock of given size at the current HeapPointer address
+ * @param size HeapBlock size
+ * @return Virtual address of newly allocated heap block
+ */
+uint64_t MemManager::allocHeap(size_t size) {
+    // How much will actually be allocated (not physically)
+    size_t actualSize = size + 4;
+
+    // Find heap block with capacity
+    HeapBlock* hb = nullptr;
+    for (size_t i = 0; i < Heap.size(); i++) {
+        if (Heap[i].Capacity >= actualSize) {
+            hb = &Heap[i];
+            break;
+        }
+    }
+
+    // If no heap block was found allocate a new one
+    if (hb == nullptr) {
+        uint64_t hbAddr = HeapPointer;
+        size_t hbIndex = Heap.size();
+        Heap.emplace_back(HEAP_BLOCK_SIZE, hbAddr);
+        HeapPointer += HEAP_BLOCK_SIZE;
+
+        // write 32 bit size
+        uint32_t* sizeVal =
+            reinterpret_cast<uint32_t*>(Heap[hbIndex].Buffer.get());
+        *sizeVal = size;
+
+        Heap[hbIndex].Capacity = HEAP_BLOCK_SIZE - actualSize;
+
+        // Heap block start address plus 32 bit size offset
+        return hbAddr + 4;
+    } else {
+        size_t hbOffset = hb->Size - hb->Capacity;
+
+        // write 32 bit size
+        uint8_t* hbBuffer = hb->Buffer.get();
+        uint32_t* sizeVal = reinterpret_cast<uint32_t*>(&hbBuffer[hbOffset]);
+        *sizeVal = size;
+
+        uint64_t allocAddr = hb->VStart + hb->Size - hb->Capacity + 4;
+
+        hb->Capacity -= actualSize;
+        return allocAddr;
+    }
+
+    return UVM_NULLPTR;
+}
+
+/**
+ * Deallocates a previously allocated heap area
+ * @param vAddr Virtual start address of memory range to be deallocated
+ * @return On sucess return true otherwise false
+ */
+bool MemManager::deallocHeap(uint64_t vAddr) {
+    // Find heap block with capacity
+    HeapBlock* hb = nullptr;
+    size_t hbIndex = 0;
+    for (size_t i = 0; i < Heap.size(); i++) {
+        // Has to start at offset 4 to be a valid address which was previously
+        // allocated
+        uint64_t hbStart = Heap[i].VStart + 4;
+        uint64_t hbEnd = Heap[i].VStart + Heap[i].Size;
+        if (vAddr >= hbStart && vAddr <= hbEnd) {
+            hb = &Heap[i];
+            hbIndex = i;
+            break;
+        }
+    }
+
+    if (hb == nullptr) {
+        std::cout << "Error: address 0x" << std::hex << vAddr
+                  << " does not belong to any heap allocated memory\n";
+        return false;
+    }
+
+    uint8_t* hbBuffer = hb->Buffer.get();
+    // Get allocated size
+    uint32_t allocSize = 0;
+    uint64_t relAddr = vAddr - hb->VStart - 4;
+    memcpy(&allocSize, &hbBuffer[relAddr], 4);
+
+    hb->Freed += allocSize + 4;
+    if (hb->Freed == hb->Size) {
+        // TODO: deallocate full heap block
     }
 
     return true;
