@@ -1,6 +1,7 @@
 add_library(instr
     memory_manip.cpp memory_manip.hpp
     syscall.cpp syscall.hpp
+    function.cpp function.hpp
 )
 
 set_target_properties(instr PROPERTIES LINKER_LANGUAGE CXX)

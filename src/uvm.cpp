@@ -15,6 +15,7 @@
 // ======================================================================== //
 
 #include "uvm.hpp"
+#include "instr/function.hpp"
 #include "instr/memory_manip.hpp"
 #include "instr/syscall.hpp"
 #include "memory.hpp"
@@ -381,6 +382,20 @@ bool UVM::run() {
         case OP_SYS:
             instrWidth = 2;
             runtimeError = !Instr::syscall(this);
+            break;
+
+        /********************************
+            CALL and RET
+        ********************************/
+        case OP_CALL:
+            instrWidth = 9;
+            runtimeError = !Instr::call(this);
+            continue;
+            break;
+        case OP_RET:
+            instrWidth = 1;
+            runtimeError = !Instr::ret(this);
+            continue;
             break;
 
         /********************************
