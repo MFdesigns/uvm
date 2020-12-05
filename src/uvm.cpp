@@ -18,6 +18,7 @@
 #include "instr/function.hpp"
 #include "instr/memory_manip.hpp"
 #include "instr/syscall.hpp"
+#include "instr/arithmetic.hpp"
 #include "memory.hpp"
 #include <cstring>
 #include <fstream>
@@ -367,6 +368,27 @@ bool UVM::run() {
             instrWidth = 14;
             runtimeError = !Instr::copyROToRO(this);
             break;
+
+        /********************************
+            ARITHMETIC INSTRUCTIONS
+        ********************************/
+        case OP_ADD_IT_IR_IR:
+            instrWidth = 4;
+            runtimeError = !Instr::addIRegToIReg(this);
+            break;
+        case OP_SUB_IT_IR_IR:
+            instrWidth = 4;
+            runtimeError = !Instr::subIRegFromIReg(this);
+            break;
+        case OP_MUL_IT_IR_IR:
+            instrWidth = 4;
+            runtimeError = !Instr::mulIRegWithIReg(this);
+            break;
+        case OP_DIV_IT_IR_IR:
+            instrWidth = 4;
+            runtimeError = !Instr::divIRegByIReg(this);
+            break;
+
 
         /********************************
             LEA INSTRUCTION

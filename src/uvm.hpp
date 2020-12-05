@@ -46,6 +46,10 @@ constexpr uint8_t OP_COPY_I64_RO = 0x24;
 constexpr uint8_t OP_COPY_IT_IR_IR = 0x25;
 constexpr uint8_t OP_COPY_IT_RO_RO = 0x26;
 constexpr uint8_t OP_RET = 0x30;
+constexpr uint8_t OP_ADD_IT_IR_IR = 0x35;
+constexpr uint8_t OP_SUB_IT_IR_IR = 0x45;
+constexpr uint8_t OP_MUL_IT_IR_IR = 0x55;
+constexpr uint8_t OP_DIV_IT_IR_IR = 0x65;
 constexpr uint8_t OP_SYS = 0x40;
 constexpr uint8_t OP_EXIT = 0x50;
 
