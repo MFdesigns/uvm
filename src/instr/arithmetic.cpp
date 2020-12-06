@@ -223,3 +223,40 @@ bool Instr::divIRegByIReg(UVM* vm) {
 
     return true;
 }
+
+bool Instr::uIntConvert(UVM* vm, IntType type) {
+    // Load complete instruction
+    uint8_t* buff = nullptr;
+    bool memAccess =
+        vm->MMU.readPhysicalMem(vm->MMU.IP, 2, PERM_EXE_MASK, &buff);
+    if (!memAccess) {
+        return false;
+    }
+
+    constexpr uint64_t I8_MASK = 0xF;
+    constexpr uint64_t I16_MASK = 0xFF;
+    constexpr uint64_t I32_MASK = 0xFFFF;
+
+    uint8_t iReg = buff[1];
+
+    IntVal iRegVal;
+    if (vm->MMU.getIntReg(iReg, iRegVal) != 0) {
+        return false;
+    }
+
+    switch (type) {
+    case IntType::I8:
+        iRegVal.I64 &= I8_MASK;
+        break;
+    case IntType::I16:
+        iRegVal.I64 &= I16_MASK;
+        break;
+    case IntType::I32:
+        iRegVal.I64 &= I32_MASK;
+        break;
+    }
+
+    vm->MMU.setIntReg(iReg, iRegVal, IntType::I64);
+
+    return true;
+}

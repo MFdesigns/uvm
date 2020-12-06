@@ -498,6 +498,22 @@ bool UVM::run() {
         /********************************
             EXIT
         ********************************/
+        case OP_B2L:
+            instrWidth = 2;
+            runtimeError = !Instr::uIntConvert(this, IntType::I8);
+            break;
+        case OP_S2L:
+            instrWidth = 2;
+            runtimeError = !Instr::uIntConvert(this, IntType::I16);
+            break;
+        case OP_I2L:
+            instrWidth = 2;
+            runtimeError = !Instr::uIntConvert(this, IntType::I32);
+            break;
+
+        /********************************
+            EXIT
+        ********************************/
         case OP_EXIT:
             continue;
         default:

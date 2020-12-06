@@ -22,4 +22,5 @@ bool addIRegToIReg(UVM* vm);
 bool subIRegFromIReg(UVM* vm);
 bool mulIRegWithIReg(UVM* vm);
 bool divIRegByIReg(UVM* vm);
+bool uIntConvert(UVM* vm, IntType type);
 } // namespace Instr
