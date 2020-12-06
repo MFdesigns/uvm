@@ -49,21 +49,21 @@ bool Instr::cmpIRegToIReg(UVM* vm) {
     IntVal result;
     uint32_t shiftWidth = 0;
     switch (intType) {
-        case IntType::I8:
-            result.I8 = iRegAVal.I8 - iRegBVal.I8;
-            shiftWidth = 7;
+    case IntType::I8:
+        result.I8 = iRegAVal.I8 - iRegBVal.I8;
+        shiftWidth = 7;
         break;
-        case IntType::I16:
-            result.I16 = iRegAVal.I16 - iRegBVal.I16;
-            shiftWidth = 15;
+    case IntType::I16:
+        result.I16 = iRegAVal.I16 - iRegBVal.I16;
+        shiftWidth = 15;
         break;
-        case IntType::I32:
-            result.I32 = iRegAVal.I32 - iRegBVal.I32;
-            shiftWidth = 31;
+    case IntType::I32:
+        result.I32 = iRegAVal.I32 - iRegBVal.I32;
+        shiftWidth = 31;
         break;
-        case IntType::I64:
-            result.I64 = iRegAVal.I64 - iRegBVal.I64;
-            shiftWidth = 63;
+    case IntType::I64:
+        result.I64 = iRegAVal.I64 - iRegBVal.I64;
+        shiftWidth = 63;
         break;
     }
 
@@ -108,62 +108,61 @@ bool Instr::jmp(UVM* vm, JumpCondition cond, bool* jumped) {
         return false;
     }
 
-    switch(cond) {
-        case JumpCondition::UNCONDITIONAL:
+    switch (cond) {
+    case JumpCondition::UNCONDITIONAL:
+        vm->MMU.IP = *targetAddr;
+        *jumped = true;
+        break;
+    case JumpCondition::IF_EQUALS: {
+        if (vm->MMU.Flags.Zero) {
             vm->MMU.IP = *targetAddr;
             *jumped = true;
-        break;
-        case JumpCondition::IF_EQUALS: {
-            if (vm->MMU.Flags.Zero) {
-                vm->MMU.IP = *targetAddr;
-                *jumped = true;
-            } else {
-                *jumped = false;
-            }
+        } else {
+            *jumped = false;
+        }
+    } break;
+    case JumpCondition::IF_NOT_EQUALS:
+        if (!vm->MMU.Flags.Zero) {
+            vm->MMU.IP = *targetAddr;
+            *jumped = true;
+        } else {
+            *jumped = false;
         }
         break;
-        case JumpCondition::IF_NOT_EQUALS:
-            if (!vm->MMU.Flags.Zero) {
-                vm->MMU.IP = *targetAddr;
-                *jumped = true;
-            } else {
-                *jumped = false;
-            }
+    case JumpCondition::IF_GREATER_THAN:
+        if (!vm->MMU.Flags.Zero && !vm->MMU.Flags.Signed) {
+            vm->MMU.IP = *targetAddr;
+            *jumped = true;
+        } else {
+            *jumped = false;
+        }
         break;
-        case JumpCondition::IF_GREATER_THAN:
-            if (!vm->MMU.Flags.Zero && !vm->MMU.Flags.Signed) {
-                vm->MMU.IP = *targetAddr;
-                *jumped = true;
-            } else {
-                *jumped = false;
-            }
+    case JumpCondition::IF_LESS_THAN:
+        if (!vm->MMU.Flags.Zero && vm->MMU.Flags.Signed) {
+            vm->MMU.IP = *targetAddr;
+            *jumped = true;
+        } else {
+            *jumped = false;
+        }
         break;
-        case JumpCondition::IF_LESS_THAN:
-            if (!vm->MMU.Flags.Zero && vm->MMU.Flags.Signed) {
-                vm->MMU.IP = *targetAddr;
-                *jumped = true;
-            } else {
-                *jumped = false;
-            }
+    case JumpCondition::IF_GREATER_EQUALS:
+        if (!vm->MMU.Flags.Signed) {
+            vm->MMU.IP = *targetAddr;
+            *jumped = true;
+        } else {
+            *jumped = false;
+        }
         break;
-        case JumpCondition::IF_GREATER_EQUALS:
-            if (!vm->MMU.Flags.Signed) {
-                vm->MMU.IP = *targetAddr;
-                *jumped = true;
-            } else {
-                *jumped = false;
-            }
-        break;
-        case JumpCondition::IF_LESS_EQUALS:
-            if ((vm->MMU.Flags.Zero && !vm->MMU.Flags.Signed) || (!vm->MMU.Flags.Zero && vm->MMU.Flags.Signed)) {
-                vm->MMU.IP = *targetAddr;
-                *jumped = true;
-            } else {
-                *jumped = false;
-            }
+    case JumpCondition::IF_LESS_EQUALS:
+        if ((vm->MMU.Flags.Zero && !vm->MMU.Flags.Signed) ||
+            (!vm->MMU.Flags.Zero && vm->MMU.Flags.Signed)) {
+            vm->MMU.IP = *targetAddr;
+            *jumped = true;
+        } else {
+            *jumped = false;
+        }
         break;
     }
-
 
     return true;
 }

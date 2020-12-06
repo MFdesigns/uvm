@@ -30,4 +30,4 @@ enum class JumpCondition {
 namespace Instr {
 bool cmpIRegToIReg(UVM* vm);
 bool jmp(UVM* vm, JumpCondition cond, bool* jumped);
-}
+} // namespace Instr

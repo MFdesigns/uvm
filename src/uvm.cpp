@@ -15,11 +15,11 @@
 // ======================================================================== //
 
 #include "uvm.hpp"
+#include "instr/arithmetic.hpp"
+#include "instr/branching.hpp"
 #include "instr/function.hpp"
 #include "instr/memory_manip.hpp"
 #include "instr/syscall.hpp"
-#include "instr/arithmetic.hpp"
-#include "instr/branching.hpp"
 #include "memory.hpp"
 #include <cstring>
 #include <fstream>
@@ -390,7 +390,6 @@ bool UVM::run() {
             runtimeError = !Instr::divIRegByIReg(this);
             break;
 
-
         /********************************
             LEA INSTRUCTION
         ********************************/
@@ -427,7 +426,8 @@ bool UVM::run() {
         case OP_JMP: {
             instrWidth = 9;
             bool jumped = false;
-            runtimeError = !Instr::jmp(this, JumpCondition::UNCONDITIONAL, &jumped);
+            runtimeError =
+                !Instr::jmp(this, JumpCondition::UNCONDITIONAL, &jumped);
             continue;
             break;
         }
@@ -443,7 +443,8 @@ bool UVM::run() {
         case OP_JNE: {
             instrWidth = 9;
             bool jumped = false;
-            runtimeError = !Instr::jmp(this, JumpCondition::IF_NOT_EQUALS, &jumped);
+            runtimeError =
+                !Instr::jmp(this, JumpCondition::IF_NOT_EQUALS, &jumped);
             if (jumped) {
                 continue;
             }
@@ -452,7 +453,8 @@ bool UVM::run() {
         case OP_JGT: {
             instrWidth = 9;
             bool jumped = false;
-            runtimeError = !Instr::jmp(this, JumpCondition::IF_GREATER_THAN, &jumped);
+            runtimeError =
+                !Instr::jmp(this, JumpCondition::IF_GREATER_THAN, &jumped);
             if (jumped) {
                 continue;
             }
@@ -461,7 +463,8 @@ bool UVM::run() {
         case OP_JLT: {
             instrWidth = 9;
             bool jumped = false;
-            runtimeError = !Instr::jmp(this, JumpCondition::IF_LESS_THAN, &jumped);
+            runtimeError =
+                !Instr::jmp(this, JumpCondition::IF_LESS_THAN, &jumped);
             if (jumped) {
                 continue;
             }
@@ -470,7 +473,8 @@ bool UVM::run() {
         case OP_JGE: {
             instrWidth = 9;
             bool jumped = false;
-            runtimeError = !Instr::jmp(this, JumpCondition::IF_GREATER_EQUALS, &jumped);
+            runtimeError =
+                !Instr::jmp(this, JumpCondition::IF_GREATER_EQUALS, &jumped);
             if (jumped) {
                 continue;
             }
@@ -479,7 +483,8 @@ bool UVM::run() {
         case OP_JLE: {
             instrWidth = 9;
             bool jumped = false;
-            runtimeError = !Instr::jmp(this, JumpCondition::IF_LESS_EQUALS, &jumped);
+            runtimeError =
+                !Instr::jmp(this, JumpCondition::IF_LESS_EQUALS, &jumped);
             if (jumped) {
                 continue;
             }

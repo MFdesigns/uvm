@@ -47,21 +47,22 @@ bool Instr::addIRegToIReg(UVM* vm) {
 
     IntVal result;
     switch (intType) {
-        case IntType::I8:
-            result.I8 = iRegAVal.I8 + iRegBVal.I8;
+    case IntType::I8:
+        result.I8 = iRegAVal.I8 + iRegBVal.I8;
         break;
-        case IntType::I16:
-            result.I16 = iRegAVal.I16 + iRegBVal.I16;
+    case IntType::I16:
+        result.I16 = iRegAVal.I16 + iRegBVal.I16;
         break;
-        case IntType::I32:
-            result.I32 = iRegAVal.I32 + iRegBVal.I32;
+    case IntType::I32:
+        result.I32 = iRegAVal.I32 + iRegBVal.I32;
         break;
-        case IntType::I64:
-            result.I64 = iRegAVal.I64 + iRegBVal.I64;
+    case IntType::I64:
+        result.I64 = iRegAVal.I64 + iRegBVal.I64;
         break;
     }
 
-    // No need to evaluate reg id because this was already done by the earlier get
+    // No need to evaluate reg id because this was already done by the earlier
+    // get
     vm->MMU.setIntReg(iRegB, result, intType);
 
     return true;
@@ -98,21 +99,22 @@ bool Instr::subIRegFromIReg(UVM* vm) {
 
     IntVal result;
     switch (intType) {
-        case IntType::I8:
-            result.I8 = iRegAVal.I8 - iRegBVal.I8;
+    case IntType::I8:
+        result.I8 = iRegAVal.I8 - iRegBVal.I8;
         break;
-        case IntType::I16:
-            result.I16 = iRegAVal.I16 - iRegBVal.I16;
+    case IntType::I16:
+        result.I16 = iRegAVal.I16 - iRegBVal.I16;
         break;
-        case IntType::I32:
-            result.I32 = iRegAVal.I32 - iRegBVal.I32;
+    case IntType::I32:
+        result.I32 = iRegAVal.I32 - iRegBVal.I32;
         break;
-        case IntType::I64:
-            result.I64 = iRegAVal.I64 - iRegBVal.I64;
+    case IntType::I64:
+        result.I64 = iRegAVal.I64 - iRegBVal.I64;
         break;
     }
 
-    // No need to evaluate reg id because this was already done by the earlier get
+    // No need to evaluate reg id because this was already done by the earlier
+    // get
     vm->MMU.setIntReg(iRegB, result, intType);
 
     return true;
@@ -149,21 +151,22 @@ bool Instr::mulIRegWithIReg(UVM* vm) {
 
     IntVal result;
     switch (intType) {
-        case IntType::I8:
-            result.I8 = iRegAVal.I8 * iRegBVal.I8;
+    case IntType::I8:
+        result.I8 = iRegAVal.I8 * iRegBVal.I8;
         break;
-        case IntType::I16:
-            result.I16 = iRegAVal.I16 * iRegBVal.I16;
+    case IntType::I16:
+        result.I16 = iRegAVal.I16 * iRegBVal.I16;
         break;
-        case IntType::I32:
-            result.I32 = iRegAVal.I32 * iRegBVal.I32;
+    case IntType::I32:
+        result.I32 = iRegAVal.I32 * iRegBVal.I32;
         break;
-        case IntType::I64:
-            result.I64 = iRegAVal.I64 * iRegBVal.I64;
+    case IntType::I64:
+        result.I64 = iRegAVal.I64 * iRegBVal.I64;
         break;
     }
 
-    // No need to evaluate reg id because this was already done by the earlier get
+    // No need to evaluate reg id because this was already done by the earlier
+    // get
     vm->MMU.setIntReg(iRegB, result, intType);
 
     return true;
@@ -200,21 +203,22 @@ bool Instr::divIRegByIReg(UVM* vm) {
 
     IntVal result;
     switch (intType) {
-        case IntType::I8:
-            result.I8 = iRegAVal.I8 / iRegBVal.I8;
+    case IntType::I8:
+        result.I8 = iRegAVal.I8 / iRegBVal.I8;
         break;
-        case IntType::I16:
-            result.I16 = iRegAVal.I16 / iRegBVal.I16;
+    case IntType::I16:
+        result.I16 = iRegAVal.I16 / iRegBVal.I16;
         break;
-        case IntType::I32:
-            result.I32 = iRegAVal.I32 / iRegBVal.I32;
+    case IntType::I32:
+        result.I32 = iRegAVal.I32 / iRegBVal.I32;
         break;
-        case IntType::I64:
-            result.I64 = iRegAVal.I64 / iRegBVal.I64;
+    case IntType::I64:
+        result.I64 = iRegAVal.I64 / iRegBVal.I64;
         break;
     }
 
-    // No need to evaluate reg id because this was already done by the earlier get
+    // No need to evaluate reg id because this was already done by the earlier
+    // get
     vm->MMU.setIntReg(iRegB, result, intType);
 
     return true;
