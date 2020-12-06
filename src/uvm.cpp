@@ -19,6 +19,7 @@
 #include "instr/memory_manip.hpp"
 #include "instr/syscall.hpp"
 #include "instr/arithmetic.hpp"
+#include "instr/branching.hpp"
 #include "memory.hpp"
 #include <cstring>
 #include <fstream>
@@ -418,6 +419,75 @@ bool UVM::run() {
             instrWidth = 1;
             runtimeError = !Instr::ret(this);
             continue;
+            break;
+
+        /********************************
+            CONDITIONS
+        ********************************/
+        case OP_JMP: {
+            instrWidth = 9;
+            bool jumped = false;
+            runtimeError = !Instr::jmp(this, JumpCondition::UNCONDITIONAL, &jumped);
+            continue;
+            break;
+        }
+        case OP_JE: {
+            instrWidth = 9;
+            bool jumped = false;
+            runtimeError = !Instr::jmp(this, JumpCondition::IF_EQUALS, &jumped);
+            if (jumped) {
+                continue;
+            }
+            break;
+        }
+        case OP_JNE: {
+            instrWidth = 9;
+            bool jumped = false;
+            runtimeError = !Instr::jmp(this, JumpCondition::IF_NOT_EQUALS, &jumped);
+            if (jumped) {
+                continue;
+            }
+            break;
+        }
+        case OP_JGT: {
+            instrWidth = 9;
+            bool jumped = false;
+            runtimeError = !Instr::jmp(this, JumpCondition::IF_GREATER_THAN, &jumped);
+            if (jumped) {
+                continue;
+            }
+            break;
+        }
+        case OP_JLT: {
+            instrWidth = 9;
+            bool jumped = false;
+            runtimeError = !Instr::jmp(this, JumpCondition::IF_LESS_THAN, &jumped);
+            if (jumped) {
+                continue;
+            }
+            break;
+        }
+        case OP_JGE: {
+            instrWidth = 9;
+            bool jumped = false;
+            runtimeError = !Instr::jmp(this, JumpCondition::IF_GREATER_EQUALS, &jumped);
+            if (jumped) {
+                continue;
+            }
+            break;
+        }
+        case OP_JLE: {
+            instrWidth = 9;
+            bool jumped = false;
+            runtimeError = !Instr::jmp(this, JumpCondition::IF_LESS_EQUALS, &jumped);
+            if (jumped) {
+                continue;
+            }
+            break;
+        }
+        case OP_CMP_IT_IR_IR:
+            instrWidth = 4;
+            runtimeError = !Instr::cmpIRegToIReg(this);
             break;
 
         /********************************

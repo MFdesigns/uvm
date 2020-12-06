@@ -147,6 +147,11 @@ class HeapBlock {
 bool parseIntType(uint8_t type, IntType* intType);
 bool parseFloatType(uint8_t type, FloatType* floatType);
 
+struct FlagsRegister {
+    bool Zero = false;
+    bool Signed = false;
+};
+
 class MemManager {
   public:
     std::vector<MemSection> Sections;
@@ -162,6 +167,8 @@ class MemManager {
     uint64_t BP = 0;
     std::array<IntVal, 16> GP = {0};
     std::array<FloatVal, 16> FP = {0};
+
+    FlagsRegister Flags;
 
     MemSection* findSection(uint64_t vAddr, uint32_t size) const;
     bool readPhysicalMem(uint64_t vAddr,

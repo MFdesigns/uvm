@@ -52,6 +52,14 @@ constexpr uint8_t OP_MUL_IT_IR_IR = 0x55;
 constexpr uint8_t OP_DIV_IT_IR_IR = 0x65;
 constexpr uint8_t OP_SYS = 0x40;
 constexpr uint8_t OP_EXIT = 0x50;
+constexpr uint8_t OP_CMP_IT_IR_IR = 0xD1;
+constexpr uint8_t OP_JMP = 0xE1;
+constexpr uint8_t OP_JE = 0xE2;
+constexpr uint8_t OP_JNE = 0xE3;
+constexpr uint8_t OP_JGT = 0xE4;
+constexpr uint8_t OP_JLT = 0xE5;
+constexpr uint8_t OP_JGE = 0xE6;
+constexpr uint8_t OP_JLE = 0xE7;
 
 struct HeaderInfo {
     uint8_t Version = 0;
