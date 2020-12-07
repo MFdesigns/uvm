@@ -29,7 +29,8 @@ bool Instr::call(UVM* vm) {
     // Get target vAddr
     uint64_t* targetAddr = reinterpret_cast<uint64_t*>(&buff[1]);
 
-    uint64_t currentIP = vm->MMU.IP;
+    // Push next instruction pointer
+    uint64_t currentIP = vm->MMU.IP + 9;
     if (vm->MMU.stackPush(&currentIP, UVMDataSize::QWORD) != 0) {
         return false;
     }
