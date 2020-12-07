@@ -271,6 +271,11 @@ bool UVM::run() {
         op = *opRef;
 
         switch (op) {
+
+        case OP_NOP:
+            instrWidth = 1;
+            break;
+
         /********************************
             PUSH INSTRUCTIONS
         ********************************/

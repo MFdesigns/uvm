@@ -52,6 +52,7 @@ constexpr uint8_t OP_MUL_IT_IR_IR = 0x55;
 constexpr uint8_t OP_DIV_IT_IR_IR = 0x65;
 constexpr uint8_t OP_SYS = 0x40;
 constexpr uint8_t OP_EXIT = 0x50;
+constexpr uint8_t OP_NOP = 0xA0;
 constexpr uint8_t OP_B2L = 0xB1;
 constexpr uint8_t OP_S2L = 0xB2;
 constexpr uint8_t OP_I2L = 0xB3;
