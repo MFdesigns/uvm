@@ -1,0 +1,14 @@
+static {}
+
+global {
+    text: str = "Hello World\n"
+    textSize: i32 = 12
+}
+
+code {
+@main
+    lea [text], r0
+    load i32 [textSize], r1
+    sys 0x1
+    exit
+}

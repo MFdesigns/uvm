@@ -1,0 +1,224 @@
+static {
+    firstFib: str = "0\n1\n"
+    firstFibSize: i32 = 4
+}
+
+global {}
+
+code {
+
+// uint8_t* itostr(uint64_t num, uint32_t* outSize)
+// locals
+//      i64 num         0
+//      i64 outSize     8
+//      i32 size        16
+//      i64 numTmp      20
+//      i64 charBuf     28
+//      i32 i           36
+//      i8  digit       40
+//      i32 j           41
+//      i8  tmpChar     45
+@itostr
+    // stack frame setup
+    push i64 bp
+    copy i64 sp, bp
+    load i32 46, r15
+    add i32 r15, sp
+
+    // Parameters variables
+    store i64 r0, [bp]          // int num
+    store i64 r1, [bp + 8]      // i32 pointer outSize
+
+    // Local variables
+    copy i32 0, [bp + 16]       // size
+    copy i64 [bp], [bp + 20]    // numTmp
+
+@L1
+    // numTmp /= 10
+    load i64 [bp + 20], r0
+    load i64 10, r1
+    div i64 r0, r1
+    store i64 r1, [bp + 20]
+
+    // size++
+    load i32 [bp + 16], r0
+    load i32 1, r1
+    add i32 r0, r1
+    store i32 r1, [bp + 16]
+
+    load i64 [bp + 20], r0
+    load i64 0, r1
+    cmp i64 r0, r1
+    jgt L1
+
+    // void* alloc(i32 size)
+    // + 1 byte for \n
+    load i32 [bp + 16], r0
+    load i32 1, r1
+    add i32 r0, r1
+    copy i32 r1, r0
+    sys 0x41
+    store i64 r0, [bp + 28]     // char* buff
+
+    copy i64 [bp], [bp + 20]    // revert numTmp
+
+    copy i32 0, [bp + 36]   // i = 0
+
+@L2
+    load i32 [bp + 36], r0
+    load i32 [bp + 16], r1
+    cmp i32 r0, r1 // i < size
+    jge L3
+
+    // numTmp - ((numTmp / 10) * 10) + '0'
+    load i64 [bp + 20], r0
+    load i64 10, r1
+    div i64 r0, r1  // r1: (numTmp / 10)
+    load i64 10, r0
+    mul i64 r1, r0  // r0: ((numTmp / 10) * 10)
+    load i64 [bp + 20], r1
+    sub i64 r1, r0
+    load i8 0x30, r1
+    add i8 r0, r1
+    store i8 r1, [bp + 40]  // digit
+
+    // numTmp /= 10
+    load i64 [bp + 20], r0
+    load i64 10, r1
+    div i64 r0, r1
+    store i64 r1, [bp + 20]
+
+    // buff[i] = digit
+    load i64 [bp + 28], r0
+    load i32 [bp + 36], r1
+    b2l r1
+    add i64 r0, r1
+    copy i8 [bp + 40], [r1]
+
+
+    // i++
+    load i32 [bp + 36], r0
+    load i32 1, r1
+    add i32 r0, r1
+    store i32 r1, [bp + 36]
+
+    jmp L2
+@L3
+    copy i32 0, [bp + 41]   // j
+@L4
+    // j < size / 2
+    load i32 [bp + 16], r0
+    load i32 2, r1
+    div i32 r0, r1
+    load i32 [bp + 41], r0
+    cmp i32 r0, r1
+    jge L5
+
+    load i64 [bp + 28], r0
+    load i32 [bp + 41], r1
+    i2l r1
+    add i64 r0, r1
+    copy i64 r1, r10 // address of buff[j]
+    copy i8 [r1], [bp + 45] // tmpChar
+
+    load i32 [bp + 41], r0
+    load i32 1, r1
+    add i32 r0, r1
+    load i32 [bp + 16], r0
+    sub i32 r0, r1
+    copy i64 r1, r11 // size - (1 + j)
+
+    // buff[j] = buff[size - (1 + j)];
+    copy i64 r11, r0
+    load i64 [bp + 28], r1
+    add i64 r0, r1
+    copy i8 [r1], [r10]
+
+    // buff[size - (1 + j)] = tmpChar;
+    copy i8 [bp + 45], [r1]
+
+    // j++
+    load i32 [bp + 41], r0
+    load i32 1, r1
+    add i32 r0, r1
+    store i32 r1, [bp + 41]
+
+    jmp L4
+@L5
+    // Add \n at the end
+    load i64 [bp + 28], r0
+    load i32 [bp + 16], r1
+    copy i8 0x0A, [r0 + r1 * 1]
+
+    // Add \n to size
+    load i32 [bp + 16], r0
+    load i32 1, r1
+    add i32 r0, r1
+    store i32 r1, [bp + 16]
+
+    // outSize = size
+    load i64 [bp + 8], r0
+    copy i32 [bp + 16], [r0]
+
+    // return value
+    load i64 [bp + 28], r0
+
+    copy i64 bp, sp
+    pop i64 bp
+    ret
+
+// void main()
+// locals
+//
+@main
+    copy i64 sp, bp
+    load i64 36, r0
+    add i64 r0, sp
+
+    // Local variables
+    copy i64 0, [bp]        // x1
+    copy i64 1, [bp + 8]    // x2
+    copy i32 2, [bp + 16]   // loop i
+    copy i64 0, [bp + 20]   // char* buff
+    copy i32 0, [bp + 28]   // outSize
+
+    lea [firstFib], r0
+    load i32 [firstFibSize], r1
+    sys 0x1
+
+@L6
+    load i32 [bp + 16], r0
+    load i32 80, r1
+    cmp i32 r0, r1
+    jge L7
+
+    copy i64 [bp + 8], [bp + 20] // int tmp
+
+    // x2 = x1 + x2
+    load i64 [bp], r0
+    load i64 [bp + 8], r1
+    add i64 r0, r1
+    store i64 r1, [bp + 8]
+
+    // x1 = tmp
+    copy i64 [bp + 20], [bp]
+
+    // print fib number
+    load i64 [bp + 8], r0
+    lea [bp + 28], r1
+    call itostr
+    store i64 r0, [bp + 20]
+
+    load i64 [bp + 20], r0
+    load i32 [bp + 28], r1
+    sys 0x1
+
+    // i++
+    load i32 [bp + 16], r0
+    load i32 1, r1
+    add i32 r0, r1
+    store i32 r1, [bp + 16]
+
+    jmp L6
+@L7
+    exit
