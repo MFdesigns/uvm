@@ -215,13 +215,12 @@ bool parseSectionTable(std::vector<MemSection>& sections,
     return validSectionTable;
 }
 
-UVM::UVM(std::filesystem::path p)
-    : SourcePath(std::move(p)), HInfo(std::make_unique<HeaderInfo>()), MMU() {}
+void UVM::setFilePath(std::filesystem::path p) {
+    SourcePath = std::move(p);
+}
 
 bool UVM::init() {
-    readSource();
-    bool validHeader =
-        validateHeader(HInfo.get(), &MMU.Buffers[SourceBuffIndex]);
+    bool validHeader = validateHeader(&HInfo, &MMU.Buffers[SourceBuffIndex]);
     if (!validHeader) {
         return false;
     }
@@ -236,9 +235,24 @@ bool UVM::init() {
     MMU.initStack(vStackStart);
 
     // TODO: Validate start address
-    MMU.IP = HInfo->StartAddress;
+    MMU.IP = HInfo.StartAddress;
 
     return true;
+}
+
+/**
+ * Adds a new source buffer by copying it from another buffer. This function
+ * should only be used if the source buffer if provided by a debug server
+ * request, otherwise readSource() should be used.
+ * @param srcBuffer Non-owning pointer to source buffer
+ * @param size Size of buffer
+ */
+void UVM::addSourceFromBuffer(uint8_t* srcBuffer, size_t size) {
+    SourceBuffIndex = MMU.addBuffer(UVM_START_ADDR, size);
+
+    // Allocate new buffer of file size and read complete file to buffer
+    uint8_t* buffer = MMU.Buffers[SourceBuffIndex].getBuffer();
+    memcpy(buffer, srcBuffer, size);
 }
 
 void UVM::readSource() {
@@ -258,278 +272,278 @@ void UVM::readSource() {
 }
 
 bool UVM::run() {
-    uint8_t op = 0;
     bool runtimeError = false;
 
-    while (op != OP_EXIT && !runtimeError) {
-        uint32_t instrWidth = 1;
-
-        // Get opcode byte
-        uint8_t* opRef = nullptr;
-        // Handle invalid memory access
-        MMU.readPhysicalMem(MMU.IP, 1, PERM_EXE_MASK, &opRef);
-        op = *opRef;
-
-        switch (op) {
-
-        case OP_NOP:
-            instrWidth = 1;
-            break;
-
-        /********************************
-            PUSH INSTRUCTIONS
-        ********************************/
-        case OP_PUSH_I8:
-            instrWidth = 2;
-            runtimeError = !Instr::pushInt(this, instrWidth, IntType::I8);
-            break;
-        case OP_PUSH_I16:
-            instrWidth = 3;
-            runtimeError = !Instr::pushInt(this, instrWidth, IntType::I16);
-            break;
-        case OP_PUSH_I32:
-            instrWidth = 5;
-            runtimeError = !Instr::pushInt(this, instrWidth, IntType::I32);
-            break;
-        case OP_PUSH_I64:
-            instrWidth = 9;
-            runtimeError = !Instr::pushInt(this, instrWidth, IntType::I64);
-            break;
-        case OP_PUSH_IT_IR:
-            instrWidth = 3;
-            runtimeError = !Instr::pushIReg(this);
-            break;
-
-        /********************************
-            POP INSTRUCTIONS
-        ********************************/
-        case OP_POP_IT:
-            instrWidth = 2;
-            runtimeError = !Instr::pop(this);
-            break;
-        case OP_POP_IT_IR:
-            instrWidth = 3;
-            runtimeError = !Instr::popIReg(this);
-            break;
-
-        /********************************
-            LOAD INSTRUCTIONS
-        ********************************/
-        case OP_LOAD_I8_IR:
-            instrWidth = 3;
-            runtimeError = !Instr::loadIntToIReg(this, instrWidth, IntType::I8);
-            break;
-        case OP_LOAD_I16_IR:
-            instrWidth = 4;
-            runtimeError =
-                !Instr::loadIntToIReg(this, instrWidth, IntType::I16);
-            break;
-        case OP_LOAD_I32_IR:
-            instrWidth = 6;
-            runtimeError =
-                !Instr::loadIntToIReg(this, instrWidth, IntType::I32);
-            break;
-        case OP_LOAD_I64_IR:
-            instrWidth = 10;
-            runtimeError =
-                !Instr::loadIntToIReg(this, instrWidth, IntType::I64);
-            break;
-        case OP_LOAD_IT_RO_IR:
-            instrWidth = 9;
-            runtimeError = !Instr::loadROToIReg(this, instrWidth);
-            break;
-
-        /********************************
-            STORE INSTRUCTION
-        ********************************/
-        case OP_STORE_IT_IR_RO:
-            instrWidth = 9;
-            runtimeError = !Instr::storeIRegToRO(this);
-            break;
-
-        /********************************
-            COPY INSTRUCTIONS
-        ********************************/
-        case OP_COPY_I8_RO:
-            instrWidth = 8;
-            runtimeError = !Instr::copyIntToRO(this, instrWidth, IntType::I8);
-            break;
-        case OP_COPY_I16_RO:
-            instrWidth = 9;
-            runtimeError = !Instr::copyIntToRO(this, instrWidth, IntType::I16);
-            break;
-        case OP_COPY_I32_RO:
-            instrWidth = 11;
-            runtimeError = !Instr::copyIntToRO(this, instrWidth, IntType::I32);
-            break;
-        case OP_COPY_I64_RO:
-            instrWidth = 15;
-            runtimeError = !Instr::copyIntToRO(this, instrWidth, IntType::I64);
-            break;
-        case OP_COPY_IT_IR_IR:
-            instrWidth = 4;
-            runtimeError = !Instr::copyIRegToIReg(this);
-            break;
-        case OP_COPY_IT_RO_RO:
-            instrWidth = 14;
-            runtimeError = !Instr::copyROToRO(this);
-            break;
-
-        /********************************
-            ARITHMETIC INSTRUCTIONS
-        ********************************/
-        case OP_ADD_IT_IR_IR:
-            instrWidth = 4;
-            runtimeError = !Instr::addIRegToIReg(this);
-            break;
-        case OP_SUB_IT_IR_IR:
-            instrWidth = 4;
-            runtimeError = !Instr::subIRegFromIReg(this);
-            break;
-        case OP_MUL_IT_IR_IR:
-            instrWidth = 4;
-            runtimeError = !Instr::mulIRegWithIReg(this);
-            break;
-        case OP_DIV_IT_IR_IR:
-            instrWidth = 4;
-            runtimeError = !Instr::divIRegByIReg(this);
-            break;
-
-        /********************************
-            LEA INSTRUCTION
-        ********************************/
-        case OP_LEA_RO_IR:
-            instrWidth = 8;
-            runtimeError = !Instr::leaROToIReg(this);
-            break;
-
-        /********************************
-            SYSCALL
-        ********************************/
-        case OP_SYS:
-            instrWidth = 2;
-            runtimeError = !Instr::syscall(this);
-            break;
-
-        /********************************
-            CALL and RET
-        ********************************/
-        case OP_CALL:
-            instrWidth = 9;
-            runtimeError = !Instr::call(this);
-            continue;
-            break;
-        case OP_RET:
-            instrWidth = 1;
-            runtimeError = !Instr::ret(this);
-            continue;
-            break;
-
-        /********************************
-            CONDITIONS
-        ********************************/
-        case OP_JMP: {
-            instrWidth = 9;
-            bool jumped = false;
-            runtimeError =
-                !Instr::jmp(this, JumpCondition::UNCONDITIONAL, &jumped);
-            continue;
-            break;
-        }
-        case OP_JE: {
-            instrWidth = 9;
-            bool jumped = false;
-            runtimeError = !Instr::jmp(this, JumpCondition::IF_EQUALS, &jumped);
-            if (jumped) {
-                continue;
-            }
-            break;
-        }
-        case OP_JNE: {
-            instrWidth = 9;
-            bool jumped = false;
-            runtimeError =
-                !Instr::jmp(this, JumpCondition::IF_NOT_EQUALS, &jumped);
-            if (jumped) {
-                continue;
-            }
-            break;
-        }
-        case OP_JGT: {
-            instrWidth = 9;
-            bool jumped = false;
-            runtimeError =
-                !Instr::jmp(this, JumpCondition::IF_GREATER_THAN, &jumped);
-            if (jumped) {
-                continue;
-            }
-            break;
-        }
-        case OP_JLT: {
-            instrWidth = 9;
-            bool jumped = false;
-            runtimeError =
-                !Instr::jmp(this, JumpCondition::IF_LESS_THAN, &jumped);
-            if (jumped) {
-                continue;
-            }
-            break;
-        }
-        case OP_JGE: {
-            instrWidth = 9;
-            bool jumped = false;
-            runtimeError =
-                !Instr::jmp(this, JumpCondition::IF_GREATER_EQUALS, &jumped);
-            if (jumped) {
-                continue;
-            }
-            break;
-        }
-        case OP_JLE: {
-            instrWidth = 9;
-            bool jumped = false;
-            runtimeError =
-                !Instr::jmp(this, JumpCondition::IF_LESS_EQUALS, &jumped);
-            if (jumped) {
-                continue;
-            }
-            break;
-        }
-        case OP_CMP_IT_IR_IR:
-            instrWidth = 4;
-            runtimeError = !Instr::cmpIRegToIReg(this);
-            break;
-
-        /********************************
-            EXIT
-        ********************************/
-        case OP_B2L:
-            instrWidth = 2;
-            runtimeError = !Instr::uIntConvert(this, IntType::I8);
-            break;
-        case OP_S2L:
-            instrWidth = 2;
-            runtimeError = !Instr::uIntConvert(this, IntType::I16);
-            break;
-        case OP_I2L:
-            instrWidth = 2;
-            runtimeError = !Instr::uIntConvert(this, IntType::I32);
-            break;
-
-        /********************************
-            EXIT
-        ********************************/
-        case OP_EXIT:
-            continue;
-        default:
-            std::cout << "[Runtime] Unknow opcode 0x" << std::hex
-                      << (uint16_t)op << '\n';
-            runtimeError = true;
-            continue;
-        }
-        // TODO: Check IP perm
-        MMU.IP += instrWidth;
+    while (Opcode != OP_EXIT && !runtimeError) {
+        runtimeError = !nextInstr();
     }
 
+    return !runtimeError;
+}
+
+bool UVM::nextInstr() {
+    bool runtimeError = false;
+
+    uint32_t instrWidth = 1;
+
+    // Get opcode byte
+    uint8_t* opRef = nullptr;
+    // Handle invalid memory access
+    MMU.readPhysicalMem(MMU.IP, 1, PERM_EXE_MASK, &opRef);
+    Opcode = *opRef;
+
+    switch (Opcode) {
+
+    case OP_NOP:
+        instrWidth = 1;
+        break;
+
+    /********************************
+        PUSH INSTRUCTIONS
+    ********************************/
+    case OP_PUSH_I8:
+        instrWidth = 2;
+        runtimeError = !Instr::pushInt(this, instrWidth, IntType::I8);
+        break;
+    case OP_PUSH_I16:
+        instrWidth = 3;
+        runtimeError = !Instr::pushInt(this, instrWidth, IntType::I16);
+        break;
+    case OP_PUSH_I32:
+        instrWidth = 5;
+        runtimeError = !Instr::pushInt(this, instrWidth, IntType::I32);
+        break;
+    case OP_PUSH_I64:
+        instrWidth = 9;
+        runtimeError = !Instr::pushInt(this, instrWidth, IntType::I64);
+        break;
+    case OP_PUSH_IT_IR:
+        instrWidth = 3;
+        runtimeError = !Instr::pushIReg(this);
+        break;
+
+    /********************************
+        POP INSTRUCTIONS
+    ********************************/
+    case OP_POP_IT:
+        instrWidth = 2;
+        runtimeError = !Instr::pop(this);
+        break;
+    case OP_POP_IT_IR:
+        instrWidth = 3;
+        runtimeError = !Instr::popIReg(this);
+        break;
+
+    /********************************
+        LOAD INSTRUCTIONS
+    ********************************/
+    case OP_LOAD_I8_IR:
+        instrWidth = 3;
+        runtimeError = !Instr::loadIntToIReg(this, instrWidth, IntType::I8);
+        break;
+    case OP_LOAD_I16_IR:
+        instrWidth = 4;
+        runtimeError = !Instr::loadIntToIReg(this, instrWidth, IntType::I16);
+        break;
+    case OP_LOAD_I32_IR:
+        instrWidth = 6;
+        runtimeError = !Instr::loadIntToIReg(this, instrWidth, IntType::I32);
+        break;
+    case OP_LOAD_I64_IR:
+        instrWidth = 10;
+        runtimeError = !Instr::loadIntToIReg(this, instrWidth, IntType::I64);
+        break;
+    case OP_LOAD_IT_RO_IR:
+        instrWidth = 9;
+        runtimeError = !Instr::loadROToIReg(this, instrWidth);
+        break;
+
+    /********************************
+        STORE INSTRUCTION
+    ********************************/
+    case OP_STORE_IT_IR_RO:
+        instrWidth = 9;
+        runtimeError = !Instr::storeIRegToRO(this);
+        break;
+
+    /********************************
+        COPY INSTRUCTIONS
+    ********************************/
+    case OP_COPY_I8_RO:
+        instrWidth = 8;
+        runtimeError = !Instr::copyIntToRO(this, instrWidth, IntType::I8);
+        break;
+    case OP_COPY_I16_RO:
+        instrWidth = 9;
+        runtimeError = !Instr::copyIntToRO(this, instrWidth, IntType::I16);
+        break;
+    case OP_COPY_I32_RO:
+        instrWidth = 11;
+        runtimeError = !Instr::copyIntToRO(this, instrWidth, IntType::I32);
+        break;
+    case OP_COPY_I64_RO:
+        instrWidth = 15;
+        runtimeError = !Instr::copyIntToRO(this, instrWidth, IntType::I64);
+        break;
+    case OP_COPY_IT_IR_IR:
+        instrWidth = 4;
+        runtimeError = !Instr::copyIRegToIReg(this);
+        break;
+    case OP_COPY_IT_RO_RO:
+        instrWidth = 14;
+        runtimeError = !Instr::copyROToRO(this);
+        break;
+
+    /********************************
+        ARITHMETIC INSTRUCTIONS
+    ********************************/
+    case OP_ADD_IT_IR_IR:
+        instrWidth = 4;
+        runtimeError = !Instr::addIRegToIReg(this);
+        break;
+    case OP_SUB_IT_IR_IR:
+        instrWidth = 4;
+        runtimeError = !Instr::subIRegFromIReg(this);
+        break;
+    case OP_MUL_IT_IR_IR:
+        instrWidth = 4;
+        runtimeError = !Instr::mulIRegWithIReg(this);
+        break;
+    case OP_DIV_IT_IR_IR:
+        instrWidth = 4;
+        runtimeError = !Instr::divIRegByIReg(this);
+        break;
+
+    /********************************
+        LEA INSTRUCTION
+    ********************************/
+    case OP_LEA_RO_IR:
+        instrWidth = 8;
+        runtimeError = !Instr::leaROToIReg(this);
+        break;
+
+    /********************************
+        SYSCALL
+    ********************************/
+    case OP_SYS:
+        instrWidth = 2;
+        runtimeError = !Instr::syscall(this);
+        break;
+
+    /********************************
+        CALL and RET
+    ********************************/
+    case OP_CALL:
+        instrWidth = 9;
+        runtimeError = !Instr::call(this);
+        return !runtimeError;
+        break;
+    case OP_RET:
+        instrWidth = 1;
+        runtimeError = !Instr::ret(this);
+        return !runtimeError;
+        break;
+
+    /********************************
+        CONDITIONS
+    ********************************/
+    case OP_JMP: {
+        instrWidth = 9;
+        bool jumped = false;
+        runtimeError = !Instr::jmp(this, JumpCondition::UNCONDITIONAL, &jumped);
+        return !runtimeError;
+        break;
+    }
+    case OP_JE: {
+        instrWidth = 9;
+        bool jumped = false;
+        runtimeError = !Instr::jmp(this, JumpCondition::IF_EQUALS, &jumped);
+        if (jumped) {
+            return !runtimeError;
+        }
+        break;
+    }
+    case OP_JNE: {
+        instrWidth = 9;
+        bool jumped = false;
+        runtimeError = !Instr::jmp(this, JumpCondition::IF_NOT_EQUALS, &jumped);
+        if (jumped) {
+            return !runtimeError;
+        }
+        break;
+    }
+    case OP_JGT: {
+        instrWidth = 9;
+        bool jumped = false;
+        runtimeError =
+            !Instr::jmp(this, JumpCondition::IF_GREATER_THAN, &jumped);
+        if (jumped) {
+            return !runtimeError;
+        }
+        break;
+    }
+    case OP_JLT: {
+        instrWidth = 9;
+        bool jumped = false;
+        runtimeError = !Instr::jmp(this, JumpCondition::IF_LESS_THAN, &jumped);
+        if (jumped) {
+            return !runtimeError;
+        }
+        break;
+    }
+    case OP_JGE: {
+        instrWidth = 9;
+        bool jumped = false;
+        runtimeError =
+            !Instr::jmp(this, JumpCondition::IF_GREATER_EQUALS, &jumped);
+        if (jumped) {
+            return !runtimeError;
+        }
+        break;
+    }
+    case OP_JLE: {
+        instrWidth = 9;
+        bool jumped = false;
+        runtimeError =
+            !Instr::jmp(this, JumpCondition::IF_LESS_EQUALS, &jumped);
+        if (jumped) {
+            return !runtimeError;
+        }
+        break;
+    }
+    case OP_CMP_IT_IR_IR:
+        instrWidth = 4;
+        runtimeError = !Instr::cmpIRegToIReg(this);
+        break;
+
+    /********************************
+        EXIT
+    ********************************/
+    case OP_B2L:
+        instrWidth = 2;
+        runtimeError = !Instr::uIntConvert(this, IntType::I8);
+        break;
+    case OP_S2L:
+        instrWidth = 2;
+        runtimeError = !Instr::uIntConvert(this, IntType::I16);
+        break;
+    case OP_I2L:
+        instrWidth = 2;
+        runtimeError = !Instr::uIntConvert(this, IntType::I32);
+        break;
+
+    /********************************
+        EXIT
+    ********************************/
+    case OP_EXIT:
+        return !runtimeError;
+    default:
+        std::cout << "[Runtime] Unknow opcode 0x" << std::hex
+                  << (uint16_t)Opcode << '\n';
+        runtimeError = true;
+        return !runtimeError;
+    }
+    // TODO: Check IP perm
+    MMU.IP += instrWidth;
     return !runtimeError;
 }

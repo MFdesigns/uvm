@@ -37,7 +37,9 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    UVM vmInstance{p};
+    UVM vmInstance;
+    vmInstance.setFilePath(p);
+    vmInstance.readSource();
     bool initSuccess = vmInstance.init();
     if (!initSuccess) {
         return -1;

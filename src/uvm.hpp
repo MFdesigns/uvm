@@ -73,14 +73,17 @@ struct HeaderInfo {
 
 class UVM {
   public:
-    UVM(std::filesystem::path p);
+    MemManager MMU;
+    uint8_t Opcode = 0;
+    void setFilePath(std::filesystem::path p);
     bool init();
     bool run();
-    MemManager MMU;
+    bool nextInstr();
+    void addSourceFromBuffer(uint8_t* srcBuffer, size_t size);
+    void readSource();
 
   private:
     std::filesystem::path SourcePath;
     uint32_t SourceBuffIndex = 0;
-    std::unique_ptr<HeaderInfo> HInfo;
-    void readSource();
+    HeaderInfo HInfo;
 };
