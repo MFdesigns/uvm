@@ -173,11 +173,11 @@ void Debugger::appendRegisters(std::stringstream& stream) {
     stream << static_cast<char>(0x4);
     uint64_t Flags = 0;
     uint64_t Carry = static_cast<uint64_t>(VM.MMU.Flags.Carry) << 63;
-    uint64_t Signed = static_cast<uint64_t>(VM.MMU.Flags.Signed) << 62;
-    uint64_t Zero = static_cast<uint64_t>(VM.MMU.Flags.Zero) << 61;
+    uint64_t Zero = static_cast<uint64_t>(VM.MMU.Flags.Zero) << 62;
+    uint64_t Signed = static_cast<uint64_t>(VM.MMU.Flags.Signed) << 61;
     Flags |= Carry;
-    Flags |= Signed;
     Flags |= Zero;
+    Flags |= Signed;
     stream.write(reinterpret_cast<char*>(&Flags), 8);
 
     uint8_t regId = 0x5;
