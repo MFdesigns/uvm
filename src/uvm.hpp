@@ -20,6 +20,7 @@
 #include <filesystem>
 #include <memory>
 #include <vector>
+#include <sstream>
 
 constexpr uint64_t UVM_START_ADDR = 0;
 
@@ -71,10 +72,17 @@ struct HeaderInfo {
     uint64_t StartAddress = 0;
 };
 
+enum class ExecutionMode {
+    USER,
+    DEBUGGER,
+};
+
 class UVM {
   public:
     MemManager MMU;
     uint8_t Opcode = 0;
+    ExecutionMode Mode = ExecutionMode::USER;
+    std::stringstream DbgConsole;
     void setFilePath(std::filesystem::path p);
     bool init();
     bool run();

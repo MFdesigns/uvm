@@ -36,7 +36,14 @@ bool internalPrint(UVM* vm) {
     }
 
     std::string tmpStr{(char*)buff, r1.I32};
-    std::cout << tmpStr;
+    switch (vm->Mode) { 
+    case ExecutionMode::USER:
+        std::cout << tmpStr;
+        break;
+    case ExecutionMode::DEBUGGER:
+        vm->DbgConsole << tmpStr;
+        break;
+    }
 
     return true;
 }

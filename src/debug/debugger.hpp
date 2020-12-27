@@ -41,4 +41,5 @@ struct Debugger {
     bool handleHandshake(Response& res);
     bool handleRequest(Response& res);
     void appendRegisters(std::stringstream& stream);
+    void appendConsole(std::stringstream& stream);
 };

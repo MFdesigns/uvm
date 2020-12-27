@@ -104,6 +104,7 @@ bool Debugger::handleHandshake(Response& res) {
 
     VM.setFilePath(std::filesystem::path{path});
     VM.addSourceFromBuffer(fileBuff, fileSize);
+    VM.Mode = ExecutionMode::DEBUGGER;
 
     if (!VM.init()) {
         res.Code = ResponseCode::BAD_REQUEST_400;
@@ -139,6 +140,7 @@ bool Debugger::handleRequest(Response& res) {
 
         res.Body << RES_NEXT_INSTR;
         appendRegisters(res.Body);
+        appendConsole(res.Body);
         break;
     case RES_GET_REGS:
         res.Body << RES_GET_REGS;
@@ -189,4 +191,11 @@ void Debugger::appendRegisters(std::stringstream& stream) {
         stream.write(reinterpret_cast<char*>(&val.F64), 8);
         regId++;
     }
+}
+
+void Debugger::appendConsole(std::stringstream& stream) {
+    stream << VM.DbgConsole.rdbuf();
+    // Clear console
+    VM.DbgConsole.str(std::string());
+    VM.DbgConsole.clear();
 }
