@@ -148,6 +148,7 @@ bool parseIntType(uint8_t type, IntType* intType);
 bool parseFloatType(uint8_t type, FloatType* floatType);
 
 struct FlagsRegister {
+    bool Carry = false;
     bool Zero = false;
     bool Signed = false;
 };
