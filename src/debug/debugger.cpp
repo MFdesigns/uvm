@@ -149,6 +149,36 @@ bool Debugger::handleRequest(Response& res) {
     case RES_CLOSE:
         State = DbgSessState::CLOSED;
         break;
+    case RES_CONTINUE:
+        continueToBreakpoint();
+        if (VM.Opcode == OP_EXIT) {
+            State = DbgSessState::CLOSED;
+            return true;
+        }
+
+        res.Body << RES_CONTINUE;
+        appendRegisters(res.Body);
+        appendConsole(res.Body);
+        break;
+    case RES_SET_BREAKPOINT: {
+        // TODO: Range check parameter. What if breakpoint already exists?
+        uint64_t breakpoint = *reinterpret_cast<uint64_t*>(&buff[9]);
+        Breakpoints.push_back(breakpoint);
+    } break;
+    case RES_REMOVE_BREAKPOINT: {
+        uint64_t breakpoint = *reinterpret_cast<uint64_t*>(&buff[9]);
+        // Find index of breakpoint
+        // TODO: What if breakpoint does not exist
+        size_t index = 0;
+        for (size_t i = 0; i < Breakpoints.size(); i++) {
+            if (Breakpoints[i] == breakpoint) {
+                index = i;
+                break;
+            }
+        }
+
+        Breakpoints.erase(Breakpoints.begin() + index);
+    } break;
     default:
         return false;
         break;
@@ -158,8 +188,6 @@ bool Debugger::handleRequest(Response& res) {
 }
 
 void Debugger::appendRegisters(std::stringstream& stream) {
-    // TODO: Flags register
-
     // Instruction pointer
     stream << static_cast<char>(0x1);
     stream.write(reinterpret_cast<char*>(&VM.MMU.IP), 8);
@@ -198,4 +226,29 @@ void Debugger::appendConsole(std::stringstream& stream) {
     // Clear console
     VM.DbgConsole.str(std::string());
     VM.DbgConsole.clear();
+}
+
+void Debugger::continueToBreakpoint() {
+    while (VM.Opcode != OP_EXIT) {
+        uint64_t ip = VM.MMU.IP;
+        if (OnBreakpoint) {
+            VM.nextInstr();
+            OnBreakpoint = false;
+        } else {
+            bool isBreakpoint = false;
+            for (uint32_t i = 0; i < Breakpoints.size(); i++) {
+                if (Breakpoints[i] == ip) {
+                    isBreakpoint = true;
+                    break;
+                }
+            }
+
+            if (isBreakpoint) {
+                OnBreakpoint = true;
+                return;
+            } else {
+                VM.nextInstr();
+            }
+        }
+    }
 }
