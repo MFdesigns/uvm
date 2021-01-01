@@ -117,7 +117,7 @@ bool parseSectionTable(std::vector<MemSection>& sections,
         return false;
     }
 
-    constexpr uint64_t SEC_TABLE_ENTRY_SIZE = 0x1A;
+    constexpr uint64_t SEC_TABLE_ENTRY_SIZE = 0x16;
     uint32_t* tableSize = (uint32_t*)&sourceBuffer[SEC_TABLE_OFFSET];
 
     // Range check given section table size
@@ -181,8 +181,8 @@ bool parseSectionTable(std::vector<MemSection>& sections,
 
         // Parse section size and perform basic validation
         constexpr uint64_t SEC_SIZE_OFFSET = 0x0A;
-        uint64_t secSize = 0;
-        std::memcpy(&secSize, &sourceBuffer[cursor + SEC_SIZE_OFFSET], 8);
+        uint32_t secSize = 0;
+        std::memcpy(&secSize, &sourceBuffer[cursor + SEC_SIZE_OFFSET], 4);
         // Check if section size points into file buffer. More validation will
         // be performed at a later stage. Check for 64bit integer overflow
         // before validating section size
@@ -195,7 +195,7 @@ bool parseSectionTable(std::vector<MemSection>& sections,
         }
 
         // Parse section size and perform basic validation
-        constexpr uint64_t SEC_NAME_OFFSET = 0x12;
+        constexpr uint64_t SEC_NAME_OFFSET = 0xE;
         uint64_t secNameAddress = 0;
         std::memcpy(&secNameAddress, &sourceBuffer[cursor + SEC_NAME_OFFSET],
                     8);
