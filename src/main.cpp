@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "debug/debugger.hpp"
 #include "uvm.hpp"
 #include <filesystem>
 #include <iostream>
@@ -27,6 +28,12 @@ int main(int argc, char* argv[]) {
     if (argc < 2) {
         printCLIUsage();
         return -1;
+    }
+
+    if (strcmp(argv[1], "--debug-server") == 0) {
+        Debugger dbg;
+        dbg.startSession();
+        return 0;
     }
 
     // Check if target UX file exists
