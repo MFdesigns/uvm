@@ -17,7 +17,11 @@
 #include "debugger.hpp"
 #include "http.hpp"
 #include <iostream>
+#include <memory>
 
+/**
+ * Starts a new debug session and awaits incoming handshake
+ */
 void Debugger::startSession() {
     std::cout << "[DEBUGGER] Starting up debug server...\n";
     Server.startup();
@@ -26,7 +30,7 @@ void Debugger::startSession() {
     closeSessionRes.Code = ResponseCode::OK_200;
     closeSessionRes.Headers["Access-Control-Allow-Origin"] = "*";
     closeSessionRes.Body.write(reinterpret_cast<const char*>(&RES_MAGIC), 8);
-    closeSessionRes.Body << RES_CLOSE;
+    closeSessionRes.Body << DBG_CLOSE_DBG_SESS;
     closeSessionRes.fillBuffer();
 
     while (State != DbgSessState::CLOSED) {
@@ -38,22 +42,8 @@ void Debugger::startSession() {
         std::cout << "[DEBUGGER] Listening for incoming requests...\n";
         Server.listenLoop(Req);
 
-        switch (State) {
-        case DbgSessState::HANDSHAKE: {
-            if (handleHandshake(res)) {
-                std::cout << "[DEBUGGER] Received successful handshake\n";
-                State = DbgSessState::RUNNING;
-            } else {
-                // TODO: If handshake fails reset VM
-                std::cout << "[DEBUGGER] Error: Expected handshake received "
-                             "garbage\n";
-            }
-        } break;
-        case DbgSessState::RUNNING: {
-            if (!handleRequest(res)) {
-                std::cout << "[DEBUGGER] Error: could not handle request\n";
-            }
-        } break;
+        if (!handleRequest(res)) {
+            std::cout << "[DEBUGGER] Error: could not handle request\n";
         }
 
         if (State == DbgSessState::CLOSED) {
@@ -74,49 +64,6 @@ void Debugger::closeSession() {
     Server.close();
 }
 
-bool Debugger::handleHandshake(Response& res) {
-    // Check for minimal content size
-    constexpr size_t MIN_CONTENT_SIZE = 0xD;
-    if (Req.ContentLength < MIN_CONTENT_SIZE) {
-        res.Code = ResponseCode::BAD_REQUEST_400;
-        return false;
-    }
-
-    uint8_t* buff = Req.Content;
-
-    uint64_t buffMagic = *reinterpret_cast<uint64_t*>(buff);
-    if (buffMagic != REQ_MAGIC) {
-        res.Code = ResponseCode::BAD_REQUEST_400;
-        return false;
-    }
-
-    uint8_t operation = buff[8];
-    if (operation != RES_HANDSHAKE) {
-        res.Code = ResponseCode::BAD_REQUEST_400;
-        return false;
-    }
-
-    uint32_t pathStrSize = *reinterpret_cast<uint64_t*>(&buff[9]);
-    std::string path{reinterpret_cast<char*>(&buff[13]), pathStrSize};
-
-    uint32_t fileSize = *reinterpret_cast<uint32_t*>(&buff[13 + pathStrSize]);
-    uint8_t* fileBuff = &buff[13 + pathStrSize + 4];
-
-    VM.setFilePath(std::filesystem::path{path});
-    VM.addSourceFromBuffer(fileBuff, fileSize);
-    VM.Mode = ExecutionMode::DEBUGGER;
-
-    if (!VM.init()) {
-        res.Code = ResponseCode::BAD_REQUEST_400;
-        return false;
-    }
-
-    res.Code = ResponseCode::OK_200;
-    res.Body << RES_HANDSHAKE;
-
-    return true;
-}
-
 bool Debugger::handleRequest(Response& res) {
     uint8_t* buff = Req.Content;
 
@@ -127,45 +74,115 @@ bool Debugger::handleRequest(Response& res) {
 
     uint8_t operation = buff[8];
     switch (operation) {
-    case RES_NEXT_INSTR:
-        if (!VM.nextInstr()) {
-            // Send error code
+    // If the server is already in a debugging session and we receive another
+    // request for a debug session send appropriate error
+    case DBG_OPEN_DBG_SESS: {
+        if (State == DbgSessState::OPEN) {
+            // Check for minimal content size
+            constexpr size_t MIN_CONTENT_SIZE = 0x9;
+            if (Req.ContentLength < MIN_CONTENT_SIZE) {
+                res.Code = ResponseCode::BAD_REQUEST_400;
+                return false;
+            }
+
+            uint8_t* buff = Req.Content;
+
+            uint64_t buffMagic = *reinterpret_cast<uint64_t*>(buff);
+            if (buffMagic != REQ_MAGIC) {
+                res.Code = ResponseCode::BAD_REQUEST_400;
+                return false;
+            }
+
+            uint8_t operation = buff[8];
+            if (operation != DBG_OPEN_DBG_SESS) {
+                res.Code = ResponseCode::BAD_REQUEST_400;
+                return false;
+            }
+
+            res.Code = ResponseCode::OK_200;
+            res.Body << DBG_OPEN_DBG_SESS;
+
+            State = DbgSessState::RUNNING;
+
+            return true;
+        } else {
+            res.Body << DBG_ERROR << ERR_ALREADY_IN_DEBUG_SESSION;
+            return false;
+        }
+    } break;
+    case DBG_CLOSE_DBG_SESS: {
+        if (State == DbgSessState::RUNNING) {
+            State = DbgSessState::CLOSED;
+            return true;
+        } else {
+            res.Body << DBG_ERROR << ERR_NOT_IN_DEBUG_SESSION;
+            return false;
+        }
+    }
+    case DBG_RUN_APP: {
+        if (State == DbgSessState::RUNNING) {
+            // TODO: Refactored into own function and check min size before
+            // pointer stuff
+            VM.reset();
+            VM = std::make_unique<UVM>();
+
+            uint32_t fileSize = *reinterpret_cast<uint32_t*>(&buff[9]);
+            uint8_t* fileBuff = &buff[13];
+
+            VM->addSourceFromBuffer(fileBuff, fileSize);
+            VM->Mode = ExecutionMode::DEBUGGER;
+
+            if (!VM->init()) {
+                res.Body << DBG_ERROR << ERR_FILE_FORMAT_ERROR;
+                return false;
+            }
+        } else {
+            res.Body << DBG_ERROR << ERR_NOT_IN_DEBUG_SESSION;
             return false;
         }
 
-        if (VM.Opcode == OP_EXIT) {
-            State = DbgSessState::CLOSED;
-            return true;
-        }
-
-        res.Body << RES_NEXT_INSTR;
-        appendRegisters(res.Body);
-        appendConsole(res.Body);
-        break;
-    case RES_GET_REGS:
-        res.Body << RES_GET_REGS;
-        appendRegisters(res.Body);
-        break;
-    case RES_CLOSE:
-        State = DbgSessState::CLOSED;
-        break;
-    case RES_CONTINUE:
+        // TODO: Runtime error?
         continueToBreakpoint();
-        if (VM.Opcode == OP_EXIT) {
-            State = DbgSessState::CLOSED;
-            return true;
+        if (VM->Opcode == OP_EXIT) {
+            res.Body << DBG_EXE_FIN;
+            appendRegisters(res.Body);
+            appendConsole(res.Body);
+            VM.reset();
+            OnBreakpoint = false;
+        } else if (OnBreakpoint) {
+            res.Body << DBG_RUN_APP;
+            appendRegisters(res.Body);
+            appendConsole(res.Body);
         }
+    } break;
+    case DBG_NEXT_INSTR: {
+        // TODO: ERR_NO_UX_FILE and runtime error
+        if (State == DbgSessState::RUNNING) {
+            if (!VM->nextInstr()) {
+                return false;
+            }
 
-        res.Body << RES_CONTINUE;
-        appendRegisters(res.Body);
-        appendConsole(res.Body);
-        break;
-    case RES_SET_BREAKPOINT: {
+            if (VM->Opcode == OP_EXIT) {
+                res.Body << DBG_EXE_FIN;
+                appendRegisters(res.Body);
+                appendConsole(res.Body);
+                VM.reset();
+            } else {
+                res.Body << DBG_NEXT_INSTR;
+                appendRegisters(res.Body);
+                appendConsole(res.Body);
+            }
+        } else {
+            res.Body << DBG_ERROR << ERR_NOT_IN_DEBUG_SESSION;
+        }
+    } break;
+    case DBG_SET_BREAKPNT: {
         // TODO: Range check parameter. What if breakpoint already exists?
         uint64_t breakpoint = *reinterpret_cast<uint64_t*>(&buff[9]);
         Breakpoints.push_back(breakpoint);
+        res.Body << DBG_SET_BREAKPNT;
     } break;
-    case RES_REMOVE_BREAKPOINT: {
+    case DBG_REMOVE_BREAKPNT: {
         uint64_t breakpoint = *reinterpret_cast<uint64_t*>(&buff[9]);
         // Find index of breakpoint
         // TODO: What if breakpoint does not exist
@@ -178,6 +195,34 @@ bool Debugger::handleRequest(Response& res) {
         }
 
         Breakpoints.erase(Breakpoints.begin() + index);
+        res.Body << DBG_REMOVE_BREAKPNT;
+    } break;
+    case DBG_CONTINUE_: {
+        if (State != DbgSessState::RUNNING) {
+            res.Body << DBG_ERROR << ERR_NOT_IN_DEBUG_SESSION;
+            return false;
+        }
+
+        // TODO: Runtime error?
+        continueToBreakpoint();
+        if (VM->Opcode == OP_EXIT) {
+            res.Body << DBG_EXE_FIN;
+            appendRegisters(res.Body);
+            appendConsole(res.Body);
+            VM.reset();
+        } else if (OnBreakpoint) {
+            res.Body << DBG_CONTINUE_;
+            appendRegisters(res.Body);
+            appendConsole(res.Body);
+        }
+    } break;
+    case DBG_STOP_EXE: {
+        // TODO: Does UVM even run?
+        res.Body << DBG_STOP_EXE;
+        appendRegisters(res.Body);
+        appendConsole(res.Body);
+        VM.reset();
+        OnBreakpoint = false;
     } break;
     default:
         return false;
@@ -190,31 +235,31 @@ bool Debugger::handleRequest(Response& res) {
 void Debugger::appendRegisters(std::stringstream& stream) {
     // Instruction pointer
     stream << static_cast<char>(0x1);
-    stream.write(reinterpret_cast<char*>(&VM.MMU.IP), 8);
+    stream.write(reinterpret_cast<char*>(&VM->MMU.IP), 8);
     // Stack pointer
     stream << static_cast<char>(0x2);
-    stream.write(reinterpret_cast<char*>(&VM.MMU.SP), 8);
+    stream.write(reinterpret_cast<char*>(&VM->MMU.SP), 8);
     // Base pointer
     stream << static_cast<char>(0x3);
-    stream.write(reinterpret_cast<char*>(&VM.MMU.BP), 8);
+    stream.write(reinterpret_cast<char*>(&VM->MMU.BP), 8);
     // Flags
     stream << static_cast<char>(0x4);
     uint64_t Flags = 0;
-    uint64_t Carry = static_cast<uint64_t>(VM.MMU.Flags.Carry) << 63;
-    uint64_t Zero = static_cast<uint64_t>(VM.MMU.Flags.Zero) << 62;
-    uint64_t Signed = static_cast<uint64_t>(VM.MMU.Flags.Signed) << 61;
+    uint64_t Carry = static_cast<uint64_t>(VM->MMU.Flags.Carry) << 63;
+    uint64_t Zero = static_cast<uint64_t>(VM->MMU.Flags.Zero) << 62;
+    uint64_t Signed = static_cast<uint64_t>(VM->MMU.Flags.Signed) << 61;
     Flags |= Carry;
     Flags |= Zero;
     Flags |= Signed;
     stream.write(reinterpret_cast<char*>(&Flags), 8);
 
     uint8_t regId = 0x5;
-    for (IntVal& val : VM.MMU.GP) {
+    for (IntVal& val : VM->MMU.GP) {
         stream << regId;
         stream.write(reinterpret_cast<char*>(&val.I64), 8);
         regId++;
     }
-    for (FloatVal& val : VM.MMU.FP) {
+    for (FloatVal& val : VM->MMU.FP) {
         stream << regId;
         stream.write(reinterpret_cast<char*>(&val.F64), 8);
         regId++;
@@ -222,17 +267,17 @@ void Debugger::appendRegisters(std::stringstream& stream) {
 }
 
 void Debugger::appendConsole(std::stringstream& stream) {
-    stream << VM.DbgConsole.rdbuf();
+    stream << VM->DbgConsole.rdbuf();
     // Clear console
-    VM.DbgConsole.str(std::string());
-    VM.DbgConsole.clear();
+    VM->DbgConsole.str(std::string());
+    VM->DbgConsole.clear();
 }
 
 void Debugger::continueToBreakpoint() {
-    while (VM.Opcode != OP_EXIT) {
-        uint64_t ip = VM.MMU.IP;
+    while (VM->Opcode != OP_EXIT) {
+        uint64_t ip = VM->MMU.IP;
         if (OnBreakpoint) {
-            VM.nextInstr();
+            VM->nextInstr();
             OnBreakpoint = false;
         } else {
             bool isBreakpoint = false;
@@ -247,7 +292,7 @@ void Debugger::continueToBreakpoint() {
                 OnBreakpoint = true;
                 return;
             } else {
-                VM.nextInstr();
+                VM->nextInstr();
             }
         }
     }

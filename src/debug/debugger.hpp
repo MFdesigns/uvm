@@ -18,20 +18,35 @@
 #include "../uvm.hpp"
 #include "http.hpp"
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 constexpr uint64_t REQ_MAGIC = 0x3f697a65bcc37247;
 constexpr uint64_t RES_MAGIC = 0x4772C3BC657A6921;
-constexpr uint8_t RES_NEXT_INSTR = 0xA0;
-constexpr uint8_t RES_CONTINUE = 0xA1;
-constexpr uint8_t RES_SET_BREAKPOINT = 0xB0;
-constexpr uint8_t RES_REMOVE_BREAKPOINT = 0xB1;
-constexpr uint8_t RES_HANDSHAKE = 0xD0;
-constexpr uint8_t RES_GET_REGS = 0xD2;
-constexpr uint8_t RES_CLOSE = 0xDC;
+
+// Operation codes
+constexpr uint8_t DBG_OPEN_DBG_SESS = 0x01;
+constexpr uint8_t DBG_CLOSE_DBG_SESS = 0x02;
+constexpr uint8_t DBG_SET_BREAKPNT = 0xB0;
+constexpr uint8_t DBG_REMOVE_BREAKPNT = 0xB1;
+constexpr uint8_t DBG_RUN_APP = 0xE0;
+constexpr uint8_t DBG_NEXT_INSTR = 0xE1;
+constexpr uint8_t DBG_CONTINUE_ = 0xE2;
+constexpr uint8_t DBG_STOP_EXE = 0xE3;
+constexpr uint8_t DBG_GET_REGS = 0x10;
+constexpr uint8_t DBG_ERROR = 0xEE;
+constexpr uint8_t DBG_EXE_FIN = 0xFF;
+
+// Error codes
+constexpr uint8_t ERR_ALREADY_IN_DEBUG_SESSION = 0x1;
+constexpr uint8_t ERR_NOT_IN_DEBUG_SESSION = 0x2;
+constexpr uint8_t ERR_RUNTIME_ERROR = 0x3;
+constexpr uint8_t ERR_FILE_FORMAT_ERROR = 0x4;
+constexpr uint8_t ERR_BREAKPOINT_ALREADY_SET = 0x5;
+constexpr uint8_t ERR_BREAKPOINT_NOT_EXISTING = 0x6;
 
 enum class DbgSessState {
-    HANDSHAKE,
+    OPEN,
     RUNNING,
     CLOSED,
 };
@@ -39,13 +54,12 @@ enum class DbgSessState {
 struct Debugger {
     HTTPServer Server;
     RequestParser Req;
-    UVM VM;
-    DbgSessState State = DbgSessState::HANDSHAKE;
+    std::unique_ptr<UVM> VM;
+    DbgSessState State = DbgSessState::OPEN;
     std::vector<uint64_t> Breakpoints;
     bool OnBreakpoint = false;
     void startSession();
     void closeSession();
-    bool handleHandshake(Response& res);
     bool handleRequest(Response& res);
     void appendRegisters(std::stringstream& stream);
     void appendConsole(std::stringstream& stream);
