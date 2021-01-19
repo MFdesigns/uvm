@@ -36,7 +36,7 @@ bool internalPrint(UVM* vm) {
     }
 
     std::string tmpStr{(char*)buff, r1.I32};
-    switch (vm->Mode) { 
+    switch (vm->Mode) {
     case ExecutionMode::USER:
         std::cout << tmpStr;
         break;

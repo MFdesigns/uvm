@@ -39,7 +39,6 @@ void Debugger::startSession() {
         res.Headers["Access-Control-Allow-Origin"] = "*";
         res.Body.write(reinterpret_cast<const char*>(&RES_MAGIC), 8);
 
-        std::cout << "[DEBUGGER] Listening for incoming requests...\n";
         Server.listenLoop(Req);
 
         if (!handleRequest(res)) {
@@ -59,11 +58,19 @@ void Debugger::startSession() {
     closeSession();
 }
 
+/**
+ * Closes the current HTTP server
+ */
 void Debugger::closeSession() {
     std::cout << "[DEBUGGER] Closing debug server...\n";
     Server.close();
 }
 
+/**
+ * Handles an incoming request
+ * @param res Response which on valid request will hold the response data
+ * @return On valid request returns true otherwise false
+ */
 bool Debugger::handleRequest(Response& res) {
     uint8_t* buff = Req.Content;
 
@@ -121,13 +128,24 @@ bool Debugger::handleRequest(Response& res) {
     }
     case DBG_RUN_APP: {
         if (State == DbgSessState::RUNNING) {
-            // TODO: Refactored into own function and check min size before
-            // pointer stuff
+            // Delete previous UVM instances and create a new one
             VM.reset();
             VM = std::make_unique<UVM>();
 
+            // Check if request meets minimal size to be valid before indexing
+            // into it
+            constexpr size_t MIN_VALID_REQ_SIZE = 13;
+            if (Req.ContentLength < MIN_VALID_REQ_SIZE) {
+                return false;
+            }
+
             uint32_t fileSize = *reinterpret_cast<uint32_t*>(&buff[9]);
             uint8_t* fileBuff = &buff[13];
+
+            // Check if given file size is valid
+            if (Req.ContentLength < MIN_VALID_REQ_SIZE + fileSize) {
+                return false;
+            }
 
             VM->addSourceFromBuffer(fileBuff, fileSize);
             VM->Mode = ExecutionMode::DEBUGGER;
@@ -232,6 +250,10 @@ bool Debugger::handleRequest(Response& res) {
     return true;
 }
 
+/**
+ * Appends register data to the given stream
+ * @param stream Target stream
+ */
 void Debugger::appendRegisters(std::stringstream& stream) {
     // Instruction pointer
     stream << static_cast<char>(0x1);
@@ -266,6 +288,10 @@ void Debugger::appendRegisters(std::stringstream& stream) {
     }
 }
 
+/**
+ * Appends console output to given stream and flushes console
+ * @param stream Target stream
+ */
 void Debugger::appendConsole(std::stringstream& stream) {
     stream << VM->DbgConsole.rdbuf();
     // Clear console
@@ -273,6 +299,9 @@ void Debugger::appendConsole(std::stringstream& stream) {
     VM->DbgConsole.clear();
 }
 
+/**
+ * Executes virtual machine until next breakpoint is hit
+ */
 void Debugger::continueToBreakpoint() {
     while (VM->Opcode != OP_EXIT) {
         uint64_t ip = VM->MMU.IP;

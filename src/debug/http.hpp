@@ -16,16 +16,8 @@
 
 #pragma once
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
 #include <map>
 #include <sstream>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-
-#pragma comment(lib, "Ws2_32.lib")
 
 constexpr char* PORT = "2001";
 constexpr size_t REC_BUFFER_SIZE = 1024;
@@ -95,8 +87,8 @@ struct RequestParser {
 };
 
 struct HTTPServer {
-    SOCKET ListenSock = INVALID_SOCKET;
-    SOCKET ClientSock = INVALID_SOCKET;
+    uint64_t* ListenSock = nullptr;
+    uint64_t* ClientSock = nullptr;
     uint8_t RecBuffer[REC_BUFFER_SIZE];
     bool startup();
     void listenLoop(RequestParser& rq);
