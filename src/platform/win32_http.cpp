@@ -155,6 +155,6 @@ void HTTPServer::shutdownSock() {
     closesocket(reinterpret_cast<SOCKET>(ClientSock));
 }
 
-void HTTPServer::close() {
+void HTTPServer::closeServer() {
     WSACleanup();
 }

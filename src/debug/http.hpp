@@ -88,6 +88,8 @@ struct RequestParser {
 };
 
 struct HTTPServer {
+    uint32_t UnixListenSock = -1;
+    uint32_t UnixClientSock = -1;
     uint64_t* ListenSock = nullptr;
     uint64_t* ClientSock = nullptr;
     uint8_t RecBuffer[REC_BUFFER_SIZE];
@@ -95,5 +97,5 @@ struct HTTPServer {
     void listenLoop(RequestParser& rq);
     void sendReq(std::ostream& stream);
     void shutdownSock();
-    void close();
+    void closeServer();
 };

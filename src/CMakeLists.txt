@@ -19,7 +19,7 @@ if(WIN32)
 # Linux and MacOS shared platform files
 elseif(UNIX)
     set(PLATFORM_FILES
-        # unix files
+        platform/linux_http.cpp
     )
     # MacOS specific platform files
     if(APPLE)

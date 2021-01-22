@@ -63,7 +63,7 @@ void Debugger::startSession() {
  */
 void Debugger::closeSession() {
     std::cout << "[DEBUGGER] Closing debug server...\n";
-    Server.close();
+    Server.closeServer();
 }
 
 /**
