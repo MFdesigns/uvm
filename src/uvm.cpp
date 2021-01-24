@@ -15,6 +15,7 @@
 // ======================================================================== //
 
 #include "uvm.hpp"
+#include "error.hpp"
 #include "instr/arithmetic.hpp"
 #include "instr/branching.hpp"
 #include "instr/function.hpp"
@@ -25,11 +26,10 @@
 #include <fstream>
 #include <iostream>
 
-bool validateHeader(HeaderInfo* info, MemBuffer* source) {
-    uint8_t* sourceBuffer = source->getBuffer();
+bool validateHeader(HeaderInfo* info, uint8_t* source, size_t size) {
     // Check if source file has minimal size to contain a valid header
     constexpr uint32_t MIN_HEADER_SIZE = 0x60;
-    if (source->Size < MIN_HEADER_SIZE) {
+    if (size < MIN_HEADER_SIZE) {
         std::cout << "[Error] Invalid file header: header size smaller than "
                      "required to be a valid header\n";
         return false;
@@ -37,7 +37,7 @@ bool validateHeader(HeaderInfo* info, MemBuffer* source) {
 
     // Validate magic number
     constexpr uint32_t MAGIC = 0x50504953; // Magic 'SIPP' in big endianness
-    uint32_t* sourceMagic = reinterpret_cast<uint32_t*>(sourceBuffer);
+    uint32_t* sourceMagic = reinterpret_cast<uint32_t*>(source);
     if (*sourceMagic != MAGIC) {
         std::cout << "[Error] Invalid magic number inside header\n";
         return false;
@@ -45,7 +45,7 @@ bool validateHeader(HeaderInfo* info, MemBuffer* source) {
 
     // Check version
     constexpr uint64_t VERSION_OFFSET = 0x04;
-    uint8_t version = sourceBuffer[VERSION_OFFSET];
+    uint8_t version = source[VERSION_OFFSET];
     if (version != 1) {
         std::cout << "[Error] Unsupported file version '" << (uint16_t)version
                   << "'\n";
@@ -55,7 +55,7 @@ bool validateHeader(HeaderInfo* info, MemBuffer* source) {
 
     // Check mode
     constexpr uint64_t MODE_OFFSET = 0x05;
-    uint8_t mode = sourceBuffer[MODE_OFFSET];
+    uint8_t mode = source[MODE_OFFSET];
     switch (mode) {
     case 0x1: // Release
     case 0x2: // Debug
@@ -68,10 +68,10 @@ bool validateHeader(HeaderInfo* info, MemBuffer* source) {
 
     // Validate start address
     constexpr uint64_t START_ADDR_OFFSET = 0x08;
-    uint64_t* startAddress = (uint64_t*)&sourceBuffer[START_ADDR_OFFSET];
+    uint64_t* startAddress = (uint64_t*)&source[START_ADDR_OFFSET];
     // Check if start address point inside source buffer. More in depth
     // validation will be performed later once the section table has been parsed
-    if (*startAddress > (uint64_t)source->Size) {
+    if (*startAddress > (uint64_t)size) {
         std::cout << "[Error] Invalid start address: Address points outside of "
                      "source file "
                   << std::hex << "0x" << *startAddress << " \n";
@@ -103,11 +103,16 @@ bool validateSectionPermission(uint8_t perms) {
     return true;
 }
 
-bool parseSectionTable(std::vector<MemSection>& sections,
-                       MemBuffer* buffer,
-                       uint32_t buffIndex) {
-    uint64_t size = buffer->Size;
-    uint8_t* sourceBuffer = buffer->getBuffer();
+/**
+ * Validates the section table and adds sections to vector
+ * @param sections Output vector of sections
+ * @param buff Pointer to source buffer
+ * @param size Size of source buffer
+ * @return On success returns true otherwise false
+ */
+bool parseSectionTable(std::vector<MemSection>* sections,
+                       uint8_t* buff,
+                       size_t size) {
     constexpr uint64_t SEC_TABLE_OFFSET = 0x60;
 
     // Range check if section table size is given
@@ -118,7 +123,7 @@ bool parseSectionTable(std::vector<MemSection>& sections,
     }
 
     constexpr uint64_t SEC_TABLE_ENTRY_SIZE = 0x16;
-    uint32_t* tableSize = (uint32_t*)&sourceBuffer[SEC_TABLE_OFFSET];
+    uint32_t* tableSize = (uint32_t*)&buff[SEC_TABLE_OFFSET];
 
     // Range check given section table size
     if (SEC_TABLE_OFFSET + sizeof(uint32_t) + *tableSize > size) {
@@ -135,15 +140,15 @@ bool parseSectionTable(std::vector<MemSection>& sections,
 
     // Allocate sections in vector
     uint32_t sectionCount = *tableSize / SEC_TABLE_ENTRY_SIZE;
-    sections.reserve(sectionCount);
+    sections->reserve(sectionCount);
 
     // Start to parse the section table entries
     uint64_t cursor = SEC_TABLE_OFFSET + sizeof(uint32_t);
     uint64_t tableEnd = SEC_TABLE_OFFSET + sizeof(uint32_t) + *tableSize;
     bool validSectionTable = true;
     while (cursor < tableEnd && validSectionTable) {
-        uint8_t type = sourceBuffer[cursor];
-        uint8_t perms = sourceBuffer[cursor + 1];
+        uint8_t type = buff[cursor];
+        uint8_t perms = buff[cursor + 1];
 
         auto memType = SectionType::STATIC;
 
@@ -168,8 +173,7 @@ bool parseSectionTable(std::vector<MemSection>& sections,
         // Parse start address and perform basic validation
         constexpr uint64_t SEC_START_ADDR_OFFSET = 0x02;
         uint64_t startAddress = 0;
-        std::memcpy(&startAddress,
-                    &sourceBuffer[cursor + SEC_START_ADDR_OFFSET], 8);
+        std::memcpy(&startAddress, &buff[cursor + SEC_START_ADDR_OFFSET], 8);
         // Check if start address points into file buffer. More validation will
         // be performed at a later stage
         if (startAddress > size) {
@@ -182,7 +186,7 @@ bool parseSectionTable(std::vector<MemSection>& sections,
         // Parse section size and perform basic validation
         constexpr uint64_t SEC_SIZE_OFFSET = 0x0A;
         uint32_t secSize = 0;
-        std::memcpy(&secSize, &sourceBuffer[cursor + SEC_SIZE_OFFSET], 4);
+        std::memcpy(&secSize, &buff[cursor + SEC_SIZE_OFFSET], 4);
         // Check if section size points into file buffer. More validation will
         // be performed at a later stage. Check for 64bit integer overflow
         // before validating section size
@@ -197,8 +201,7 @@ bool parseSectionTable(std::vector<MemSection>& sections,
         // Parse section size and perform basic validation
         constexpr uint64_t SEC_NAME_OFFSET = 0xE;
         uint64_t secNameAddress = 0;
-        std::memcpy(&secNameAddress, &sourceBuffer[cursor + SEC_NAME_OFFSET],
-                    8);
+        std::memcpy(&secNameAddress, &buff[cursor + SEC_NAME_OFFSET], 8);
         // Check if section name points into file buffer. More validation will
         // be performed at a later stage
         if (secNameAddress > size) {
@@ -208,7 +211,7 @@ bool parseSectionTable(std::vector<MemSection>& sections,
             continue;
         }
 
-        sections.emplace_back(memType, perms, startAddress, secSize, buffIndex);
+        sections->emplace_back(memType, perms, startAddress, secSize);
         cursor += SEC_TABLE_ENTRY_SIZE;
     }
 
@@ -220,19 +223,10 @@ void UVM::setFilePath(std::filesystem::path p) {
 }
 
 bool UVM::init() {
-    bool validHeader = validateHeader(&HInfo, &MMU.Buffers[SourceBuffIndex]);
-    if (!validHeader) {
-        return false;
-    }
+    MMU.initStack();
 
-    bool validSectionTable = parseSectionTable(
-        MMU.Sections, &MMU.Buffers[SourceBuffIndex], SourceBuffIndex);
-    if (!validSectionTable) {
-        return false;
-    }
-
-    uint64_t vStackStart = MMU.Buffers[SourceBuffIndex].Size + 1;
-    MMU.initStack(vStackStart);
+    // Set the start address of the heap memory range
+    MMU.VHeapStart = MMU.VStackEnd + 1;
 
     // TODO: Validate start address
     MMU.IP = HInfo.StartAddress;
@@ -241,34 +235,46 @@ bool UVM::init() {
 }
 
 /**
- * Adds a new source buffer by copying it from another buffer. This function
- * should only be used if the source buffer if provided by a debug server
- * request, otherwise readSource() should be used.
- * @param srcBuffer Non-owning pointer to source buffer
- * @param size Size of buffer
+ * Reads source file into ram
+ * @param p Path to source file
+ * @param size Output file size
  */
-void UVM::addSourceFromBuffer(uint8_t* srcBuffer, size_t size) {
-    SourceBuffIndex = MMU.addBuffer(UVM_START_ADDR, size);
-
-    // Allocate new buffer of file size and read complete file to buffer
-    uint8_t* buffer = MMU.Buffers[SourceBuffIndex].getBuffer();
-    memcpy(buffer, srcBuffer, size);
-}
-
-void UVM::readSource() {
+uint8_t* UVM::readSource(std::filesystem::path p, size_t* size) {
     // Read source file into buffer
-    std::ifstream stream{SourcePath};
+    std::ifstream stream{p};
 
     // Get buffer size
     stream.seekg(0, std::ios::end);
-    uint64_t size = stream.tellg();
+    *size = stream.tellg();
     stream.seekg(0, std::ios::beg);
 
-    SourceBuffIndex = MMU.addBuffer(UVM_START_ADDR, size);
-
     // Allocate new buffer of file size and read complete file to buffer
-    uint8_t* buffer = MMU.Buffers[SourceBuffIndex].getBuffer();
-    stream.read((char*)buffer, size);
+    uint8_t* buffer = new uint8_t[*size]();
+    stream.read((char*)buffer, *size);
+
+    return buffer;
+}
+
+/**
+ * Loads an UX source file and initializes it
+ * @param buff Pointer to source buffer
+ * @param size Size of source buffer
+ * @return On success return zero otherwise non-zero value
+ */
+uint32_t UVM::loadFile(uint8_t* buff, size_t size) {
+    bool validHeader = validateHeader(&HInfo, buff, size);
+    if (!validateHeader) {
+        return E_INVALID_HEADER;
+    }
+
+    bool validSecTable = parseSectionTable(&MMU.Sections, buff, size);
+    if (!validSecTable) {
+        return E_INVALID_SEC_TABLE;
+    }
+
+    MMU.loadSections(buff, size);
+
+    return SUCCESS;
 }
 
 bool UVM::run() {

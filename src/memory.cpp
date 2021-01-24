@@ -23,10 +23,15 @@
  * Constructs a new MemBuffer
  * @param startAddr Virtual start address of memory buffer
  * @param size Size in bytes of memory section
+ * @param type Buffer type
+ * @param perm Buffer permissions
  */
-MemBuffer::MemBuffer(uint64_t startAddr, uint32_t size)
-    : VStartAddr(startAddr), Size(size) {
-    PhysicalBuffer = std::make_unique<uint8_t[]>(size);
+MemBuffer::MemBuffer(uint64_t startAddr,
+                     uint32_t size,
+                     SectionType type,
+                     uint8_t perm)
+    : VStartAddr(startAddr), Size(size), Type(type), Perm(perm) {
+    Buffer = std::make_unique<uint8_t[]>(size);
 }
 
 /**
@@ -35,14 +40,23 @@ MemBuffer::MemBuffer(uint64_t startAddr, uint32_t size)
  */
 MemBuffer::MemBuffer(MemBuffer&& memBuffer) noexcept
     : VStartAddr(memBuffer.VStartAddr), Size(memBuffer.Size),
-      PhysicalBuffer(std::move(memBuffer.PhysicalBuffer)) {}
+      Type(memBuffer.Type), Perm(memBuffer.Perm),
+      Buffer(std::move(memBuffer.Buffer)) {}
 
 /**
  * Get the underlying buffer
  * @return Pointer to buffer
  */
 uint8_t* MemBuffer::getBuffer() const {
-    return PhysicalBuffer.get();
+    return Buffer.get();
+}
+
+/**
+ * Copies memory of size given in member Size from source into member Buffer
+ * @param source Pointer to source buffer
+ */
+void MemBuffer::read(void* source) {
+    memcpy(Buffer.get(), source, Size);
 }
 
 /**
@@ -56,10 +70,8 @@ uint8_t* MemBuffer::getBuffer() const {
 MemSection::MemSection(SectionType type,
                        uint8_t perm,
                        uint64_t startAddr,
-                       uint32_t size,
-                       uint32_t buffIndex)
-    : Type(type), Perm(perm), VStartAddr(startAddr), Size(size),
-      BufferIndex(buffIndex) {}
+                       uint32_t size)
+    : Type(type), Perm(perm), VStartAddr(startAddr), Size(size) {}
 
 /**
  * Finds a section which contains the given memory range
@@ -192,10 +204,11 @@ bool MemManager::readPhysicalMem(uint64_t vAddr,
         }
 
         // Get physical buffer address
-        const MemBuffer* memBuffer = &Buffers[section->BufferIndex];
+        // TODO: Does no longer work because sections have changed!!!
+        /*const MemBuffer* memBuffer = &Buffers[section->BufferIndex];
         uint64_t bufferOffset = vAddr - memBuffer->VStartAddr;
         uint8_t* buffer = reinterpret_cast<uint8_t*>(memBuffer->getBuffer());
-        *ptr = &buffer[bufferOffset];
+        *ptr = &buffer[bufferOffset];*/
     }
 
     return true;
@@ -217,28 +230,29 @@ bool MemManager::writePhysicalMem(void* source, uint64_t vAddr, uint32_t size) {
  * Adds new MemBuffer to memory manager
  * @param vAddr Virtual start address of buffer
  * @param size Buffer size
+ * @param type Buffer type
+ * @param perm Buffer permissions
  * @return Added buffer index (used for reference)
  */
-uint32_t MemManager::addBuffer(uint64_t vAddr, uint32_t size) {
+uint32_t MemManager::addBuffer(uint64_t vAddr,
+                               uint32_t size,
+                               SectionType type,
+                               uint8_t perm) {
     uint32_t buffIndex = Buffers.size();
-    Buffers.emplace_back(vAddr, size);
+    Buffers.emplace_back(vAddr, size, type, perm);
     return buffIndex;
 }
 
 /**
- * Allocates stack, creates corresponding section and sets stack pointer
+ * Allocates stack and sets stack pointer
  * @param vAddr Virtual start address of stack
  */
-void MemManager::initStack(uint64_t vAddr) {
-    StackBufferIndex = addBuffer(vAddr, UVM_STACK_SIZE);
-    Sections.emplace_back(SectionType::STACK, PERM_WRITE_MASK | PERM_READ_MASK,
-                          vAddr, UVM_STACK_SIZE, StackBufferIndex);
-    SP = vAddr;
-    VStackStart = vAddr;
-    VStackEnd = vAddr + UVM_STACK_SIZE;
-
-    // Set the start address of the heap memory range
-    HeapPointer = VStackEnd + 1;
+void MemManager::initStack() {
+    StackBufferIndex =
+        addBuffer(VStackStart, UVM_STACK_SIZE, SectionType::STACK,
+                  PERM_READ_MASK | PERM_WRITE_MASK);
+    SP = VStackStart;
+    VStackEnd = VStackStart + UVM_STACK_SIZE;
 }
 
 /**
@@ -532,10 +546,10 @@ uint64_t MemManager::allocHeap(size_t size) {
 
     // If no heap block was found allocate a new one
     if (hb == nullptr) {
-        uint64_t hbAddr = HeapPointer;
+        uint64_t hbAddr = VHeapStart;
         size_t hbIndex = Heap.size();
         Heap.emplace_back(HEAP_BLOCK_SIZE, hbAddr);
-        HeapPointer += HEAP_BLOCK_SIZE;
+        VHeapStart += HEAP_BLOCK_SIZE;
 
         // write 32 bit size
         uint32_t* sizeVal =
@@ -602,4 +616,22 @@ bool MemManager::deallocHeap(uint64_t vAddr) {
     }
 
     return true;
+}
+
+/**
+ * Loads sections from source buffer into memory buffers and sets stack start
+ * address
+ * @param buff Pointer to source buffer
+ * @param size Size of source buffer
+ */
+void MemManager::loadSections(uint8_t* buff, size_t size) {
+    uint64_t Cursor = 0;
+    for (const auto& sec : Sections) {
+        uint32_t buffIndex =
+            addBuffer(sec.VStartAddr, sec.Size, sec.Type, sec.Perm);
+        MemBuffer* buffer = &Buffers[buffIndex];
+        buffer->read(&buff[sec.VStartAddr]);
+        Cursor += sec.VStartAddr + sec.Size;
+    }
+    VStackStart = Cursor + 1;
 }

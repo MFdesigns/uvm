@@ -87,11 +87,11 @@ class UVM {
     bool init();
     bool run();
     bool nextInstr();
-    void addSourceFromBuffer(uint8_t* srcBuffer, size_t size);
-    void readSource();
+    uint8_t* readSource(std::filesystem::path p, size_t* size);
+
+    uint32_t loadFile(uint8_t* buff, size_t size);
 
   private:
     std::filesystem::path SourcePath;
-    uint32_t SourceBuffIndex = 0;
     HeaderInfo HInfo;
 };

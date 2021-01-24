@@ -101,17 +101,26 @@ enum class SectionType {
 
 class MemBuffer {
   public:
-    MemBuffer(uint64_t startAddr, uint32_t size);
+    MemBuffer(uint64_t startAddr,
+              uint32_t size,
+              SectionType type,
+              uint8_t perm);
     MemBuffer(MemBuffer&& memBuffer) noexcept;
     /** Virtual start address of physical buffer */
     const uint64_t VStartAddr = 0;
     /** Size of buffer in bytes */
     const uint32_t Size = 0;
+    /** Type of the section */
+    const SectionType Type;
+    /** Section permissions */
+    const uint8_t Perm = 0;
+
     uint8_t* getBuffer() const;
+    void read(void* source);
 
   private:
     /** Physical buffer */
-    std::unique_ptr<uint8_t[]> PhysicalBuffer;
+    std::unique_ptr<uint8_t[]> Buffer;
 };
 
 // TODO: What about section name strings?
@@ -120,8 +129,7 @@ class MemSection {
     MemSection(SectionType type,
                uint8_t perm,
                uint64_t startAddr,
-               uint32_t size,
-               uint32_t buffIndex);
+               uint32_t size);
     const SectionType Type;
     /** Section permissions */
     const uint8_t Perm = 0;
@@ -129,8 +137,6 @@ class MemSection {
     const uint64_t VStartAddr = 0;
     /** Size of section in bytes */
     const uint32_t Size = 0;
-    /** Index to physical buffer in MemBuffer vector */
-    const uint32_t BufferIndex = 0;
 };
 
 class HeapBlock {
@@ -177,8 +183,9 @@ class MemManager {
                          uint8_t perms,
                          uint8_t** ptr) const;
     bool writePhysicalMem(void* source, uint64_t vAddr, uint32_t size);
-    uint32_t addBuffer(uint64_t vAddr, uint32_t size);
-    void initStack(uint64_t vAddr);
+    uint32_t
+    addBuffer(uint64_t vAddr, uint32_t size, SectionType type, uint8_t perm);
+    void initStack();
 
     uint32_t setStackPtr(uint64_t vAddr);
     uint32_t setBasePtr(uint64_t vAddr);
@@ -196,6 +203,7 @@ class MemManager {
     uint64_t allocHeap(size_t size);
     bool deallocHeap(uint64_t vAddr);
 
-  private:
-    uint64_t HeapPointer = 0;
+    void loadSections(uint8_t* buff, size_t size);
+
+    uint64_t VHeapStart = 0;
 };

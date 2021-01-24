@@ -2,6 +2,7 @@ set(SOURCE_FILES
     main.cpp
     uvm.cpp uvm.hpp
     memory.cpp memory.hpp
+    error.hpp
     debug/debugger.cpp debug/debugger.hpp
     debug/http.cpp debug/http.hpp
     instr/memory_manip.cpp instr/memory_manip.hpp

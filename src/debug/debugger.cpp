@@ -147,7 +147,7 @@ bool Debugger::handleRequest(Response& res) {
                 return false;
             }
 
-            VM->addSourceFromBuffer(fileBuff, fileSize);
+            VM->loadFile(fileBuff, fileSize);
             VM->Mode = ExecutionMode::DEBUGGER;
 
             if (!VM->init()) {

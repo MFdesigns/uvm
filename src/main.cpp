@@ -47,7 +47,11 @@ int main(int argc, char* argv[]) {
 
     UVM vmInstance;
     vmInstance.setFilePath(p);
-    vmInstance.readSource();
+    size_t fileSize = 0;
+    uint8_t* buffer = vmInstance.readSource(p, &fileSize);
+    vmInstance.loadFile(buffer, fileSize);
+    delete[] buffer;
+
     bool initSuccess = vmInstance.init();
     if (!initSuccess) {
         return -1;
