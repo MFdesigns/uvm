@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2020 Michel Fäh
+// Copyright 2020-2021 Michel Fäh
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,34 +15,31 @@
 // ======================================================================== //
 
 #include "arithmetic.hpp"
+#include "../error.hpp"
 
-bool Instr::addIRegToIReg(UVM* vm) {
-    // Load complete instruction
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, 4, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
+uint32_t Instr::addIRegToIReg(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t TYPE_OFFSET = 1;
+    constexpr uint32_t IREG_A_OFFSET = 2;
+    constexpr uint32_t IREG_B_OFFSET = 3;
 
-    uint8_t type = buff[1];
-    uint8_t iRegA = buff[2];
-    uint8_t iRegB = buff[3];
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    uint8_t iRegA = vm->MMU.InstrBuffer[IREG_A_OFFSET];
+    uint8_t iRegB = vm->MMU.InstrBuffer[IREG_B_OFFSET];
 
     IntType intType = IntType::I32;
     if (!parseIntType(type, &intType)) {
-        return false;
+        return 0xFF;
     }
 
     IntVal iRegAVal;
     IntVal iRegBVal;
 
     if (vm->MMU.getIntReg(iRegA, iRegAVal) != 0) {
-        return false;
+        return 0xFF;
     }
 
     if (vm->MMU.getIntReg(iRegB, iRegBVal) != 0) {
-        return false;
+        return 0xFF;
     }
 
     IntVal result;
@@ -65,36 +62,32 @@ bool Instr::addIRegToIReg(UVM* vm) {
     // get
     vm->MMU.setIntReg(iRegB, result, intType);
 
-    return true;
+    return UVM_SUCCESS;
 }
 
-bool Instr::subIRegFromIReg(UVM* vm) {
-    // Load complete instruction
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, 4, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
+uint32_t Instr::subIRegFromIReg(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t TYPE_OFFSET = 1;
+    constexpr uint32_t IREG_A_OFFSET = 2;
+    constexpr uint32_t IREG_B_OFFSET = 3;
 
-    uint8_t type = buff[1];
-    uint8_t iRegA = buff[2];
-    uint8_t iRegB = buff[3];
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    uint8_t iRegA = vm->MMU.InstrBuffer[IREG_A_OFFSET];
+    uint8_t iRegB = vm->MMU.InstrBuffer[IREG_B_OFFSET];
 
     IntType intType = IntType::I32;
     if (!parseIntType(type, &intType)) {
-        return false;
+        return 0xFF;
     }
 
     IntVal iRegAVal;
     IntVal iRegBVal;
 
     if (vm->MMU.getIntReg(iRegA, iRegAVal) != 0) {
-        return false;
+        return 0xFF;
     }
 
     if (vm->MMU.getIntReg(iRegB, iRegBVal) != 0) {
-        return false;
+        return 0xFF;
     }
 
     IntVal result;
@@ -117,36 +110,32 @@ bool Instr::subIRegFromIReg(UVM* vm) {
     // get
     vm->MMU.setIntReg(iRegB, result, intType);
 
-    return true;
+    return UVM_SUCCESS;
 }
 
-bool Instr::mulIRegWithIReg(UVM* vm) {
-    // Load complete instruction
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, 4, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
+uint32_t Instr::mulIRegWithIReg(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t TYPE_OFFSET = 1;
+    constexpr uint32_t IREG_A_OFFSET = 2;
+    constexpr uint32_t IREG_B_OFFSET = 3;
 
-    uint8_t type = buff[1];
-    uint8_t iRegA = buff[2];
-    uint8_t iRegB = buff[3];
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    uint8_t iRegA = vm->MMU.InstrBuffer[IREG_A_OFFSET];
+    uint8_t iRegB = vm->MMU.InstrBuffer[IREG_B_OFFSET];
 
     IntType intType = IntType::I32;
     if (!parseIntType(type, &intType)) {
-        return false;
+        return 0xFF;
     }
 
     IntVal iRegAVal;
     IntVal iRegBVal;
 
     if (vm->MMU.getIntReg(iRegA, iRegAVal) != 0) {
-        return false;
+        return 0xFF;
     }
 
     if (vm->MMU.getIntReg(iRegB, iRegBVal) != 0) {
-        return false;
+        return 0xFF;
     }
 
     IntVal result;
@@ -169,36 +158,32 @@ bool Instr::mulIRegWithIReg(UVM* vm) {
     // get
     vm->MMU.setIntReg(iRegB, result, intType);
 
-    return true;
+    return UVM_SUCCESS;
 }
 
-bool Instr::divIRegByIReg(UVM* vm) {
-    // Load complete instruction
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, 4, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
+uint32_t Instr::divIRegByIReg(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t TYPE_OFFSET = 1;
+    constexpr uint32_t IREG_A_OFFSET = 2;
+    constexpr uint32_t IREG_B_OFFSET = 3;
 
-    uint8_t type = buff[1];
-    uint8_t iRegA = buff[2];
-    uint8_t iRegB = buff[3];
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    uint8_t iRegA = vm->MMU.InstrBuffer[IREG_A_OFFSET];
+    uint8_t iRegB = vm->MMU.InstrBuffer[IREG_B_OFFSET];
 
     IntType intType = IntType::I32;
     if (!parseIntType(type, &intType)) {
-        return false;
+        return 0xFF;
     }
 
     IntVal iRegAVal;
     IntVal iRegBVal;
 
     if (vm->MMU.getIntReg(iRegA, iRegAVal) != 0) {
-        return false;
+        return 0xFF;
     }
 
     if (vm->MMU.getIntReg(iRegB, iRegBVal) != 0) {
-        return false;
+        return 0xFF;
     }
 
     IntVal result;
@@ -221,29 +206,24 @@ bool Instr::divIRegByIReg(UVM* vm) {
     // get
     vm->MMU.setIntReg(iRegB, result, intType);
 
-    return true;
+    return UVM_SUCCESS;
 }
 
-bool Instr::uIntConvert(UVM* vm, IntType type) {
-    // Load complete instruction
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, 2, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
+uint32_t Instr::uIntConvert(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t IREG_OFFSET = 1;
 
     constexpr uint64_t I8_MASK = 0xF;
     constexpr uint64_t I16_MASK = 0xFF;
     constexpr uint64_t I32_MASK = 0xFFFF;
 
-    uint8_t iReg = buff[1];
+    uint8_t iReg = vm->MMU.InstrBuffer[IREG_OFFSET];
 
     IntVal iRegVal;
     if (vm->MMU.getIntReg(iReg, iRegVal) != 0) {
-        return false;
+        return 0xFF;
     }
 
+    IntType type = static_cast<IntType>(flag);
     switch (type) {
     case IntType::I8:
         iRegVal.I64 &= I8_MASK;
@@ -258,5 +238,5 @@ bool Instr::uIntConvert(UVM* vm, IntType type) {
 
     vm->MMU.setIntReg(iReg, iRegVal, IntType::I64);
 
-    return true;
+    return UVM_SUCCESS;
 }

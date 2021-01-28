@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2020 Michel Fäh
+// Copyright 2020-2021 Michel Fäh
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,20 +19,15 @@
 
 namespace Instr {
 // Push
-bool pushInt(UVM* vm, uint32_t width, IntType type);
-bool pushIReg(UVM* vm);
-// Pop
-bool pop(UVM* vm);
-bool popIReg(UVM* vm);
-// Load
-bool loadIntToIReg(UVM* vm, uint32_t width, IntType type);
-bool loadROToIReg(UVM* vm, uint32_t width);
-// Store
-bool storeIRegToRO(UVM* vm);
-// Copy
-bool copyIntToRO(UVM* vm, uint32_t width, IntType type);
-bool copyIRegToIReg(UVM* vm);
-bool copyROToRO(UVM* vm);
-// Lea
-bool leaROToIReg(UVM* vm);
+uint32_t pushInt(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t pushIReg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t pop(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t popIReg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t loadIntToIReg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t loadROToIReg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t storeIRegToRO(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t copyIntToRO(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t copyIRegToIReg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t copyROToRO(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t leaROToIReg(UVM* vm, uint32_t width, uint32_t flag);
 } // namespace Instr

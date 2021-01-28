@@ -16,6 +16,12 @@
 
 #pragma once
 
-constexpr uint32_t SUCCESS = 0;
+// Successful values
+constexpr uint32_t UVM_SUCCESS = 0;
+constexpr uint32_t UVM_SUCCESS_JUMPED = 5;
+
+// Error values
 constexpr uint32_t E_INVALID_HEADER = 1;
 constexpr uint32_t E_INVALID_SEC_TABLE = 2;
+constexpr uint32_t E_VADDR_NOT_FOUND = 3;
+constexpr uint32_t E_MISSING_PERM = 4;

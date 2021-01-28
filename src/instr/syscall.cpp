@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2020 Michel Fäh
+// Copyright 2020-2021 Michel Fäh
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,8 +15,10 @@
 // ======================================================================== //
 
 #include "syscall.hpp"
+#include "../error.hpp"
 #include <iostream>
 
+// TODO: Completely broken!
 /**
  * Takes the syscall arguments in register r0-r15 and prints to console
  * @param vm Current UVM instance
@@ -30,10 +32,12 @@ bool internalPrint(UVM* vm) {
     vm->MMU.getIntReg(0x05, r0);
     vm->MMU.getIntReg(0x06, r1);
 
-    uint8_t* buff = nullptr;
+    /*uint8_t* buff = nullptr;
     if (!vm->MMU.readPhysicalMem(r0.I64, r1.I32, PERM_READ_MASK, &buff)) {
         return false;
     }
+
+    uint32_t readres = vm->MMU.read(r0.I64, &buff, )
 
     std::string tmpStr{(char*)buff, r1.I32};
     switch (vm->Mode) {
@@ -43,7 +47,7 @@ bool internalPrint(UVM* vm) {
     case ExecutionMode::DEBUGGER:
         vm->DbgConsole << tmpStr;
         break;
-    }
+    }*/
 
     return true;
 }
@@ -53,21 +57,15 @@ bool internalPrint(UVM* vm) {
  * @param vm Current UVM instance
  * @return On success return true otherwise false
  */
-bool Instr::syscall(UVM* vm) {
-    // Load complete instruction
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, 2, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
+uint32_t Instr::syscall(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t SYS_TYPE_OFFSET = 1;
 
     constexpr uint8_t SYS_PRINT = 0x1;
     constexpr uint8_t SYS_ALLOC = 0x41;
     constexpr uint8_t SYS_DEALLOC = 0x44;
     constexpr uint8_t REG_R0 = 0x5;
 
-    uint8_t syscallType = buff[1];
+    uint8_t syscallType = vm->MMU.InstrBuffer[SYS_TYPE_OFFSET];
     bool callSuccess = true;
     switch (syscallType) {
     case SYS_PRINT:
@@ -76,30 +74,30 @@ bool Instr::syscall(UVM* vm) {
     case SYS_ALLOC: {
         IntVal allocSize;
         if (vm->MMU.getIntReg(REG_R0, allocSize) != 0) {
-            return false;
+            return 0xFF;
         }
 
         IntVal allocAddr;
         allocAddr.I64 = vm->MMU.allocHeap(allocSize.I32);
 
         if (allocAddr.I64 == UVM_NULLPTR) {
-            return false;
+            return 0xFF;
         }
 
         if (vm->MMU.setIntReg(REG_R0, allocAddr, IntType::I64) != 0) {
-            return false;
+            return 0xFF;
         }
     } break;
     case SYS_DEALLOC:
         // TODO: Implement dealloc
         break;
     default:
-        return false;
+        return 0xFF;
     }
 
     if (!callSuccess) {
-        return false;
+        return 0xFF;
     }
 
-    return true;
+    return UVM_SUCCESS;
 }

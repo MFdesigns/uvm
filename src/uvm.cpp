@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2020 Michel Fäh
+// Copyright 2020-2021 Michel Fäh
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -274,7 +274,7 @@ uint32_t UVM::loadFile(uint8_t* buff, size_t size) {
 
     MMU.loadSections(buff, size);
 
-    return SUCCESS;
+    return UVM_SUCCESS;
 }
 
 bool UVM::run() {
@@ -288,15 +288,17 @@ bool UVM::run() {
 }
 
 bool UVM::nextInstr() {
-    bool runtimeError = false;
-
     uint32_t instrWidth = 1;
 
     // Get opcode byte
-    uint8_t* opRef = nullptr;
-    // Handle invalid memory access
-    MMU.readPhysicalMem(MMU.IP, 1, PERM_EXE_MASK, &opRef);
-    Opcode = *opRef;
+    uint32_t readRes =
+        MMU.read(MMU.IP, &Opcode, UVMDataSize::BYTE, PERM_EXE_MASK);
+    if (readRes != UVM_SUCCESS) {
+        return false;
+    }
+
+    uint32_t (*instrCall)(UVM * vm, uint32_t instrWidth, uint32_t flag);
+    uint32_t instrFlag = 0;
 
     switch (Opcode) {
 
@@ -309,23 +311,27 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_PUSH_I8:
         instrWidth = 2;
-        runtimeError = !Instr::pushInt(this, instrWidth, IntType::I8);
+        instrFlag = static_cast<uint32_t>(IntType::I8);
+        instrCall = Instr::pushInt;
         break;
     case OP_PUSH_I16:
         instrWidth = 3;
-        runtimeError = !Instr::pushInt(this, instrWidth, IntType::I16);
+        instrFlag = static_cast<uint32_t>(IntType::I16);
+        instrCall = Instr::pushInt;
         break;
     case OP_PUSH_I32:
         instrWidth = 5;
-        runtimeError = !Instr::pushInt(this, instrWidth, IntType::I32);
+        instrFlag = static_cast<uint32_t>(IntType::I32);
+        instrCall = Instr::pushInt;
         break;
     case OP_PUSH_I64:
         instrWidth = 9;
-        runtimeError = !Instr::pushInt(this, instrWidth, IntType::I64);
+        instrFlag = static_cast<uint32_t>(IntType::I64);
+        instrCall = Instr::pushInt;
         break;
     case OP_PUSH_IT_IR:
         instrWidth = 3;
-        runtimeError = !Instr::pushIReg(this);
+        instrCall = Instr::pushIReg;
         break;
 
     /********************************
@@ -333,11 +339,11 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_POP_IT:
         instrWidth = 2;
-        runtimeError = !Instr::pop(this);
+        instrCall = Instr::pop;
         break;
     case OP_POP_IT_IR:
         instrWidth = 3;
-        runtimeError = !Instr::popIReg(this);
+        instrCall = Instr::popIReg;
         break;
 
     /********************************
@@ -345,23 +351,25 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_LOAD_I8_IR:
         instrWidth = 3;
-        runtimeError = !Instr::loadIntToIReg(this, instrWidth, IntType::I8);
+        // runtimeError = !Instr::loadIntToIReg(this, instrWidth, IntType::I8);
         break;
     case OP_LOAD_I16_IR:
         instrWidth = 4;
-        runtimeError = !Instr::loadIntToIReg(this, instrWidth, IntType::I16);
+        // runtimeError = !Instr::loadIntToIReg(this, instrWidth, IntType::I16);
         break;
     case OP_LOAD_I32_IR:
         instrWidth = 6;
-        runtimeError = !Instr::loadIntToIReg(this, instrWidth, IntType::I32);
+        instrCall = Instr::loadIntToIReg;
+        instrFlag = static_cast<uint32_t>(IntType::I32);
+        // runtimeError = !Instr::loadIntToIReg(this, instrWidth, IntType::I32);
         break;
     case OP_LOAD_I64_IR:
         instrWidth = 10;
-        runtimeError = !Instr::loadIntToIReg(this, instrWidth, IntType::I64);
+        // runtimeError = !Instr::loadIntToIReg(this, instrWidth, IntType::I64);
         break;
     case OP_LOAD_IT_RO_IR:
         instrWidth = 9;
-        runtimeError = !Instr::loadROToIReg(this, instrWidth);
+        instrCall = Instr::loadROToIReg;
         break;
 
     /********************************
@@ -369,7 +377,7 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_STORE_IT_IR_RO:
         instrWidth = 9;
-        runtimeError = !Instr::storeIRegToRO(this);
+        instrCall = Instr::storeIRegToRO;
         break;
 
     /********************************
@@ -377,27 +385,31 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_COPY_I8_RO:
         instrWidth = 8;
-        runtimeError = !Instr::copyIntToRO(this, instrWidth, IntType::I8);
+        instrFlag = static_cast<uint32_t>(IntType::I8);
+        instrCall = Instr::copyIntToRO;
         break;
     case OP_COPY_I16_RO:
         instrWidth = 9;
-        runtimeError = !Instr::copyIntToRO(this, instrWidth, IntType::I16);
+        instrFlag = static_cast<uint32_t>(IntType::I16);
+        instrCall = Instr::copyIntToRO;
         break;
     case OP_COPY_I32_RO:
         instrWidth = 11;
-        runtimeError = !Instr::copyIntToRO(this, instrWidth, IntType::I32);
+        instrFlag = static_cast<uint32_t>(IntType::I32);
+        instrCall = Instr::copyIntToRO;
         break;
     case OP_COPY_I64_RO:
         instrWidth = 15;
-        runtimeError = !Instr::copyIntToRO(this, instrWidth, IntType::I64);
+        instrFlag = static_cast<uint32_t>(IntType::I64);
+        instrCall = Instr::copyIntToRO;
         break;
     case OP_COPY_IT_IR_IR:
         instrWidth = 4;
-        runtimeError = !Instr::copyIRegToIReg(this);
+        instrCall = Instr::copyIRegToIReg;
         break;
     case OP_COPY_IT_RO_RO:
         instrWidth = 14;
-        runtimeError = !Instr::copyROToRO(this);
+        instrCall = Instr::copyROToRO;
         break;
 
     /********************************
@@ -405,19 +417,19 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_ADD_IT_IR_IR:
         instrWidth = 4;
-        runtimeError = !Instr::addIRegToIReg(this);
+        instrCall = Instr::addIRegToIReg;
         break;
     case OP_SUB_IT_IR_IR:
         instrWidth = 4;
-        runtimeError = !Instr::subIRegFromIReg(this);
+        instrCall = Instr::subIRegFromIReg;
         break;
     case OP_MUL_IT_IR_IR:
         instrWidth = 4;
-        runtimeError = !Instr::mulIRegWithIReg(this);
+        instrCall = Instr::mulIRegWithIReg;
         break;
     case OP_DIV_IT_IR_IR:
         instrWidth = 4;
-        runtimeError = !Instr::divIRegByIReg(this);
+        instrCall = Instr::divIRegByIReg;
         break;
 
     /********************************
@@ -425,7 +437,8 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_LEA_RO_IR:
         instrWidth = 8;
-        runtimeError = !Instr::leaROToIReg(this);
+        instrCall = Instr::leaROToIReg;
+        // runtimeError = !Instr::leaROToIReg(this);
         break;
 
     /********************************
@@ -433,7 +446,7 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_SYS:
         instrWidth = 2;
-        runtimeError = !Instr::syscall(this);
+        instrCall = Instr::syscall;
         break;
 
     /********************************
@@ -441,13 +454,11 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_CALL:
         instrWidth = 9;
-        runtimeError = !Instr::call(this);
-        return !runtimeError;
+        instrCall = Instr::call;
         break;
     case OP_RET:
         instrWidth = 1;
-        runtimeError = !Instr::ret(this);
-        return !runtimeError;
+        instrCall = Instr::ret;
         break;
 
     /********************************
@@ -455,71 +466,49 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_JMP: {
         instrWidth = 9;
-        bool jumped = false;
-        runtimeError = !Instr::jmp(this, JumpCondition::UNCONDITIONAL, &jumped);
-        return !runtimeError;
+        instrFlag = static_cast<uint32_t>(JumpCondition::UNCONDITIONAL);
+        instrCall = Instr::jmp;
         break;
     }
     case OP_JE: {
         instrWidth = 9;
-        bool jumped = false;
-        runtimeError = !Instr::jmp(this, JumpCondition::IF_EQUALS, &jumped);
-        if (jumped) {
-            return !runtimeError;
-        }
+        instrFlag = static_cast<uint32_t>(JumpCondition::IF_EQUALS);
+        instrCall = Instr::jmp;
         break;
     }
     case OP_JNE: {
         instrWidth = 9;
-        bool jumped = false;
-        runtimeError = !Instr::jmp(this, JumpCondition::IF_NOT_EQUALS, &jumped);
-        if (jumped) {
-            return !runtimeError;
-        }
+        instrFlag = static_cast<uint32_t>(JumpCondition::IF_NOT_EQUALS);
+        instrCall = Instr::jmp;
         break;
     }
     case OP_JGT: {
         instrWidth = 9;
-        bool jumped = false;
-        runtimeError =
-            !Instr::jmp(this, JumpCondition::IF_GREATER_THAN, &jumped);
-        if (jumped) {
-            return !runtimeError;
-        }
+        instrFlag = static_cast<uint32_t>(JumpCondition::IF_GREATER_THAN);
+        instrCall = Instr::jmp;
         break;
     }
     case OP_JLT: {
         instrWidth = 9;
-        bool jumped = false;
-        runtimeError = !Instr::jmp(this, JumpCondition::IF_LESS_THAN, &jumped);
-        if (jumped) {
-            return !runtimeError;
-        }
+        instrFlag = static_cast<uint32_t>(JumpCondition::IF_LESS_THAN);
+        instrCall = Instr::jmp;
         break;
     }
     case OP_JGE: {
         instrWidth = 9;
-        bool jumped = false;
-        runtimeError =
-            !Instr::jmp(this, JumpCondition::IF_GREATER_EQUALS, &jumped);
-        if (jumped) {
-            return !runtimeError;
-        }
+        instrFlag = static_cast<uint32_t>(JumpCondition::IF_GREATER_EQUALS);
+        instrCall = Instr::jmp;
         break;
     }
     case OP_JLE: {
         instrWidth = 9;
-        bool jumped = false;
-        runtimeError =
-            !Instr::jmp(this, JumpCondition::IF_LESS_EQUALS, &jumped);
-        if (jumped) {
-            return !runtimeError;
-        }
+        instrFlag = static_cast<uint32_t>(JumpCondition::IF_LESS_EQUALS);
+        instrCall = Instr::jmp;
         break;
     }
     case OP_CMP_IT_IR_IR:
         instrWidth = 4;
-        runtimeError = !Instr::cmpIRegToIReg(this);
+        instrCall = Instr::cmpIRegToIReg;
         break;
 
     /********************************
@@ -527,29 +516,48 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_B2L:
         instrWidth = 2;
-        runtimeError = !Instr::uIntConvert(this, IntType::I8);
+        instrFlag = static_cast<uint32_t>(IntType::I8);
+        instrCall = Instr::uIntConvert;
         break;
     case OP_S2L:
         instrWidth = 2;
-        runtimeError = !Instr::uIntConvert(this, IntType::I16);
+        instrFlag = static_cast<uint32_t>(IntType::I16);
+        instrCall = Instr::uIntConvert;
         break;
     case OP_I2L:
         instrWidth = 2;
-        runtimeError = !Instr::uIntConvert(this, IntType::I32);
+        instrFlag = static_cast<uint32_t>(IntType::I32);
+        instrCall = Instr::uIntConvert;
         break;
 
     /********************************
         EXIT
     ********************************/
     case OP_EXIT:
-        return !runtimeError;
+        return true;
     default:
         std::cout << "[Runtime] Unknow opcode 0x" << std::hex
                   << (uint16_t)Opcode << '\n';
-        runtimeError = true;
-        return !runtimeError;
+        return false;
     }
+
+    uint32_t fetchRes =
+        MMU.fetchInstruction(MMU.InstrBuffer.data(), instrWidth);
+    if (fetchRes != UVM_SUCCESS) {
+        return false;
+    }
+
+    // TODO: is nullptr if default case is used
+    uint32_t instrCallRes = instrCall(this, instrWidth, instrFlag);
+    if (instrCallRes != UVM_SUCCESS) {
+        if (instrCallRes == UVM_SUCCESS_JUMPED) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     // TODO: Check IP perm
     MMU.IP += instrWidth;
-    return !runtimeError;
+    return true;
 }

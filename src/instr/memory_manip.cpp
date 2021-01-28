@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2020 Michel Fäh
+// Copyright 2020-2021 Michel Fäh
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 // ======================================================================== //
 
 #include "memory_manip.hpp"
+#include "../error.hpp"
 #include <cstring>
 #include <iostream>
 
@@ -26,31 +27,29 @@
  * @param type Operation width deducted from opcode
  * @return On success return true otherwise false
  */
-bool Instr::pushInt(UVM* vm, uint32_t width, IntType type) {
-    // Load complete instruction
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, width, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
+uint32_t Instr::pushInt(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t INT_OFFSET = 1;
 
+    IntType type = static_cast<IntType>(flag);
     IntVal val;
     UVMDataSize dataSize = UVMDataSize::BYTE;
     switch (type) {
     case IntType::I8:
-        val.I8 = buff[1];
+        val.I8 = vm->MMU.InstrBuffer[INT_OFFSET];
         break;
     case IntType::I16:
-        val.I16 = *reinterpret_cast<uint16_t*>(&buff[1]);
+        val.I16 =
+            *reinterpret_cast<uint16_t*>(&vm->MMU.InstrBuffer[INT_OFFSET]);
         dataSize = UVMDataSize::WORD;
         break;
     case IntType::I32:
-        val.I32 = *reinterpret_cast<uint32_t*>(&buff[1]);
+        val.I32 =
+            *reinterpret_cast<uint32_t*>(&vm->MMU.InstrBuffer[INT_OFFSET]);
         dataSize = UVMDataSize::DWORD;
         break;
     case IntType::I64:
-        val.I64 = *reinterpret_cast<uint64_t*>(&buff[1]);
+        val.I64 =
+            *reinterpret_cast<uint64_t*>(&vm->MMU.InstrBuffer[INT_OFFSET]);
         dataSize = UVMDataSize::QWORD;
         break;
     }
@@ -59,10 +58,10 @@ bool Instr::pushInt(UVM* vm, uint32_t width, IntType type) {
     if (status != 0) {
         std::cout << "[Runtime] Error code " << std::hex << "0x" << status
                   << '\n';
-        return false;
+        return 0xFF;
     }
 
-    return true;
+    return UVM_SUCCESS;
 }
 
 /**
@@ -71,26 +70,21 @@ bool Instr::pushInt(UVM* vm, uint32_t width, IntType type) {
  * @param vm Pointer to current UVM instance
  * @return On success return true otherwise false
  */
-bool Instr::pushIReg(UVM* vm) {
-    // Load complete instruction
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, 3, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
+uint32_t Instr::pushIReg(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t TYPE_OFFSET = 1;
+    constexpr uint32_t IREG_OFFSET = 2;
 
-    uint8_t type = buff[1];
-    uint8_t iReg = buff[2];
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    uint8_t iReg = vm->MMU.InstrBuffer[IREG_OFFSET];
 
     IntVal intReg{};
     if (vm->MMU.getIntReg(iReg, intReg) != 0) {
-        return false;
+        return 0xFF;
     }
 
     IntType intType = IntType::I32;
     if (!parseIntType(type, &intType)) {
-        return false;
+        return 0xFF;
     }
 
     IntVal val;
@@ -114,10 +108,10 @@ bool Instr::pushIReg(UVM* vm) {
     if (status != 0) {
         std::cout << "[Runtime] Error code " << std::hex << "0x" << status
                   << '\n';
-        return false;
+        return 0xFF;
     }
 
-    return true;
+    return UVM_SUCCESS;
 }
 
 /**
@@ -125,19 +119,13 @@ bool Instr::pushIReg(UVM* vm) {
  * @param vm Pointer to current UVM instance
  * @return On success return true otherwise false
  */
-bool Instr::pop(UVM* vm) {
-    // Load complete instruction
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, 2, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
+uint32_t Instr::pop(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t TYPE_OFFSET = 1;
 
-    uint8_t type = buff[1];
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
     IntType intType = IntType::I32;
     if (!parseIntType(type, &intType)) {
-        return false;
+        return 0xFF;
     }
 
     UVMDataSize dataSize = UVMDataSize::BYTE;
@@ -159,10 +147,10 @@ bool Instr::pop(UVM* vm) {
     uint32_t stackStatus = vm->MMU.stackPop(nullptr, dataSize);
     if (stackStatus != 0) {
         std::cout << "Stack error: 0x" << std::hex << stackStatus << '\n';
-        return false;
+        return 0xFF;
     }
 
-    return true;
+    return UVM_SUCCESS;
 }
 
 /**
@@ -170,22 +158,17 @@ bool Instr::pop(UVM* vm) {
  * @param vm Pointer to current UVM instance
  * @return On success return true otherwise false
  */
-bool Instr::popIReg(UVM* vm) {
-    // Load complete instruction
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, 3, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
+uint32_t Instr::popIReg(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t TYPE_OFFSET = 1;
+    constexpr uint32_t IREG_OFFSET = 2;
 
-    uint8_t type = buff[1];
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    uint8_t reg = vm->MMU.InstrBuffer[IREG_OFFSET];
+
     IntType intType = IntType::I32;
     if (!parseIntType(type, &intType)) {
-        return false;
+        return 0xFF;
     }
-
-    uint8_t reg = buff[2];
 
     UVMDataSize dataSize = UVMDataSize::BYTE;
     switch (intType) {
@@ -207,15 +190,15 @@ bool Instr::popIReg(UVM* vm) {
     uint32_t stackStatus = vm->MMU.stackPop(&stackVal.I64, dataSize);
     if (stackStatus != 0) {
         std::cout << "Stack error: 0x" << std::hex << stackStatus << '\n';
-        return false;
+        return 0xFF;
     }
 
     // TODO: Handle errors
     if (vm->MMU.setIntReg(reg, stackVal, intType)) {
-        return false;
+        return 0xFF;
     }
 
-    return true;
+    return UVM_SUCCESS;
 }
 
 /**
@@ -225,38 +208,33 @@ bool Instr::popIReg(UVM* vm) {
  * @param type Operation width deducted from opcode
  * @return On success return true otherwise false
  */
-bool Instr::loadIntToIReg(UVM* vm, uint32_t width, IntType type) {
-    // Load complete instruction
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, width, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
+uint32_t Instr::loadIntToIReg(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t IREG_OFFSET = 1;
 
+    IntType intType = static_cast<IntType>(flag);
     IntVal val;
-    switch (type) {
+    switch (intType) {
     case IntType::I8:
-        val.I8 = buff[1];
+        val.I8 = vm->MMU.InstrBuffer[IREG_OFFSET];
         break;
     case IntType::I16:
-        std::memcpy(&val.I16, &buff[1], 2);
+        std::memcpy(&val.I16, &vm->MMU.InstrBuffer[IREG_OFFSET], 2);
         break;
     case IntType::I32:
-        std::memcpy(&val.I32, &buff[1], 4);
+        std::memcpy(&val.I32, &vm->MMU.InstrBuffer[IREG_OFFSET], 4);
         break;
     case IntType::I64:
-        std::memcpy(&val.I64, &buff[1], 8);
+        std::memcpy(&val.I64, &vm->MMU.InstrBuffer[IREG_OFFSET], 8);
         break;
     }
 
     // Target register is at the last byte in instruction
-    uint8_t reg = buff[width - 1];
-    if (vm->MMU.setIntReg(reg, val, type) != 0) {
-        return false;
+    uint8_t reg = vm->MMU.InstrBuffer[width - 1];
+    if (vm->MMU.setIntReg(reg, val, intType) != 0) {
+        return 0xFF;
     }
 
-    return true;
+    return UVM_SUCCESS;
 }
 
 /**
@@ -265,73 +243,68 @@ bool Instr::loadIntToIReg(UVM* vm, uint32_t width, IntType type) {
  * @param vm Pointer to current UVM instance
  * @return On success return true otherwise false
  */
-bool Instr::loadROToIReg(UVM* vm, uint32_t width) {
-    // Load complete instruction
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, width, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
-
+uint32_t Instr::loadROToIReg(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t TYPE_OFFSET = 1;
     constexpr uint32_t RO_OFFSET = 2;
-    uint8_t type = buff[1];
-    uint8_t iReg = buff[8];
+    constexpr uint32_t IREG_OFFSET = 8;
+
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    uint8_t iReg = vm->MMU.InstrBuffer[IREG_OFFSET];
 
     IntType intType = IntType::I32;
     if (!parseIntType(type, &intType)) {
-        return false;
+        return 0xFF;
     }
 
     uint64_t roAddress = 0;
-    if (!vm->MMU.evalRegOffset(&buff[RO_OFFSET], &roAddress)) {
-        return false;
+    if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[RO_OFFSET], &roAddress)) {
+        return 0xFF;
     }
 
-    uint32_t readSize = 0;
+    UVMDataSize readSize = UVMDataSize::BYTE;
     switch (intType) {
     case IntType::I8:
-        readSize = 1;
+        readSize = UVMDataSize::BYTE;
         break;
     case IntType::I16:
-        readSize = 2;
+        readSize = UVMDataSize::WORD;
         break;
     case IntType::I32:
-        readSize = 4;
+        readSize = UVMDataSize::DWORD;
         break;
     case IntType::I64:
-        readSize = 8;
+        readSize = UVMDataSize::QWORD;
         break;
     }
 
-    uint8_t* readBuff = nullptr;
-    bool readSuccess =
-        vm->MMU.readPhysicalMem(roAddress, readSize, PERM_READ_MASK, &readBuff);
-    if (!readSuccess) {
-        return false;
+    uint64_t readBuff = 0;
+    uint32_t readRes = vm->MMU.read(
+        roAddress, reinterpret_cast<uint8_t*>(&readBuff), readSize, 0);
+    if (readRes != UVM_SUCCESS) {
+        return 0xFF;
     }
 
     IntVal intVal;
     switch (intType) {
     case IntType::I8:
-        intVal.I8 = readBuff[0];
+        intVal.I8 = *reinterpret_cast<uint8_t*>(&readBuff);
         break;
     case IntType::I16:
-        std::memcpy(&intVal.I16, &readBuff[0], 2);
+        std::memcpy(&intVal.I16, &readBuff, 2);
         break;
     case IntType::I32:
-        std::memcpy(&intVal.I32, &readBuff[0], 4);
+        std::memcpy(&intVal.I32, &readBuff, 4);
         break;
     case IntType::I64:
-        std::memcpy(&intVal.I64, &readBuff[0], 8);
+        std::memcpy(&intVal.I64, &readBuff, 8);
         break;
     }
 
     if (vm->MMU.setIntReg(iReg, intVal, intType) != 0) {
-        return false;
+        return 0xFF;
     }
 
-    return true;
+    return UVM_SUCCESS;
 }
 
 /**
@@ -339,57 +312,51 @@ bool Instr::loadROToIReg(UVM* vm, uint32_t width) {
  * @param vm Pointer to current UVM instance
  * @return On success return true otherwise false
  */
-bool Instr::storeIRegToRO(UVM* vm) {
-    // Load complete instruction
-    constexpr uint32_t INSTR_WIDTH = 9;
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, INSTR_WIDTH, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
-
-    uint8_t type = buff[1];
-    uint8_t iReg = buff[2];
+uint32_t Instr::storeIRegToRO(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t TYPE_OFFSET = 1;
+    constexpr uint32_t IREG_OFFSET = 2;
     constexpr uint32_t RO_OFFSET = 3;
+
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    uint8_t iReg = vm->MMU.InstrBuffer[IREG_OFFSET];
 
     IntType intType = IntType::I32;
     if (!parseIntType(type, &intType)) {
-        return false;
+        return 0xFF;
     }
 
     IntVal intReg{};
     if (vm->MMU.getIntReg(iReg, intReg) != 0) {
-        return false;
+        return 0xFF;
     }
 
     uint64_t roAddress = 0;
-    if (!vm->MMU.evalRegOffset(&buff[RO_OFFSET], &roAddress)) {
-        return false;
+    if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[RO_OFFSET], &roAddress)) {
+        return 0xFF;
     }
 
-    uint32_t writeSize = 0;
+    UVMDataSize writeSize = UVMDataSize::BYTE;
     switch (intType) {
     case IntType::I8:
-        writeSize = 1;
+        writeSize = UVMDataSize::BYTE;
         break;
     case IntType::I16:
-        writeSize = 2;
+        writeSize = UVMDataSize::WORD;
         break;
     case IntType::I32:
-        writeSize = 4;
+        writeSize = UVMDataSize::DWORD;
         break;
     case IntType::I64:
-        writeSize = 8;
+        writeSize = UVMDataSize::QWORD;
         break;
     }
 
-    bool writeSuccess = vm->MMU.writePhysicalMem(&intReg, roAddress, writeSize);
-    if (!writeSuccess) {
-        return false;
+    uint32_t writeRes = vm->MMU.write(&intReg, roAddress, writeSize, 0);
+    if (writeRes != UVM_SUCCESS) {
+        return 0xFF;
     }
 
-    return true;
+    return UVM_SUCCESS;
 }
 
 /**
@@ -399,52 +366,47 @@ bool Instr::storeIRegToRO(UVM* vm) {
  * @param type Operation width deducted from opcode
  * @return On success return true otherwise false
  */
-bool Instr::copyIntToRO(UVM* vm, uint32_t width, IntType type) {
-    // Load complete instruction
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, width, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
+uint32_t Instr::copyIntToRO(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t INT_OFFSET = 1;
 
     IntVal val;
     uint32_t roOffset = 0;
-    uint32_t intSize = 0;
+    UVMDataSize intSize = UVMDataSize::BYTE;
+    IntType type = static_cast<IntType>(flag);
     switch (type) {
     case IntType::I8:
-        val.I8 = buff[1];
-        intSize = 1;
+        val.I8 = vm->MMU.InstrBuffer[INT_OFFSET];
+        intSize = UVMDataSize::BYTE;
         roOffset = 2;
         break;
     case IntType::I16:
-        std::memcpy(&val.I16, &buff[1], 2);
-        intSize = 2;
+        std::memcpy(&val.I16, &vm->MMU.InstrBuffer[INT_OFFSET], 2);
+        intSize = UVMDataSize::WORD;
         roOffset = 3;
         break;
     case IntType::I32:
-        std::memcpy(&val.I32, &buff[1], 4);
-        intSize = 4;
+        std::memcpy(&val.I32, &vm->MMU.InstrBuffer[INT_OFFSET], 4);
+        intSize = UVMDataSize::DWORD;
         roOffset = 5;
         break;
     case IntType::I64:
-        std::memcpy(&val.I64, &buff[1], 8);
-        intSize = 8;
+        std::memcpy(&val.I64, &vm->MMU.InstrBuffer[INT_OFFSET], 8);
+        intSize = UVMDataSize::QWORD;
         roOffset = 9;
         break;
     }
 
     uint64_t roAddress = 0;
-    if (!vm->MMU.evalRegOffset(&buff[roOffset], &roAddress)) {
-        return false;
+    if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[roOffset], &roAddress)) {
+        return 0xFF;
     }
 
-    bool writeSuccess = vm->MMU.writePhysicalMem(&val.I64, roAddress, intSize);
-    if (!writeSuccess) {
-        return false;
+    uint32_t writeRes = vm->MMU.write(&val.I64, roAddress, intSize, 0);
+    if (writeRes != UVM_SUCCESS) {
+        return 0xFF;
     }
 
-    return true;
+    return UVM_SUCCESS;
 }
 
 /**
@@ -452,36 +414,31 @@ bool Instr::copyIntToRO(UVM* vm, uint32_t width, IntType type) {
  * @param vm Pointer to current UVM instance
  * @return On success return true otherwise false
  */
-bool Instr::copyIRegToIReg(UVM* vm) {
-    // Load complete instruction
-    constexpr uint32_t INSTR_SIZE = 4;
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, INSTR_SIZE, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
+uint32_t Instr::copyIRegToIReg(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t TYPE_OFFSET = 1;
+    constexpr uint32_t IREG_A_OFFSET = 2;
+    constexpr uint32_t IREG_B_OFFSET = 3;
 
     // Get all instruction arguments
-    uint8_t type = buff[1];
-    uint8_t iRegA = buff[2];
-    uint8_t iRegB = buff[3];
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    uint8_t iRegA = vm->MMU.InstrBuffer[IREG_A_OFFSET];
+    uint8_t iRegB = vm->MMU.InstrBuffer[IREG_B_OFFSET];
 
     IntType intType = IntType::I32;
     if (!parseIntType(type, &intType)) {
-        return false;
+        return 0xFF;
     }
 
     IntVal intRegA;
     if (vm->MMU.getIntReg(iRegA, intRegA) != 0) {
-        return false;
+        return 0xFF;
     }
 
     if (vm->MMU.setIntReg(iRegB, intRegA, intType) != 0) {
-        return false;
+        return 0xFF;
     }
 
-    return true;
+    return UVM_SUCCESS;
 }
 
 /**
@@ -490,91 +447,77 @@ bool Instr::copyIRegToIReg(UVM* vm) {
  * @param vm Pointer to current UVM instance
  * @return On success return true otherwise false
  */
-bool Instr::copyROToRO(UVM* vm) {
-    // Load complete instruction
-    constexpr uint32_t INSTR_WIDTH = 14;
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, INSTR_WIDTH, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
-
-    uint8_t type = buff[1];
-    IntType intType = IntType::I32;
-    if (!parseIntType(type, &intType)) {
-        return false;
-    }
-
-    uint32_t readSize = 0;
-    switch (intType) {
-    case IntType::I8:
-        readSize = 1;
-        break;
-    case IntType::I16:
-        readSize = 2;
-        break;
-    case IntType::I32:
-        readSize = 4;
-        break;
-    case IntType::I64:
-        readSize = 8;
-        break;
-    }
-
+uint32_t Instr::copyROToRO(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t TYPE_OFFSET = 1;
     constexpr uint32_t RO_OFFSET_A = 2;
     constexpr uint32_t RO_OFFSET_B = 8;
 
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    IntType intType = IntType::I32;
+    if (!parseIntType(type, &intType)) {
+        return 0xFF;
+    }
+
+    UVMDataSize readSize = UVMDataSize::BYTE;
+    switch (intType) {
+    case IntType::I8:
+        readSize = UVMDataSize::BYTE;
+        break;
+    case IntType::I16:
+        readSize = UVMDataSize::WORD;
+        break;
+    case IntType::I32:
+        readSize = UVMDataSize::DWORD;
+        break;
+    case IntType::I64:
+        readSize = UVMDataSize::QWORD;
+        break;
+    }
+
     uint64_t roAddrA = 0;
     uint64_t roAddrB = 0;
-    if (!vm->MMU.evalRegOffset(&buff[RO_OFFSET_A], &roAddrA) ||
-        !vm->MMU.evalRegOffset(&buff[RO_OFFSET_B], &roAddrB)) {
-        return false;
+    if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[RO_OFFSET_A], &roAddrA) ||
+        !vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[RO_OFFSET_B], &roAddrB)) {
+        return 0xFF;
     }
 
-    uint8_t* readBuff = nullptr;
-    bool readSuccess =
-        vm->MMU.readPhysicalMem(roAddrA, readSize, PERM_READ_MASK, &readBuff);
-    if (!readSuccess) {
-        return false;
+    uint64_t readBuff = 0;
+    uint32_t readRes = vm->MMU.read(
+        roAddrA, reinterpret_cast<uint8_t*>(&readBuff), readSize, 0);
+    if (readRes != UVM_SUCCESS) {
+        return 0xFF;
     }
 
-    bool writeSuccess = vm->MMU.writePhysicalMem(readBuff, roAddrB, readSize);
-    if (!writeSuccess) {
-        return false;
+    uint32_t writeRes = vm->MMU.write(&readBuff, roAddrB, readSize, 0);
+    if (writeRes != UVM_SUCCESS) {
+        return 0xFF;
     }
 
-    return true;
+    return UVM_SUCCESS;
 }
 
+// TODO: Update docs
 /**
  * Loads the computed address of register offset into integer register
  * @param vm Pointer to current UVM instance
  * @return On success return true otherwise false
  */
-bool Instr::leaROToIReg(UVM* vm) {
-    // Load complete instruction
-    constexpr uint32_t INSTR_WIDTH = 8;
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, INSTR_WIDTH, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
-
-    uint8_t iReg = buff[7];
-
+uint32_t Instr::leaROToIReg(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t RO_OFFSET = 1;
+    constexpr uint32_t IREG_OFFSET = 7;
+
+    uint8_t iReg = vm->MMU.InstrBuffer[IREG_OFFSET];
+
     uint64_t roAddress = 0;
-    if (!vm->MMU.evalRegOffset(&buff[RO_OFFSET], &roAddress)) {
-        return false;
+    if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[RO_OFFSET], &roAddress)) {
+        return 0xFF;
     }
 
     IntVal val;
     val.I64 = roAddress;
     if (vm->MMU.setIntReg(iReg, val, IntType::I64)) {
-        return false;
+        return 0xFF;
     }
 
-    return true;
+    return UVM_SUCCESS;
 }

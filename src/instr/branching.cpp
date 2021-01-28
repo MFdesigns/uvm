@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2020 Michel Fäh
+// Copyright 2020-2021 Michel Fäh
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,35 +15,32 @@
 // ======================================================================== //
 
 #include "branching.hpp"
+#include "../error.hpp"
 #include <iostream>
 
-bool Instr::cmpIRegToIReg(UVM* vm) {
-    // Load complete instruction
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, 4, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
+uint32_t Instr::cmpIRegToIReg(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t TYPE_OFFSET = 1;
+    constexpr uint32_t IREG_A_OFFSET = 2;
+    constexpr uint32_t IREG_B_OFFSET = 3;
 
-    uint8_t type = buff[1];
-    uint8_t iRegA = buff[2];
-    uint8_t iRegB = buff[3];
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    uint8_t iRegA = vm->MMU.InstrBuffer[IREG_A_OFFSET];
+    uint8_t iRegB = vm->MMU.InstrBuffer[IREG_B_OFFSET];
 
     IntType intType = IntType::I32;
     if (!parseIntType(type, &intType)) {
-        return false;
+        return 0xFF;
     }
 
     IntVal iRegAVal;
     IntVal iRegBVal;
 
     if (vm->MMU.getIntReg(iRegA, iRegAVal) != 0) {
-        return false;
+        return 0xFF;
     }
 
     if (vm->MMU.getIntReg(iRegB, iRegBVal) != 0) {
-        return false;
+        return 0xFF;
     }
 
     IntVal result;
@@ -79,90 +76,77 @@ bool Instr::cmpIRegToIReg(UVM* vm) {
         vm->MMU.Flags.Signed = false;
     }
 
-    return true;
+    return UVM_SUCCESS;
 }
 
-bool Instr::jmp(UVM* vm, JumpCondition cond, bool* jumped) {
-    // Load complete instruction
-    uint8_t* buff = nullptr;
-    bool memAccess =
-        vm->MMU.readPhysicalMem(vm->MMU.IP, 9, PERM_EXE_MASK, &buff);
-    if (!memAccess) {
-        return false;
-    }
-
+/**
+ *
+ * @return On success returns UVM_SUCCESS, if jmp was executed
+ * UVM_SUCCESS_JUMPED otherwise an error status
+ */
+uint32_t Instr::jmp(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t ADDR_OFFSET = 1;
     // Get target vAddr
-    uint64_t* targetAddr = reinterpret_cast<uint64_t*>(&buff[1]);
+    uint64_t* targetAddr =
+        reinterpret_cast<uint64_t*>(&vm->MMU.InstrBuffer[ADDR_OFFSET]);
 
     MemSection* memSec = vm->MMU.findSection(*targetAddr, 1);
     if (memSec == nullptr) {
         std::cout << "[Error] Jump to unknown memory address 0x" << std::hex
                   << *targetAddr << '\n';
-        return false;
+        return 0xFF;
     }
 
     if ((memSec->Perm & PERM_EXE_MASK) != PERM_EXE_MASK) {
         std::cout << "[Error] Jump to section with missing executable "
                      "permisson at address 0x"
                   << std::hex << *targetAddr << '\n';
-        return false;
+        return 0xFF;
     }
 
+    JumpCondition cond = static_cast<JumpCondition>(flag);
     switch (cond) {
     case JumpCondition::UNCONDITIONAL:
         vm->MMU.IP = *targetAddr;
-        *jumped = true;
-        break;
-    case JumpCondition::IF_EQUALS: {
+        return UVM_SUCCESS_JUMPED;
+    case JumpCondition::IF_EQUALS:
         if (vm->MMU.Flags.Zero) {
             vm->MMU.IP = *targetAddr;
-            *jumped = true;
-        } else {
-            *jumped = false;
+            return UVM_SUCCESS_JUMPED;
         }
-    } break;
+        break;
     case JumpCondition::IF_NOT_EQUALS:
         if (!vm->MMU.Flags.Zero) {
             vm->MMU.IP = *targetAddr;
-            *jumped = true;
-        } else {
-            *jumped = false;
+            return UVM_SUCCESS_JUMPED;
         }
         break;
     case JumpCondition::IF_GREATER_THAN:
         if (!vm->MMU.Flags.Zero && !vm->MMU.Flags.Signed) {
             vm->MMU.IP = *targetAddr;
-            *jumped = true;
-        } else {
-            *jumped = false;
+            return UVM_SUCCESS_JUMPED;
         }
         break;
     case JumpCondition::IF_LESS_THAN:
         if (!vm->MMU.Flags.Zero && vm->MMU.Flags.Signed) {
             vm->MMU.IP = *targetAddr;
-            *jumped = true;
-        } else {
-            *jumped = false;
+            return UVM_SUCCESS_JUMPED;
         }
         break;
     case JumpCondition::IF_GREATER_EQUALS:
         if (!vm->MMU.Flags.Signed) {
             vm->MMU.IP = *targetAddr;
-            *jumped = true;
-        } else {
-            *jumped = false;
+            return UVM_SUCCESS_JUMPED;
         }
         break;
     case JumpCondition::IF_LESS_EQUALS:
         if ((vm->MMU.Flags.Zero && !vm->MMU.Flags.Signed) ||
             (!vm->MMU.Flags.Zero && vm->MMU.Flags.Signed)) {
             vm->MMU.IP = *targetAddr;
-            *jumped = true;
-        } else {
-            *jumped = false;
+            return UVM_SUCCESS_JUMPED;
         }
         break;
     }
 
-    return true;
+    return UVM_SUCCESS;
 }

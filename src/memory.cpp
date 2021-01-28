@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2020 Michel Fäh
+// Copyright 2020-2021 Michel Fäh
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 // limitations under the License.
 // ======================================================================== //
 
+#include "error.hpp"
 #include "instr/memory_manip.hpp"
 #include <cstring>
 #include <iostream>
@@ -163,67 +164,6 @@ uint32_t MemManager::stackPop(uint64_t* out, UVMDataSize size) {
 
     SP = newSP;
     return 0;
-}
-
-bool MemManager::readPhysicalMem(uint64_t vAddr,
-                                 uint32_t size,
-                                 uint8_t perms,
-                                 uint8_t** ptr) const {
-    MemSection* section = findSection(vAddr, size);
-    if (section == nullptr) {
-        // If address was not found in static memeory try search in the heap
-        HeapBlock* hb = nullptr;
-        for (size_t i = 0; i < Heap.size(); i++) {
-            uint64_t hbStart = Heap[i].VStart;
-            uint64_t hbEnd = hbStart + Heap[i].Size;
-            if (vAddr >= hbStart && vAddr <= hbEnd) {
-                if (vAddr + size > hbEnd) {
-                    std::cout << "[Error] Cannot read memory range which spans "
-                                 "across multiple HeapBlocks\n";
-                    return false;
-                }
-                hb = const_cast<HeapBlock*>(&Heap[i]);
-            }
-        }
-
-        if (hb == nullptr) {
-            std::cout << "[Error] Failed reading memory at address 0x"
-                      << std::hex << vAddr
-                      << "\n\tmemory not owned by programm\n";
-            return false;
-        }
-
-        size_t hbIndex = vAddr - hb->VStart;
-        uint8_t* hbPtr = &hb->Buffer.get()[hbIndex];
-        *ptr = hbPtr;
-    } else {
-        if ((section->Perm & perms) != perms) {
-            std::cout << "[Error] Failed reading memory at address 0x"
-                      << std::hex << vAddr << "\n\tmissing read permission\n";
-            return false;
-        }
-
-        // Get physical buffer address
-        // TODO: Does no longer work because sections have changed!!!
-        /*const MemBuffer* memBuffer = &Buffers[section->BufferIndex];
-        uint64_t bufferOffset = vAddr - memBuffer->VStartAddr;
-        uint8_t* buffer = reinterpret_cast<uint8_t*>(memBuffer->getBuffer());
-        *ptr = &buffer[bufferOffset];*/
-    }
-
-    return true;
-}
-
-bool MemManager::writePhysicalMem(void* source, uint64_t vAddr, uint32_t size) {
-    uint8_t* dest = nullptr;
-    if (!readPhysicalMem(vAddr, size, PERM_WRITE_MASK, &dest)) {
-        std::cout << "[Error] Failed writing to memory at address 0x"
-                  << std::hex << vAddr << '\n';
-        return false;
-    }
-
-    memcpy(dest, source, size);
-    return true;
 }
 
 /**
@@ -634,4 +574,118 @@ void MemManager::loadSections(uint8_t* buff, size_t size) {
         Cursor += sec.VStartAddr + sec.Size;
     }
     VStackStart = Cursor + 1;
+}
+
+/**
+ * Reads from virtual memory at given address with at least read permission into
+ * destination buffer
+ * @param vAddr Source virtual address
+ * @param dest Pointer to destination buffer of at least given size
+ * @param size Size of read
+ * @param perm Required permissions of memory section
+ */
+uint32_t
+MemManager::read(uint64_t vAddr, void* dest, UVMDataSize size, uint8_t perm) {
+    // Add the read permission
+    perm |= PERM_READ_MASK;
+
+    uint32_t sizeBytes = static_cast<uint32_t>(size);
+
+    // TODO: Across multiple buffers
+    // Find the buffer of vAddr
+    MemBuffer* buffer = nullptr;
+    for (MemBuffer& buff : Buffers) {
+        if (vAddr >= buff.VStartAddr &&
+            vAddr + sizeBytes <= buff.VStartAddr + buff.Size) {
+            buffer = &buff;
+            break;
+        }
+    }
+
+    if (buffer == nullptr) {
+        return E_VADDR_NOT_FOUND;
+    }
+
+    if ((buffer->Perm & perm) != perm) {
+        return E_MISSING_PERM;
+    }
+
+    size_t buffIndex = vAddr - buffer->VStartAddr;
+    memcpy(dest, &buffer->getBuffer()[buffIndex], sizeBytes);
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Writes from source buffer into virtual memory at given address with at least
+ * write permission
+ * @param src Pointer to source buffer of at least given size
+ * @param vAddr Destination virtual address
+ * @param size Size of write
+ * @param perm Required permissions of memory section
+ */
+uint32_t
+MemManager::write(void* src, uint64_t vAddr, UVMDataSize size, uint8_t perm) {
+    // Add the write permission
+    perm |= PERM_WRITE_MASK;
+
+    uint32_t sizeBytes = static_cast<uint32_t>(size);
+
+    // TODO: Across multiple buffers
+    // Find the buffer of vAddr
+    MemBuffer* buffer = nullptr;
+    for (MemBuffer& buff : Buffers) {
+        if (vAddr >= buff.VStartAddr &&
+            vAddr + sizeBytes <= buff.VStartAddr + buff.Size) {
+            buffer = &buff;
+            break;
+        }
+    }
+
+    if (buffer == nullptr) {
+        return E_VADDR_NOT_FOUND;
+    }
+
+    if ((buffer->Perm & perm) != perm) {
+        return E_MISSING_PERM;
+    }
+
+    size_t buffIndex = vAddr - buffer->VStartAddr;
+    memcpy(&buffer->getBuffer()[buffIndex], src, sizeBytes);
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Fetches an instruction at instruction pointer and writes it into dest buffer
+ * of size
+ * @param dest Pointer to destination buffer of at least given size
+ * @param size Size of read
+ */
+uint32_t MemManager::fetchInstruction(uint8_t* dest, size_t size) {
+    // Add the execute permission
+    uint8_t perm = PERM_EXE_MASK;
+
+    // TODO: Across multiple buffers
+    // Find the buffer of vAddr
+    MemBuffer* buffer = nullptr;
+    for (MemBuffer& buff : Buffers) {
+        if (IP >= buff.VStartAddr && IP + size <= buff.VStartAddr + buff.Size) {
+            buffer = &buff;
+            break;
+        }
+    }
+
+    if (buffer == nullptr) {
+        return E_VADDR_NOT_FOUND;
+    }
+
+    if ((buffer->Perm & perm) != perm) {
+        return E_MISSING_PERM;
+    }
+
+    size_t buffIndex = IP - buffer->VStartAddr;
+    memcpy(dest, &buffer->getBuffer()[buffIndex], size);
+
+    return UVM_SUCCESS;
 }

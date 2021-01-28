@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2020 Michel Fäh
+// Copyright 2020-2021 Michel Fäh
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,6 @@
 #include "../uvm.hpp"
 
 namespace Instr {
-bool call(UVM* vm);
-bool ret(UVM* vm);
+uint32_t call(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t ret(UVM* vm, uint32_t width, uint32_t flag);
 } // namespace Instr

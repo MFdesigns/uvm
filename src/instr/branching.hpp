@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2020 Michel Fäh
+// Copyright 2020-2021 Michel Fäh
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,6 +28,6 @@ enum class JumpCondition {
 };
 
 namespace Instr {
-bool cmpIRegToIReg(UVM* vm);
-bool jmp(UVM* vm, JumpCondition cond, bool* jumped);
+uint32_t cmpIRegToIReg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t jmp(UVM* vm, uint32_t width, uint32_t flag);
 } // namespace Instr

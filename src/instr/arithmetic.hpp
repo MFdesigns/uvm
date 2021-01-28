@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2020 Michel Fäh
+// Copyright 2020-2021 Michel Fäh
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@
 #include "../uvm.hpp"
 
 namespace Instr {
-bool addIRegToIReg(UVM* vm);
-bool subIRegFromIReg(UVM* vm);
-bool mulIRegWithIReg(UVM* vm);
-bool divIRegByIReg(UVM* vm);
-bool uIntConvert(UVM* vm, IntType type);
+uint32_t addIRegToIReg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t subIRegFromIReg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t mulIRegWithIReg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t divIRegByIReg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t uIntConvert(UVM* vm, uint32_t width, uint32_t flag);
 } // namespace Instr

@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2020 Michel Fäh
+// Copyright 2020-2021 Michel Fäh
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,9 +20,10 @@
 #include <memory>
 #include <vector>
 
+constexpr uint64_t UVM_NULLPTR = 0;
 constexpr uint64_t UVM_STACK_SIZE = 4096;
 constexpr size_t HEAP_BLOCK_SIZE = 1024;
-constexpr uint64_t UVM_NULLPTR = 0;
+constexpr size_t MAX_INSTR_SIZE = 15;
 
 // Stack error codes
 constexpr uint32_t ERR_STACK_OVERFLOW = 0xE0;
@@ -54,6 +55,7 @@ enum class UVMDataSize {
     QWORD = 8, // i64 / f64
 };
 
+// TODO: IntType and FlaotType should be flags (constexpr)
 enum class IntType {
     I8 = 0x1,
     I16 = 0x2,
@@ -159,30 +161,29 @@ struct FlagsRegister {
     bool Signed = false;
 };
 
+// TODO: Cleanup
 class MemManager {
   public:
     std::vector<MemSection> Sections;
     std::vector<MemBuffer> Buffers;
     std::vector<HeapBlock> Heap;
-
     uint32_t StackBufferIndex = 0;
     uint64_t VStackStart = 0;
     uint64_t VStackEnd = 0;
-
+    uint64_t VHeapStart = 0;
     uint64_t IP = 0;
     uint64_t SP = 0;
     uint64_t BP = 0;
     std::array<IntVal, 16> GP = {0};
     std::array<FloatVal, 16> FP = {0};
-
+    std::array<uint8_t, MAX_INSTR_SIZE> InstrBuffer;
     FlagsRegister Flags;
 
     MemSection* findSection(uint64_t vAddr, uint32_t size) const;
-    bool readPhysicalMem(uint64_t vAddr,
-                         uint32_t size,
-                         uint8_t perms,
-                         uint8_t** ptr) const;
-    bool writePhysicalMem(void* source, uint64_t vAddr, uint32_t size);
+
+    uint32_t read(uint64_t vAddr, void* dest, UVMDataSize size, uint8_t perm);
+    uint32_t write(void* src, uint64_t vAddr, UVMDataSize size, uint8_t perm);
+    uint32_t fetchInstruction(uint8_t* dest, size_t size);
     uint32_t
     addBuffer(uint64_t vAddr, uint32_t size, SectionType type, uint8_t perm);
     void initStack();
@@ -204,6 +205,4 @@ class MemManager {
     bool deallocHeap(uint64_t vAddr);
 
     void loadSections(uint8_t* buff, size_t size);
-
-    uint64_t VHeapStart = 0;
 };
