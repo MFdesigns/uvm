@@ -617,6 +617,60 @@ MemManager::read(uint64_t vAddr, void* dest, UVMDataSize size, uint8_t perm) {
 }
 
 /**
+ * Reads from virtual memory at given address with at least read permission into
+ * destination buffer
+ * @param vAddr Source virtual address
+ * @param dest Pointer to destination buffer of at least given size
+ * @param size Size of read
+ * @param perm Required permissions of memory section
+ */
+uint32_t
+MemManager::readBig(uint64_t vAddr, void* dest, uint32_t size, uint8_t perm) {
+    // Add the read permission
+    perm |= PERM_READ_MASK;
+
+    // If memory range which should be read spans accross multiple memory
+    // buffers it has to perform multiple memcpy's. readLeft contains the size
+    // of how much memory is left to be copied and readIndex contains the
+    // virtual address of the start of the left memory to be copied.
+    int64_t readLeft = size;
+    uint64_t readIndex = vAddr;
+    while (readLeft > 0) {
+        // Find the buffer of vAddr
+        MemBuffer* buffer = nullptr;
+        for (MemBuffer& buff : Buffers) {
+            if (readIndex >= buff.VStartAddr &&
+                readIndex < buff.VStartAddr + buff.Size) {
+                buffer = &buff;
+                break;
+            }
+        }
+
+        if (buffer == nullptr) {
+            return E_VADDR_NOT_FOUND;
+        }
+
+        if ((buffer->Perm & perm) != perm) {
+            return E_MISSING_PERM;
+        }
+
+        uint32_t actualReadSize = size;
+        uint64_t buffVEnd = buffer->VStartAddr + buffer->Size;
+        if (readIndex + readLeft > buffVEnd) {
+            actualReadSize = buffVEnd - readIndex;
+        }
+
+        size_t buffIndex = vAddr - buffer->VStartAddr;
+        memcpy(dest, &buffer->getBuffer()[buffIndex], actualReadSize);
+
+        readLeft -= actualReadSize;
+        readIndex += actualReadSize;
+    }
+
+    return UVM_SUCCESS;
+}
+
+/**
  * Writes from source buffer into virtual memory at given address with at least
  * write permission
  * @param src Pointer to source buffer of at least given size

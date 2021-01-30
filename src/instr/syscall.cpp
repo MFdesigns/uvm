@@ -17,8 +17,8 @@
 #include "../error.hpp"
 #include "instructions.hpp"
 #include <iostream>
+#include <memory>
 
-// TODO: Completely broken!
 /**
  * Takes the syscall arguments in register r0-r15 and prints to console
  * @param vm Current UVM instance
@@ -32,14 +32,16 @@ bool internalPrint(UVM* vm) {
     vm->MMU.getIntReg(0x05, r0);
     vm->MMU.getIntReg(0x06, r1);
 
-    /*uint8_t* buff = nullptr;
-    if (!vm->MMU.readPhysicalMem(r0.I64, r1.I32, PERM_READ_MASK, &buff)) {
+    uint32_t allocSize = r1.I32;
+
+    std::unique_ptr<uint8_t[]> buff = std::make_unique<uint8_t[]>(allocSize);
+
+    uint32_t readRes = vm->MMU.readBig(r0.I64, buff.get(), allocSize, 0);
+    if (readRes != UVM_SUCCESS) {
         return false;
     }
 
-    uint32_t readres = vm->MMU.read(r0.I64, &buff, )
-
-    std::string tmpStr{(char*)buff, r1.I32};
+    std::string tmpStr{(char*)buff.get(), allocSize};
     switch (vm->Mode) {
     case ExecutionMode::USER:
         std::cout << tmpStr;
@@ -47,7 +49,7 @@ bool internalPrint(UVM* vm) {
     case ExecutionMode::DEBUGGER:
         vm->DbgConsole << tmpStr;
         break;
-    }*/
+    }
 
     return true;
 }
