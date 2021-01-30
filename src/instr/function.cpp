@@ -14,8 +14,8 @@
 // limitations under the License.
 // ======================================================================== //
 
-#include "function.hpp"
 #include "../error.hpp"
+#include "instructions.hpp"
 #include <iostream>
 
 uint32_t Instr::call(UVM* vm, uint32_t width, uint32_t flag) {

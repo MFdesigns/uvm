@@ -14,8 +14,8 @@
 // limitations under the License.
 // ======================================================================== //
 
-#include "arithmetic.hpp"
 #include "../error.hpp"
+#include "instructions.hpp"
 
 uint32_t Instr::addIRegToIReg(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;

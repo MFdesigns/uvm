@@ -15,6 +15,7 @@
 // ======================================================================== //
 
 #pragma once
+#include <cstdint>
 
 // Successful values
 constexpr uint32_t UVM_SUCCESS = 0;

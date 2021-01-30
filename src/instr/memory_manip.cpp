@@ -14,8 +14,8 @@
 // limitations under the License.
 // ======================================================================== //
 
-#include "memory_manip.hpp"
 #include "../error.hpp"
+#include "instructions.hpp"
 #include <cstring>
 #include <iostream>
 

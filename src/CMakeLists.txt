@@ -5,11 +5,12 @@ set(SOURCE_FILES
     error.hpp
     debug/debugger.cpp debug/debugger.hpp
     debug/http.cpp debug/http.hpp
-    instr/memory_manip.cpp instr/memory_manip.hpp
-    instr/syscall.cpp instr/syscall.hpp
-    instr/function.cpp instr/function.hpp
-    instr/arithmetic.cpp instr/arithmetic.hpp
-    instr/branching.cpp instr/branching.hpp
+    instr/instructions.hpp
+    instr/memory_manip.cpp
+    instr/syscall.cpp
+    instr/function.cpp
+    instr/arithmetic.cpp
+    instr/branching.cpp
     )
 
 # Win32 specific platform files

@@ -16,11 +16,7 @@
 
 #include "uvm.hpp"
 #include "error.hpp"
-#include "instr/arithmetic.hpp"
-#include "instr/branching.hpp"
-#include "instr/function.hpp"
-#include "instr/memory_manip.hpp"
-#include "instr/syscall.hpp"
+#include "instr/instructions.hpp"
 #include "memory.hpp"
 #include <cstring>
 #include <fstream>

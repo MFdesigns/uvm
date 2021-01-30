@@ -14,8 +14,8 @@
 // limitations under the License.
 // ======================================================================== //
 
-#include "branching.hpp"
 #include "../error.hpp"
+#include "instructions.hpp"
 #include <iostream>
 
 uint32_t Instr::cmpIRegToIReg(UVM* vm, uint32_t width, uint32_t flag) {
