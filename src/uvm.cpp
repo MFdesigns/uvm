@@ -294,7 +294,7 @@ bool UVM::nextInstr() {
         return false;
     }
 
-    uint32_t (*instrCall)(UVM * vm, uint32_t instrWidth, uint32_t flag);
+    uint32_t (*instrCall)(UVM * vm, uint32_t instrWidth, uint32_t flag) = nullptr;
     uint32_t instrFlag = 0;
 
     switch (Opcode) {
@@ -348,21 +348,23 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_LOAD_I8_IR:
         instrWidth = 3;
-        // runtimeError = !Instr::loadIntToIReg(this, instrWidth, IntType::I8);
+        instrFlag = static_cast<uint32_t>(IntType::I8);
+        instrCall = Instr::loadIntToIReg;
         break;
     case OP_LOAD_I16_IR:
         instrWidth = 4;
-        // runtimeError = !Instr::loadIntToIReg(this, instrWidth, IntType::I16);
+        instrFlag = static_cast<uint32_t>(IntType::I16);
+        instrCall = Instr::loadIntToIReg;
         break;
     case OP_LOAD_I32_IR:
         instrWidth = 6;
-        instrCall = Instr::loadIntToIReg;
         instrFlag = static_cast<uint32_t>(IntType::I32);
-        // runtimeError = !Instr::loadIntToIReg(this, instrWidth, IntType::I32);
+        instrCall = Instr::loadIntToIReg;
         break;
     case OP_LOAD_I64_IR:
         instrWidth = 10;
-        // runtimeError = !Instr::loadIntToIReg(this, instrWidth, IntType::I64);
+        instrFlag = static_cast<uint32_t>(IntType::I64);
+        instrCall = Instr::loadIntToIReg;
         break;
     case OP_LOAD_IT_RO_IR:
         instrWidth = 9;
@@ -435,7 +437,6 @@ bool UVM::nextInstr() {
     case OP_LEA_RO_IR:
         instrWidth = 8;
         instrCall = Instr::leaROToIReg;
-        // runtimeError = !Instr::leaROToIReg(this);
         break;
 
     /********************************
@@ -544,13 +545,15 @@ bool UVM::nextInstr() {
         return false;
     }
 
-    // TODO: is nullptr if default case is used
-    uint32_t instrCallRes = instrCall(this, instrWidth, instrFlag);
-    if (instrCallRes != UVM_SUCCESS) {
-        if (instrCallRes == UVM_SUCCESS_JUMPED) {
-            return true;
-        } else {
-            return false;
+    // If Opcode is NOP then instrCall will be nullptr
+    if (instrCall != nullptr) {
+        uint32_t instrCallRes = instrCall(this, instrWidth, instrFlag);
+        if (instrCallRes != UVM_SUCCESS) {
+            if (instrCallRes == UVM_SUCCESS_JUMPED) {
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 
