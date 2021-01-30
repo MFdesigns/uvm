@@ -78,13 +78,14 @@ bool validateHeader(HeaderInfo* info, uint8_t* source, size_t size) {
     return true;
 }
 
-bool parseSectionType(uint8_t type, SectionType& secType) {
+// TODO: Update section type range
+bool parseSectionType(uint8_t type, MemType& secType) {
     // Outside of valid section type range
     if (type < 0x1 || type > 0x5) {
         return false;
     }
 
-    secType = (SectionType)type;
+    secType = (MemType)type;
     return true;
 }
 
@@ -146,7 +147,7 @@ bool parseSectionTable(std::vector<MemSection>* sections,
         uint8_t type = buff[cursor];
         uint8_t perms = buff[cursor + 1];
 
-        auto memType = SectionType::STATIC;
+        auto memType = MemType::STATIC;
 
         // Validate section type
         bool validType = parseSectionType(type, memType);

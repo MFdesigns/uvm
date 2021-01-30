@@ -92,30 +92,32 @@ struct UVMFloat {
     FloatVal Val;
 };
 
-enum class SectionType {
+enum class MemType {
     NAME_STRING = 0x1,
     META_DATA = 0x2,
     DEBUG = 0x3,
     STATIC = 0x4,
     CODE = 0x5,
     STACK = 0x6,
+    HEAP = 0x7,
 };
 
 class MemBuffer {
   public:
-    MemBuffer(uint64_t startAddr,
-              uint32_t size,
-              SectionType type,
-              uint8_t perm);
+    MemBuffer(uint64_t startAddr, uint32_t size, MemType type, uint8_t perm);
     MemBuffer(MemBuffer&& memBuffer) noexcept;
     /** Virtual start address of physical buffer */
     const uint64_t VStartAddr = 0;
     /** Size of buffer in bytes */
     const uint32_t Size = 0;
     /** Type of the section */
-    const SectionType Type;
+    const MemType Type;
     /** Section permissions */
     const uint8_t Perm = 0;
+    /** Heap block capacity **/
+    uint32_t Capacity = 0;
+    /** How much has been freed **/
+    uint32_t Freed = 0;
 
     uint8_t* getBuffer() const;
     void read(void* source);
@@ -128,28 +130,14 @@ class MemBuffer {
 // TODO: What about section name strings?
 class MemSection {
   public:
-    MemSection(SectionType type,
-               uint8_t perm,
-               uint64_t startAddr,
-               uint32_t size);
-    const SectionType Type;
+    MemSection(MemType type, uint8_t perm, uint64_t startAddr, uint32_t size);
+    const MemType Type;
     /** Section permissions */
     const uint8_t Perm = 0;
     /** Virtual start address of section */
     const uint64_t VStartAddr = 0;
     /** Size of section in bytes */
     const uint32_t Size = 0;
-};
-
-class HeapBlock {
-  public:
-    HeapBlock(size_t size, uint64_t start);
-    HeapBlock(HeapBlock&& heapBlock);
-    size_t Size = 0;
-    uint64_t VStart = 0;
-    size_t Capacity = 0;
-    size_t Freed = 0;
-    std::unique_ptr<uint8_t[]> Buffer;
 };
 
 bool parseIntType(uint8_t type, IntType* intType);
@@ -166,10 +154,10 @@ class MemManager {
   public:
     std::vector<MemSection> Sections;
     std::vector<MemBuffer> Buffers;
-    std::vector<HeapBlock> Heap;
     uint32_t StackBufferIndex = 0;
     uint64_t VStackStart = 0;
     uint64_t VStackEnd = 0;
+    /** Pointer to top of heap */
     uint64_t VHeapStart = 0;
     uint64_t IP = 0;
     uint64_t SP = 0;
@@ -187,7 +175,7 @@ class MemManager {
 
     uint32_t fetchInstruction(uint8_t* dest, size_t size);
     uint32_t
-    addBuffer(uint64_t vAddr, uint32_t size, SectionType type, uint8_t perm);
+    addBuffer(uint64_t vAddr, uint32_t size, MemType type, uint8_t perm);
     void initStack();
 
     uint32_t setStackPtr(uint64_t vAddr);
