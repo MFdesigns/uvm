@@ -90,9 +90,17 @@ uint32_t Instr::syscall(UVM* vm, uint32_t width, uint32_t flag) {
             return 0xFF;
         }
     } break;
-    case SYS_DEALLOC:
-        // TODO: Implement dealloc
-        break;
+    case SYS_DEALLOC: {
+        IntVal vAddr;
+        if (vm->MMU.getIntReg(REG_R0, vAddr) != 0) {
+            return 0xFF;
+        }
+
+        uint32_t deallocRes = vm->MMU.deallocHeap(vAddr.I64);
+        if (deallocRes != UVM_SUCCESS) {
+            return 0xFF;
+        }
+    } break;
     default:
         return 0xFF;
     }

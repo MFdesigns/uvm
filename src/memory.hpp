@@ -102,29 +102,28 @@ enum class MemType {
     HEAP = 0x7,
 };
 
-class MemBuffer {
-  public:
+struct MemBuffer {
     MemBuffer(uint64_t startAddr, uint32_t size, MemType type, uint8_t perm);
     MemBuffer(MemBuffer&& memBuffer) noexcept;
+    MemBuffer& operator=(MemBuffer&& memBuffer) noexcept;
+    ~MemBuffer();
     /** Virtual start address of physical buffer */
-    const uint64_t VStartAddr = 0;
+    uint64_t VStartAddr = 0;
     /** Size of buffer in bytes */
-    const uint32_t Size = 0;
+    uint32_t Size = 0;
     /** Type of the section */
-    const MemType Type;
+    MemType Type;
     /** Section permissions */
-    const uint8_t Perm = 0;
+    uint8_t Perm = 0;
     /** Heap block capacity **/
     uint32_t Capacity = 0;
     /** How much has been freed **/
     uint32_t Freed = 0;
 
-    uint8_t* getBuffer() const;
     void read(void* source);
 
-  private:
     /** Physical buffer */
-    std::unique_ptr<uint8_t[]> Buffer;
+    uint8_t* Buffer = nullptr;
 };
 
 // TODO: What about section name strings?
@@ -192,7 +191,7 @@ class MemManager {
     bool evalRegOffset(uint8_t* buff, uint64_t* address);
 
     uint64_t allocHeap(size_t size);
-    bool deallocHeap(uint64_t vAddr);
+    uint32_t deallocHeap(uint64_t vAddr);
 
     void loadSections(uint8_t* buff, size_t size);
 };

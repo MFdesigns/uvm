@@ -31,9 +31,19 @@ MemBuffer::MemBuffer(uint64_t startAddr,
                      uint32_t size,
                      MemType type,
                      uint8_t perm)
-    : VStartAddr(startAddr), Size(size), Type(type), Perm(perm),
-      Capacity(size) {
-    Buffer = std::make_unique<uint8_t[]>(size);
+    : VStartAddr(startAddr), Size(size), Type(type), Perm(perm), Capacity(size),
+      Buffer(new uint8_t[size]) {}
+
+MemBuffer& MemBuffer::operator=(MemBuffer&& memBuffer) noexcept {
+    VStartAddr = memBuffer.VStartAddr;
+    Size = memBuffer.Size;
+    Type = memBuffer.Type;
+    Perm = memBuffer.Perm;
+    Capacity = memBuffer.Capacity;
+    Freed = memBuffer.Freed;
+    Buffer = memBuffer.Buffer;
+    memBuffer.Buffer = nullptr;
+    return *this;
 }
 
 /**
@@ -42,15 +52,12 @@ MemBuffer::MemBuffer(uint64_t startAddr,
  */
 MemBuffer::MemBuffer(MemBuffer&& memBuffer) noexcept
     : VStartAddr(memBuffer.VStartAddr), Size(memBuffer.Size),
-      Type(memBuffer.Type), Perm(memBuffer.Perm),
-      Buffer(std::move(memBuffer.Buffer)) {}
+      Type(memBuffer.Type), Perm(memBuffer.Perm), Buffer(memBuffer.Buffer) {
+    memBuffer.Buffer = nullptr;
+}
 
-/**
- * Get the underlying buffer
- * @return Pointer to buffer
- */
-uint8_t* MemBuffer::getBuffer() const {
-    return Buffer.get();
+MemBuffer::~MemBuffer() {
+    delete[] Buffer;
 }
 
 /**
@@ -58,7 +65,7 @@ uint8_t* MemBuffer::getBuffer() const {
  * @param source Pointer to source buffer
  */
 void MemBuffer::read(void* source) {
-    memcpy(Buffer.get(), source, Size);
+    memcpy(Buffer, source, Size);
 }
 
 /**
@@ -137,7 +144,7 @@ uint32_t MemManager::stackPush(void* val, UVMDataSize size) {
     }
 
     uint64_t bufferOffset = oldSP - VStackStart;
-    const uint8_t* stackBuffer = Buffers[StackBufferIndex].getBuffer();
+    const uint8_t* stackBuffer = Buffers[StackBufferIndex].Buffer;
     memcpy(const_cast<uint8_t*>(&stackBuffer[bufferOffset]), val,
            static_cast<uint32_t>(size));
 
@@ -160,7 +167,7 @@ uint32_t MemManager::stackPop(uint64_t* out, UVMDataSize size) {
 
     if (out != nullptr) {
         uint64_t bufferOffset = newSP - VStackStart;
-        const uint8_t* stackBuffer = Buffers[StackBufferIndex].getBuffer();
+        const uint8_t* stackBuffer = Buffers[StackBufferIndex].Buffer;
         memcpy(out, &stackBuffer[bufferOffset], static_cast<uint32_t>(size));
     }
 
@@ -449,7 +456,8 @@ bool MemManager::evalRegOffset(uint8_t* buff, uint64_t* address) {
 /**
  * Allocates a new HeapBlock of given size at the current HeapPointer address
  * @param size HeapBlock size
- * @return Virtual address of newly allocated heap block
+ * @return On success virtual address of allocated heap block otherwise
+ * UVM_NULLPTR
  */
 uint64_t MemManager::allocHeap(size_t size) {
     // Actually allocated size is <32-bit size> + <requested_size>
@@ -482,7 +490,7 @@ uint64_t MemManager::allocHeap(size_t size) {
 
             if (i == 0) {
                 uint32_t* hpAllocSizeTarget =
-                    reinterpret_cast<uint32_t*>(Buffers[hpId].getBuffer());
+                    reinterpret_cast<uint32_t*>(Buffers[hpId].Buffer);
                 *hpAllocSizeTarget = size;
             }
 
@@ -502,7 +510,7 @@ uint64_t MemManager::allocHeap(size_t size) {
         size_t hbOffset = hb->Size - hb->Capacity;
 
         // write 32 bit size
-        uint8_t* hbBuffer = hb->getBuffer();
+        uint8_t* hbBuffer = hb->Buffer;
         uint32_t* hpAllocSizeTarget =
             reinterpret_cast<uint32_t*>(&hbBuffer[hbOffset]);
         *hpAllocSizeTarget = size;
@@ -517,44 +525,65 @@ uint64_t MemManager::allocHeap(size_t size) {
 }
 
 /**
- * Deallocates a previously allocated heap area
+ * Deallocates a previously allocated heap buffer
  * @param vAddr Virtual start address of memory range to be deallocated
- * @return On sucess return true otherwise false
+ * @return On sucess returns UVM_SUCCESS otherwise return error status
  */
-bool MemManager::deallocHeap(uint64_t vAddr) {
-    //// Find heap block with capacity
-    // HeapBlock* hb = nullptr;
-    // size_t hbIndex = 0;
-    // for (size_t i = 0; i < Heap.size(); i++) {
-    //    // Has to start at offset 4 to be a valid address which was previously
-    //    // allocated
-    //    uint64_t hbStart = Heap[i].VStart + 4;
-    //    uint64_t hbEnd = Heap[i].VStart + Heap[i].Size;
-    //    if (vAddr >= hbStart && vAddr <= hbEnd) {
-    //        hb = &Heap[i];
-    //        hbIndex = i;
-    //        break;
-    //    }
-    //}
+uint32_t MemManager::deallocHeap(uint64_t vAddr) {
+    // Find heap block containing address
+    MemBuffer* hb = nullptr;
+    size_t hbIndex = 0;
+    for (MemBuffer& buff : Buffers) {
+        // Has to start at offset 4 to be a valid address which was previously
+        // allocated
+        if (vAddr >= buff.VStartAddr + 4 &&
+            vAddr <= buff.VStartAddr + buff.Size) {
+            hb = &buff;
+            break;
+        }
+        hbIndex++;
+    }
 
-    // if (hb == nullptr) {
-    //    std::cout << "Error: address 0x" << std::hex << vAddr
-    //              << " does not belong to any heap allocated memory\n";
-    //    return false;
-    //}
+    if (hb == nullptr) {
+        return E_DEALLOC_INVALID_ADDR;
+    }
 
-    // uint8_t* hbBuffer = hb->Buffer.get();
-    //// Get allocated size
-    // uint32_t allocSize = 0;
-    // uint64_t relAddr = vAddr - hb->VStart - 4;
-    // memcpy(&allocSize, &hbBuffer[relAddr], 4);
+    uint32_t blockSize = 0;
+    uint32_t readRes = read(vAddr - 4, &blockSize, UVMDataSize::DWORD, 0);
 
-    // hb->Freed += allocSize + 4;
-    // if (hb->Freed == hb->Size) {
-    //    // TODO: deallocate full heap block
-    //}
+    if (readRes != UVM_SUCCESS || blockSize == 0) {
+        return E_DEALLOC_INVALID_ADDR;
+    }
 
-    return true;
+    uint32_t actualBlockSize = blockSize + 4;
+    uint32_t sizeLeft = actualBlockSize;
+    while (sizeLeft > 0) {
+        if (sizeLeft > HEAP_BLOCK_SIZE) {
+            sizeLeft -= HEAP_BLOCK_SIZE;
+            hb->Freed = hb->Size;
+        } else {
+            hb->Freed += sizeLeft;
+            sizeLeft = 0;
+        }
+
+        if (hb->Freed >= hb->Size) {
+            // Note: we have to delete the array because std::vectors erase
+            // function should but for some reason does not call the destructor
+            // of the element to be erased.
+            delete[] hb->Buffer;
+            Buffers.erase(Buffers.begin() + hbIndex);
+        }
+
+        // Because the vector shift one to the left the hbIndex now points to
+        // the MemBuffer after the deallocated one
+        if (hbIndex < Buffers.size()) {
+            hb = &Buffers[hbIndex];
+        } else {
+            return E_DEALLOC_INVALID_ADDR;
+        }
+    }
+
+    return UVM_SUCCESS;
 }
 
 /**
@@ -610,7 +639,7 @@ MemManager::read(uint64_t vAddr, void* dest, UVMDataSize size, uint8_t perm) {
     }
 
     size_t buffIndex = vAddr - buffer->VStartAddr;
-    memcpy(dest, &buffer->getBuffer()[buffIndex], sizeBytes);
+    memcpy(dest, &buffer->Buffer[buffIndex], sizeBytes);
 
     return UVM_SUCCESS;
 }
@@ -660,7 +689,7 @@ MemManager::readBig(uint64_t vAddr, void* dest, uint32_t size, uint8_t perm) {
         }
 
         size_t buffIndex = vAddr - buffer->VStartAddr;
-        memcpy(dest, &buffer->getBuffer()[buffIndex], actualReadSize);
+        memcpy(dest, &buffer->Buffer[buffIndex], actualReadSize);
 
         readLeft -= actualReadSize;
         readIndex += actualReadSize;
@@ -704,7 +733,7 @@ MemManager::write(void* src, uint64_t vAddr, UVMDataSize size, uint8_t perm) {
     }
 
     size_t buffIndex = vAddr - buffer->VStartAddr;
-    memcpy(&buffer->getBuffer()[buffIndex], src, sizeBytes);
+    memcpy(&buffer->Buffer[buffIndex], src, sizeBytes);
 
     return UVM_SUCCESS;
 }
@@ -738,7 +767,7 @@ uint32_t MemManager::fetchInstruction(uint8_t* dest, size_t size) {
     }
 
     size_t buffIndex = IP - buffer->VStartAddr;
-    memcpy(dest, &buffer->getBuffer()[buffIndex], size);
+    memcpy(dest, &buffer->Buffer[buffIndex], size);
 
     return UVM_SUCCESS;
 }

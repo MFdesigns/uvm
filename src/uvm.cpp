@@ -260,7 +260,7 @@ uint8_t* UVM::readSource(std::filesystem::path p, size_t* size) {
  */
 uint32_t UVM::loadFile(uint8_t* buff, size_t size) {
     bool validHeader = validateHeader(&HInfo, buff, size);
-    if (!validateHeader) {
+    if (!validHeader) {
         return E_INVALID_HEADER;
     }
 
@@ -294,7 +294,8 @@ bool UVM::nextInstr() {
         return false;
     }
 
-    uint32_t (*instrCall)(UVM * vm, uint32_t instrWidth, uint32_t flag) = nullptr;
+    uint32_t (*instrCall)(UVM * vm, uint32_t instrWidth, uint32_t flag) =
+        nullptr;
     uint32_t instrFlag = 0;
 
     switch (Opcode) {

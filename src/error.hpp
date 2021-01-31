@@ -26,3 +26,4 @@ constexpr uint32_t E_INVALID_HEADER = 1;
 constexpr uint32_t E_INVALID_SEC_TABLE = 2;
 constexpr uint32_t E_VADDR_NOT_FOUND = 3;
 constexpr uint32_t E_MISSING_PERM = 4;
+constexpr uint32_t E_DEALLOC_INVALID_ADDR = 5;
