@@ -310,26 +310,26 @@ bool UVM::nextInstr() {
     case OP_PUSH_I8:
         instrWidth = 2;
         instrFlag = static_cast<uint32_t>(IntType::I8);
-        instrCall = Instr::push_int;
+        instrCall = instr_push_int;
         break;
     case OP_PUSH_I16:
         instrWidth = 3;
         instrFlag = static_cast<uint32_t>(IntType::I16);
-        instrCall = Instr::push_int;
+        instrCall = instr_push_int;
         break;
     case OP_PUSH_I32:
         instrWidth = 5;
         instrFlag = static_cast<uint32_t>(IntType::I32);
-        instrCall = Instr::push_int;
+        instrCall = instr_push_int;
         break;
     case OP_PUSH_I64:
         instrWidth = 9;
         instrFlag = static_cast<uint32_t>(IntType::I64);
-        instrCall = Instr::push_int;
+        instrCall = instr_push_int;
         break;
     case OP_PUSH_IT_IR:
         instrWidth = 3;
-        instrCall = Instr::push_ireg;
+        instrCall = instr_push_ireg;
         break;
 
     /********************************
@@ -337,11 +337,11 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_POP_IT:
         instrWidth = 2;
-        instrCall = Instr::pop;
+        instrCall = instr_pop;
         break;
     case OP_POP_IT_IR:
         instrWidth = 3;
-        instrCall = Instr::pop_ireg;
+        instrCall = instr_pop_ireg;
         break;
 
     /********************************
@@ -350,40 +350,40 @@ bool UVM::nextInstr() {
     case OP_LOAD_I8_IR:
         instrWidth = 3;
         instrFlag = static_cast<uint32_t>(IntType::I8);
-        instrCall = Instr::load_int_ireg;
+        instrCall = instr_load_int_ireg;
         break;
     case OP_LOAD_I16_IR:
         instrWidth = 4;
         instrFlag = static_cast<uint32_t>(IntType::I16);
-        instrCall = Instr::load_int_ireg;
+        instrCall = instr_load_int_ireg;
         break;
     case OP_LOAD_I32_IR:
         instrWidth = 6;
         instrFlag = static_cast<uint32_t>(IntType::I32);
-        instrCall = Instr::load_int_ireg;
+        instrCall = instr_load_int_ireg;
         break;
     case OP_LOAD_I64_IR:
         instrWidth = 10;
         instrFlag = static_cast<uint32_t>(IntType::I64);
-        instrCall = Instr::load_int_ireg;
+        instrCall = instr_load_int_ireg;
         break;
     case OP_LOAD_IT_RO_IR:
         instrWidth = 9;
-        instrCall = Instr::load_ro_ireg;
+        instrCall = instr_load_ro_ireg;
         break;
     case OP_LOAD_F32_FR:
         instrWidth = 6;
         instrFlag = static_cast<uint32_t>(FloatType::F32);
-        instrCall = Instr::loadf_float_freg;
+        instrCall = instr_loadf_float_freg;
         break;
     case OP_LOAD_F64_FR:
         instrWidth = 10;
         instrFlag = static_cast<uint32_t>(FloatType::F64);
-        instrCall = Instr::loadf_float_freg;
+        instrCall = instr_loadf_float_freg;
         break;
     case OP_LOAD_RO_FR:
         instrWidth = 9;
-        instrCall = Instr::loadf_ro_freg;
+        instrCall = instr_loadf_ro_freg;
         break;
 
     /********************************
@@ -391,7 +391,7 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_STORE_IT_IR_RO:
         instrWidth = 9;
-        instrCall = Instr::store_ireg_ro;
+        instrCall = instr_store_ireg_ro;
         break;
 
     /********************************
@@ -400,30 +400,30 @@ bool UVM::nextInstr() {
     case OP_COPY_I8_RO:
         instrWidth = 8;
         instrFlag = static_cast<uint32_t>(IntType::I8);
-        instrCall = Instr::copy_int_ro;
+        instrCall = instr_copy_int_ro;
         break;
     case OP_COPY_I16_RO:
         instrWidth = 9;
         instrFlag = static_cast<uint32_t>(IntType::I16);
-        instrCall = Instr::copy_int_ro;
+        instrCall = instr_copy_int_ro;
         break;
     case OP_COPY_I32_RO:
         instrWidth = 11;
         instrFlag = static_cast<uint32_t>(IntType::I32);
-        instrCall = Instr::copy_int_ro;
+        instrCall = instr_copy_int_ro;
         break;
     case OP_COPY_I64_RO:
         instrWidth = 15;
         instrFlag = static_cast<uint32_t>(IntType::I64);
-        instrCall = Instr::copy_int_ro;
+        instrCall = instr_copy_int_ro;
         break;
     case OP_COPY_IT_IR_IR:
         instrWidth = 4;
-        instrCall = Instr::copy_ireg_ireg;
+        instrCall = instr_copy_ireg_ireg;
         break;
     case OP_COPY_IT_RO_RO:
         instrWidth = 14;
-        instrCall = Instr::copy_ro_ro;
+        instrCall = instr_copy_ro_ro;
         break;
 
     /********************************
@@ -431,19 +431,19 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_ADD_IT_IR_IR:
         instrWidth = 4;
-        instrCall = Instr::add_ireg_ireg;
+        instrCall = instr_add_ireg_ireg;
         break;
     case OP_SUB_IT_IR_IR:
         instrWidth = 4;
-        instrCall = Instr::sub_ireg_ireg;
+        instrCall = instr_sub_ireg_ireg;
         break;
     case OP_MUL_IT_IR_IR:
         instrWidth = 4;
-        instrCall = Instr::mul_ireg_ireg;
+        instrCall = instr_mul_ireg_ireg;
         break;
     case OP_DIV_IT_IR_IR:
         instrWidth = 4;
-        instrCall = Instr::div_ireg_ireg;
+        instrCall = instr_div_ireg_ireg;
         break;
 
     /********************************
@@ -451,7 +451,7 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_LEA_RO_IR:
         instrWidth = 8;
-        instrCall = Instr::lea_ro_ireg;
+        instrCall = instr_lea_ro_ireg;
         break;
 
     /********************************
@@ -459,7 +459,7 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_SYS:
         instrWidth = 2;
-        instrCall = Instr::syscall;
+        instrCall = instr_syscall;
         break;
 
     /********************************
@@ -467,11 +467,11 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_CALL:
         instrWidth = 9;
-        instrCall = Instr::call;
+        instrCall = instr_call;
         break;
     case OP_RET:
         instrWidth = 1;
-        instrCall = Instr::ret;
+        instrCall = instr_ret;
         break;
 
     /********************************
@@ -480,48 +480,48 @@ bool UVM::nextInstr() {
     case OP_JMP: {
         instrWidth = 9;
         instrFlag = static_cast<uint32_t>(JumpCondition::UNCONDITIONAL);
-        instrCall = Instr::jmp;
+        instrCall = instr_jmp;
         break;
     }
     case OP_JE: {
         instrWidth = 9;
         instrFlag = static_cast<uint32_t>(JumpCondition::IF_EQUALS);
-        instrCall = Instr::jmp;
+        instrCall = instr_jmp;
         break;
     }
     case OP_JNE: {
         instrWidth = 9;
         instrFlag = static_cast<uint32_t>(JumpCondition::IF_NOT_EQUALS);
-        instrCall = Instr::jmp;
+        instrCall = instr_jmp;
         break;
     }
     case OP_JGT: {
         instrWidth = 9;
         instrFlag = static_cast<uint32_t>(JumpCondition::IF_GREATER_THAN);
-        instrCall = Instr::jmp;
+        instrCall = instr_jmp;
         break;
     }
     case OP_JLT: {
         instrWidth = 9;
         instrFlag = static_cast<uint32_t>(JumpCondition::IF_LESS_THAN);
-        instrCall = Instr::jmp;
+        instrCall = instr_jmp;
         break;
     }
     case OP_JGE: {
         instrWidth = 9;
         instrFlag = static_cast<uint32_t>(JumpCondition::IF_GREATER_EQUALS);
-        instrCall = Instr::jmp;
+        instrCall = instr_jmp;
         break;
     }
     case OP_JLE: {
         instrWidth = 9;
         instrFlag = static_cast<uint32_t>(JumpCondition::IF_LESS_EQUALS);
-        instrCall = Instr::jmp;
+        instrCall = instr_jmp;
         break;
     }
     case OP_CMP_IT_IR_IR:
         instrWidth = 4;
-        instrCall = Instr::cmp_ireg_ireg;
+        instrCall = instr_cmp_ireg_ireg;
         break;
 
     /********************************
@@ -530,17 +530,17 @@ bool UVM::nextInstr() {
     case OP_B2L:
         instrWidth = 2;
         instrFlag = static_cast<uint32_t>(IntType::I8);
-        instrCall = Instr::unsigned_cast_to_long;
+        instrCall = instr_unsigned_cast_to_long;
         break;
     case OP_S2L:
         instrWidth = 2;
         instrFlag = static_cast<uint32_t>(IntType::I16);
-        instrCall = Instr::unsigned_cast_to_long;
+        instrCall = instr_unsigned_cast_to_long;
         break;
     case OP_I2L:
         instrWidth = 2;
         instrFlag = static_cast<uint32_t>(IntType::I32);
-        instrCall = Instr::unsigned_cast_to_long;
+        instrCall = instr_unsigned_cast_to_long;
         break;
 
     /********************************

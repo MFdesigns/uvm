@@ -77,33 +77,34 @@ enum class JumpCondition {
 bool internalPrint(UVM* vm);
 
 // Note: For readability use snake_case for instruction function names
-namespace Instr {
+#define MAKE_INSTR(name)                                                       \
+    uint32_t instr_##name(UVM* vm, uint32_t width, uint32_t flag);
+
 // Arithmetic
-uint32_t add_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t sub_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t mul_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t div_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t unsigned_cast_to_long(UVM* vm, uint32_t width, uint32_t flag);
+MAKE_INSTR(add_ireg_ireg)
+MAKE_INSTR(sub_ireg_ireg)
+MAKE_INSTR(mul_ireg_ireg)
+MAKE_INSTR(div_ireg_ireg)
+MAKE_INSTR(unsigned_cast_to_long)
 // Branching
-uint32_t cmp_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t jmp(UVM* vm, uint32_t width, uint32_t flag);
+MAKE_INSTR(cmp_ireg_ireg)
+MAKE_INSTR(jmp)
 // Function
-uint32_t call(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t ret(UVM* vm, uint32_t width, uint32_t flag);
+MAKE_INSTR(call)
+MAKE_INSTR(ret)
 // Memory manip
-uint32_t push_int(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t push_ireg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t pop(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t pop_ireg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t load_int_ireg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t load_ro_ireg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t loadf_float_freg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t loadf_ro_freg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t store_ireg_ro(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t copy_int_ro(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t copy_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t copy_ro_ro(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t lea_ro_ireg(UVM* vm, uint32_t width, uint32_t flag);
+MAKE_INSTR(push_int)
+MAKE_INSTR(push_ireg)
+MAKE_INSTR(pop)
+MAKE_INSTR(pop_ireg)
+MAKE_INSTR(load_int_ireg)
+MAKE_INSTR(load_ro_ireg)
+MAKE_INSTR(loadf_float_freg)
+MAKE_INSTR(loadf_ro_freg)
+MAKE_INSTR(store_ireg_ro)
+MAKE_INSTR(copy_int_ro)
+MAKE_INSTR(copy_ireg_ireg)
+MAKE_INSTR(copy_ro_ro)
+MAKE_INSTR(lea_ro_ireg)
 // Syscall
-uint32_t syscall(UVM* vm, uint32_t width, uint32_t flag);
-} // namespace Instr
+MAKE_INSTR(syscall)
