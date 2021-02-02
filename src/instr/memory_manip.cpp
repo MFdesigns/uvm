@@ -406,9 +406,11 @@ uint32_t instr_loadf_ro_freg(UVM* vm, uint32_t width, uint32_t flag) {
 }
 
 /**
- * Stores an integer register value to the address at register offset
- * @param vm Pointer to current UVM instance
- * @return On success return true otherwise false
+ * Stores integer from register to address at register offset
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE, E_INVALID_SOURCE_REG, E_INVALID_REG_OFFSET, E_INVALID_WRITE]
  */
 uint32_t instr_store_ireg_ro(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;
@@ -420,17 +422,17 @@ uint32_t instr_store_ireg_ro(UVM* vm, uint32_t width, uint32_t flag) {
 
     IntType intType = IntType::I32;
     if (!parseIntType(type, &intType)) {
-        return 0xFF;
+        return E_INVALID_TYPE;
     }
 
     IntVal intReg{};
     if (vm->MMU.getIntReg(iReg, intReg) != 0) {
-        return 0xFF;
+        return E_INVALID_SOURCE_REG;
     }
 
     uint64_t roAddress = 0;
     if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[RO_OFFSET], &roAddress)) {
-        return 0xFF;
+        return E_INVALID_REG_OFFSET;
     }
 
     UVMDataSize writeSize = UVMDataSize::BYTE;
@@ -451,7 +453,58 @@ uint32_t instr_store_ireg_ro(UVM* vm, uint32_t width, uint32_t flag) {
 
     uint32_t writeRes = vm->MMU.write(&intReg, roAddress, writeSize, 0);
     if (writeRes != UVM_SUCCESS) {
-        return 0xFF;
+        return E_INVALID_WRITE;
+    }
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Stores float from register to address at register offset
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE, E_INVALID_SOURCE_REG, E_INVALID_REG_OFFSET, E_INVALID_WRITE]
+ */
+uint32_t instr_storef_freg_ro(UVM* vm, uint32_t width, uint32_t flag) {
+    // Version:
+    // storef <fT> <fR> <RO>
+
+    constexpr uint32_t TYPE_OFFSET = 1;
+    constexpr uint32_t FREG_OFFSET = 2;
+    constexpr uint32_t RO_OFFSET = 3;
+
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    uint8_t sourceReg = vm->MMU.InstrBuffer[FREG_OFFSET];
+
+    FloatType floatType = FloatType::F32;
+    if (!parseFloatType(type, &floatType)) {
+        return E_INVALID_TYPE;
+    }
+
+    FloatVal sourceRegVal{};
+    if (vm->MMU.getFloatReg(sourceReg, sourceRegVal) != 0) {
+        return E_INVALID_SOURCE_REG;
+    }
+
+    uint64_t roAddress = 0;
+    if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[RO_OFFSET], &roAddress)) {
+        return E_INVALID_REG_OFFSET;
+    }
+
+    UVMDataSize writeSize = UVMDataSize::BYTE;
+    switch (floatType) {
+    case FloatType::F32:
+        writeSize = UVMDataSize::DWORD;
+        break;
+    case FloatType::F64:
+        writeSize = UVMDataSize::QWORD;
+        break;
+    }
+
+    uint32_t writeRes = vm->MMU.write(&sourceRegVal, roAddress, writeSize, 0);
+    if (writeRes != UVM_SUCCESS) {
+        return E_INVALID_WRITE;
     }
 
     return UVM_SUCCESS;

@@ -31,3 +31,5 @@ constexpr uint32_t E_INVALID_TARGET_REG = 25;
 constexpr uint32_t E_INVALID_TYPE = 26;
 constexpr uint32_t E_INVALID_REG_OFFSET = 27;
 constexpr uint32_t E_INVALID_READ = 28;
+constexpr uint32_t E_INVALID_SOURCE_REG = 29;
+constexpr uint32_t E_INVALID_WRITE = 30;

@@ -393,6 +393,10 @@ bool UVM::nextInstr() {
         instrWidth = 9;
         instrCall = instr_store_ireg_ro;
         break;
+    case OP_STORE_FT_FR_RO:
+        instrWidth = 9;
+        instrCall = instr_storef_freg_ro;
+        break;
 
     /********************************
         COPY INSTRUCTIONS

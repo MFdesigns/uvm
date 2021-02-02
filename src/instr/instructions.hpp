@@ -27,6 +27,7 @@ constexpr uint8_t OP_PUSH_IT_IR = 0x05;
 constexpr uint8_t OP_POP_IT = 0x06;
 constexpr uint8_t OP_POP_IT_IR = 0x07;
 constexpr uint8_t OP_STORE_IT_IR_RO = 0x08;
+constexpr uint8_t OP_STORE_FT_FR_RO = 0x09;
 constexpr uint8_t OP_LEA_RO_IR = 0x10;
 constexpr uint8_t OP_LOAD_I8_IR = 0x11;
 constexpr uint8_t OP_LOAD_I16_IR = 0x12;
@@ -102,6 +103,7 @@ MAKE_INSTR(load_ro_ireg)
 MAKE_INSTR(loadf_float_freg)
 MAKE_INSTR(loadf_ro_freg)
 MAKE_INSTR(store_ireg_ro)
+MAKE_INSTR(storef_freg_ro)
 MAKE_INSTR(copy_int_ro)
 MAKE_INSTR(copy_ireg_ireg)
 MAKE_INSTR(copy_ro_ro)
