@@ -44,6 +44,10 @@ constexpr uint8_t OP_COPY_I32_RO = 0x23;
 constexpr uint8_t OP_COPY_I64_RO = 0x24;
 constexpr uint8_t OP_COPY_IT_IR_IR = 0x25;
 constexpr uint8_t OP_COPY_IT_RO_RO = 0x26;
+constexpr uint8_t OP_COPY_F32_RO = 0x27;
+constexpr uint8_t OP_COPY_F64_RO = 0x28;
+constexpr uint8_t OP_COPY_FT_FR_FR = 0x29;
+constexpr uint8_t OP_COPY_FT_RO_RO = 0x2A;
 constexpr uint8_t OP_RET = 0x30;
 constexpr uint8_t OP_ADD_IT_IR_IR = 0x35;
 constexpr uint8_t OP_SUB_IT_IR_IR = 0x45;
@@ -107,6 +111,9 @@ MAKE_INSTR(storef_freg_ro)
 MAKE_INSTR(copy_int_ro)
 MAKE_INSTR(copy_ireg_ireg)
 MAKE_INSTR(copy_ro_ro)
+MAKE_INSTR(copyf_float_ro)
+MAKE_INSTR(copyf_freg_freg)
+MAKE_INSTR(copyf_ro_ro)
 MAKE_INSTR(lea_ro_ireg)
 // Syscall
 MAKE_INSTR(syscall)

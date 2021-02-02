@@ -676,6 +676,152 @@ uint32_t instr_copy_ro_ro(UVM* vm, uint32_t width, uint32_t flag) {
     return UVM_SUCCESS;
 }
 
+/**
+ * Copies immediate float value to address at register offset
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag FloatType determines what instruction version is selected
+ * @return On success returns UVM_SUCCESS otherwise error state
+ * [E_INVALID_REG_OFFSET, E_INVALID_WRITE]
+ */
+uint32_t instr_copyf_float_ro(UVM* vm, uint32_t width, uint32_t flag) {
+    // Version:
+    // copy <f32> <RO>
+    // copy <f64> <RO>
+
+    constexpr uint32_t FLOAT_OFFSET = 1;
+    FloatType type = static_cast<FloatType>(flag);
+
+    // Offset of the register offset inside the instruction buffer
+    uint32_t roOffset = 0;
+
+    FloatVal immVal;
+    UVMDataSize intSize = UVMDataSize::BYTE;
+    switch (type) {
+    case FloatType::F32:
+        std::memcpy(&immVal.F32, &vm->MMU.InstrBuffer[FLOAT_OFFSET], 4);
+        intSize = UVMDataSize::DWORD;
+        roOffset = 5;
+        break;
+    case FloatType::F64:
+        std::memcpy(&immVal.F64, &vm->MMU.InstrBuffer[FLOAT_OFFSET], 8);
+        intSize = UVMDataSize::QWORD;
+        roOffset = 9;
+        break;
+    }
+
+    uint64_t roAddress = 0;
+    if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[roOffset], &roAddress)) {
+        return E_INVALID_REG_OFFSET;
+    }
+
+    uint32_t writeRes = vm->MMU.write(&immVal.F64, roAddress, intSize, 0);
+    if (writeRes != UVM_SUCCESS) {
+        return E_INVALID_WRITE;
+    }
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Copies source float register value to destination register
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
+ * E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ */
+uint32_t instr_copyf_freg_freg(UVM* vm, uint32_t width, uint32_t flag) {
+    // Version:
+    // copy <fT> <fR1> <fR2>
+
+    constexpr uint32_t TYPE_OFFSET = 1;
+    constexpr uint32_t SRC_FREG_OFFSET = 2;
+    constexpr uint32_t DEST_FREG_OFFSET = 3;
+
+    // Get all instruction arguments
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    uint8_t srcRegId = vm->MMU.InstrBuffer[SRC_FREG_OFFSET];
+    uint8_t destRegId = vm->MMU.InstrBuffer[DEST_FREG_OFFSET];
+
+    FloatType floatType = FloatType::F32;
+    if (!parseFloatType(type, &floatType)) {
+        return E_INVALID_TYPE;
+    }
+
+    FloatVal srcRegVal;
+    if (vm->MMU.getFloatReg(srcRegId, srcRegVal) != 0) {
+        return E_INVALID_SOURCE_REG;
+    }
+
+    if (vm->MMU.setFloatReg(destRegId, srcRegVal, floatType) != 0) {
+        return E_INVALID_TARGET_REG;
+    }
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Copies float value at source register offset to address at destination
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
+ * E_INVALID_SOURCE_REG_OFFSET, E_INVALID_DEST_REG_OFFSET, E_INVALID_READ,
+ * E_INVALID_WRITE]
+ */
+uint32_t instr_copyf_ro_ro(UVM* vm, uint32_t width, uint32_t flag) {
+    // Version:
+    // copy <fT> <RO1> <RO2>
+
+    constexpr uint32_t TYPE_OFFSET = 1;
+    constexpr uint32_t SRC_RO_OFFSET = 2;
+    constexpr uint32_t DEST_RO_OFFSET = 8;
+
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+
+    FloatType floatType = FloatType::F32;
+    if (!parseFloatType(type, &floatType)) {
+        return E_INVALID_TYPE;
+    }
+
+    UVMDataSize readSize = UVMDataSize::BYTE;
+    switch (floatType) {
+    case FloatType::F32:
+        readSize = UVMDataSize::DWORD;
+        break;
+    case FloatType::F64:
+        readSize = UVMDataSize::QWORD;
+        break;
+    }
+
+    uint64_t srcROAddr = 0;
+    uint64_t destROAddr = 0;
+    if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[SRC_RO_OFFSET],
+                               &srcROAddr)) {
+        return E_INVALID_SOURCE_REG_OFFSET;
+    }
+
+    if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[DEST_RO_OFFSET],
+                               &destROAddr)) {
+        return E_INVALID_DEST_REG_OFFSET;
+    }
+
+    uint64_t readBuff = 0;
+    uint32_t readRes = vm->MMU.read(
+        srcROAddr, reinterpret_cast<uint8_t*>(&readBuff), readSize, 0);
+    if (readRes != UVM_SUCCESS) {
+        return E_INVALID_READ;
+    }
+
+    uint32_t writeRes = vm->MMU.write(&readBuff, destROAddr, readSize, 0);
+    if (writeRes != UVM_SUCCESS) {
+        return E_INVALID_WRITE;
+    }
+
+    return UVM_SUCCESS;
+}
+
 // TODO: Update docs
 /**
  * Loads the computed address of register offset into integer register

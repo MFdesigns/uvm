@@ -429,6 +429,24 @@ bool UVM::nextInstr() {
         instrWidth = 14;
         instrCall = instr_copy_ro_ro;
         break;
+    case OP_COPY_F32_RO:
+        instrWidth = 11;
+        instrFlag = static_cast<uint32_t>(FloatType::F32);
+        instrCall = instr_copyf_float_ro;
+        break;
+    case OP_COPY_F64_RO:
+        instrWidth = 15;
+        instrFlag = static_cast<uint32_t>(FloatType::F64);
+        instrCall = instr_copyf_float_ro;
+        break;
+    case  OP_COPY_FT_FR_FR:
+        instrWidth = 4;
+        instrCall = instr_copyf_freg_freg;
+        break;
+    case  OP_COPY_FT_RO_RO:
+        instrWidth = 14;
+        instrCall = instr_copyf_ro_ro;
+        break;
 
     /********************************
         ARITHMETIC INSTRUCTIONS
