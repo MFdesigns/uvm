@@ -18,7 +18,7 @@
 #include "instructions.hpp"
 #include <iostream>
 
-uint32_t Instr::cmp_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_cmp_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;
     constexpr uint32_t IREG_A_OFFSET = 2;
     constexpr uint32_t IREG_B_OFFSET = 3;
@@ -84,7 +84,7 @@ uint32_t Instr::cmp_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
  * @return On success returns UVM_SUCCESS, if jmp was executed
  * UVM_SUCCESS_JUMPED otherwise an error status
  */
-uint32_t Instr::jmp(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_jmp(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t ADDR_OFFSET = 1;
     // Get target vAddr
     uint64_t* targetAddr =

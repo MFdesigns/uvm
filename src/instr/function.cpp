@@ -18,7 +18,7 @@
 #include "instructions.hpp"
 #include <iostream>
 
-uint32_t Instr::call(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_call(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t ADDR_OFFSET = 1;
 
     // Get target vAddr
@@ -50,7 +50,7 @@ uint32_t Instr::call(UVM* vm, uint32_t width, uint32_t flag) {
     return UVM_SUCCESS_JUMPED;
 }
 
-uint32_t Instr::ret(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_ret(UVM* vm, uint32_t width, uint32_t flag) {
     uint64_t targetIP = 0;
     if (vm->MMU.stackPop(&targetIP, UVMDataSize::QWORD) != 0) {
         return 0xFF;

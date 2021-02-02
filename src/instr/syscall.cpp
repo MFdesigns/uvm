@@ -59,7 +59,7 @@ bool internalPrint(UVM* vm) {
  * @param vm Current UVM instance
  * @return On success return true otherwise false
  */
-uint32_t Instr::syscall(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_syscall(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t SYS_TYPE_OFFSET = 1;
 
     constexpr uint8_t SYS_PRINT = 0x1;

@@ -27,7 +27,7 @@
  * @param type Operation width deducted from opcode
  * @return On success return true otherwise false
  */
-uint32_t Instr::push_int(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_push_int(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t INT_OFFSET = 1;
 
     IntType type = static_cast<IntType>(flag);
@@ -70,7 +70,7 @@ uint32_t Instr::push_int(UVM* vm, uint32_t width, uint32_t flag) {
  * @param vm Pointer to current UVM instance
  * @return On success return true otherwise false
  */
-uint32_t Instr::push_ireg(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_push_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;
     constexpr uint32_t IREG_OFFSET = 2;
 
@@ -119,7 +119,7 @@ uint32_t Instr::push_ireg(UVM* vm, uint32_t width, uint32_t flag) {
  * @param vm Pointer to current UVM instance
  * @return On success return true otherwise false
  */
-uint32_t Instr::pop(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_pop(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;
 
     uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
@@ -158,7 +158,7 @@ uint32_t Instr::pop(UVM* vm, uint32_t width, uint32_t flag) {
  * @param vm Pointer to current UVM instance
  * @return On success return true otherwise false
  */
-uint32_t Instr::pop_ireg(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_pop_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;
     constexpr uint32_t IREG_OFFSET = 2;
 
@@ -208,7 +208,7 @@ uint32_t Instr::pop_ireg(UVM* vm, uint32_t width, uint32_t flag) {
  * @param type Operation width deducted from opcode
  * @return On success return true otherwise false
  */
-uint32_t Instr::load_int_ireg(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_load_int_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     // TODO: Should be int offset
     constexpr uint32_t IREG_OFFSET = 1;
 
@@ -244,7 +244,7 @@ uint32_t Instr::load_int_ireg(UVM* vm, uint32_t width, uint32_t flag) {
  * @param vm Pointer to current UVM instance
  * @return On success return true otherwise false
  */
-uint32_t Instr::load_ro_ireg(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_load_ro_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;
     constexpr uint32_t RO_OFFSET = 2;
     constexpr uint32_t IREG_OFFSET = 8;
@@ -316,7 +316,7 @@ uint32_t Instr::load_ro_ireg(UVM* vm, uint32_t width, uint32_t flag) {
  * @return On success returns UVM_SUCCESS otherwise error state
  * [E_INVALID_TARGET_REG]
  */
-uint32_t Instr::loadf_float_freg(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_loadf_float_freg(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
     // loadf <f32> <fR>
     // loadf <f64> <fR>
@@ -350,7 +350,7 @@ uint32_t Instr::loadf_float_freg(UVM* vm, uint32_t width, uint32_t flag) {
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
  * E_INVALID_REG_OFFSET, E_INVALID_READ, E_INVALID_TARGET_REG]
  */
-uint32_t Instr::loadf_ro_freg(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_loadf_ro_freg(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
     // loadf <fT> <RO> <fR>
 
@@ -410,7 +410,7 @@ uint32_t Instr::loadf_ro_freg(UVM* vm, uint32_t width, uint32_t flag) {
  * @param vm Pointer to current UVM instance
  * @return On success return true otherwise false
  */
-uint32_t Instr::store_ireg_ro(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_store_ireg_ro(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;
     constexpr uint32_t IREG_OFFSET = 2;
     constexpr uint32_t RO_OFFSET = 3;
@@ -464,7 +464,7 @@ uint32_t Instr::store_ireg_ro(UVM* vm, uint32_t width, uint32_t flag) {
  * @param type Operation width deducted from opcode
  * @return On success return true otherwise false
  */
-uint32_t Instr::copy_int_ro(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_copy_int_ro(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t INT_OFFSET = 1;
 
     IntVal val;
@@ -512,7 +512,7 @@ uint32_t Instr::copy_int_ro(UVM* vm, uint32_t width, uint32_t flag) {
  * @param vm Pointer to current UVM instance
  * @return On success return true otherwise false
  */
-uint32_t Instr::copy_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_copy_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;
     constexpr uint32_t IREG_A_OFFSET = 2;
     constexpr uint32_t IREG_B_OFFSET = 3;
@@ -545,7 +545,7 @@ uint32_t Instr::copy_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
  * @param vm Pointer to current UVM instance
  * @return On success return true otherwise false
  */
-uint32_t Instr::copy_ro_ro(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_copy_ro_ro(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;
     constexpr uint32_t RO_OFFSET_A = 2;
     constexpr uint32_t RO_OFFSET_B = 8;
@@ -600,7 +600,7 @@ uint32_t Instr::copy_ro_ro(UVM* vm, uint32_t width, uint32_t flag) {
  * @param vm Pointer to current UVM instance
  * @return On success return true otherwise false
  */
-uint32_t Instr::lea_ro_ireg(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_lea_ro_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t RO_OFFSET = 1;
     constexpr uint32_t IREG_OFFSET = 7;
 
