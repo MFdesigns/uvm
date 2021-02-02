@@ -18,7 +18,7 @@
 #include "instructions.hpp"
 #include <iostream>
 
-uint32_t Instr::cmpIRegToIReg(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t Instr::cmp_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;
     constexpr uint32_t IREG_A_OFFSET = 2;
     constexpr uint32_t IREG_B_OFFSET = 3;

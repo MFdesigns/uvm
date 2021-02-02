@@ -79,31 +79,31 @@ bool internalPrint(UVM* vm);
 // Note: For readability use snake_case for instruction function names
 namespace Instr {
 // Arithmetic
-uint32_t addIRegToIReg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t subIRegFromIReg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t mulIRegWithIReg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t divIRegByIReg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t uIntConvert(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t add_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t sub_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t mul_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t div_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t unsigned_cast_to_long(UVM* vm, uint32_t width, uint32_t flag);
 // Branching
-uint32_t cmpIRegToIReg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t cmp_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag);
 uint32_t jmp(UVM* vm, uint32_t width, uint32_t flag);
 // Function
 uint32_t call(UVM* vm, uint32_t width, uint32_t flag);
 uint32_t ret(UVM* vm, uint32_t width, uint32_t flag);
 // Memory manip
-uint32_t pushInt(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t pushIReg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t push_int(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t push_ireg(UVM* vm, uint32_t width, uint32_t flag);
 uint32_t pop(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t popIReg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t loadIntToIReg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t loadROToIReg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t loadf_float_reg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t loadf_ro_reg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t storeIRegToRO(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t copyIntToRO(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t copyIRegToIReg(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t copyROToRO(UVM* vm, uint32_t width, uint32_t flag);
-uint32_t leaROToIReg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t pop_ireg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t load_int_ireg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t load_ro_ireg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t loadf_float_freg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t loadf_ro_freg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t store_ireg_ro(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t copy_int_ro(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t copy_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t copy_ro_ro(UVM* vm, uint32_t width, uint32_t flag);
+uint32_t lea_ro_ireg(UVM* vm, uint32_t width, uint32_t flag);
 // Syscall
 uint32_t syscall(UVM* vm, uint32_t width, uint32_t flag);
 } // namespace Instr

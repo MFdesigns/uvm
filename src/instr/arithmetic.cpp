@@ -17,7 +17,7 @@
 #include "../error.hpp"
 #include "instructions.hpp"
 
-uint32_t Instr::addIRegToIReg(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t Instr::add_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;
     constexpr uint32_t IREG_A_OFFSET = 2;
     constexpr uint32_t IREG_B_OFFSET = 3;
@@ -65,7 +65,7 @@ uint32_t Instr::addIRegToIReg(UVM* vm, uint32_t width, uint32_t flag) {
     return UVM_SUCCESS;
 }
 
-uint32_t Instr::subIRegFromIReg(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t Instr::sub_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;
     constexpr uint32_t IREG_A_OFFSET = 2;
     constexpr uint32_t IREG_B_OFFSET = 3;
@@ -113,7 +113,7 @@ uint32_t Instr::subIRegFromIReg(UVM* vm, uint32_t width, uint32_t flag) {
     return UVM_SUCCESS;
 }
 
-uint32_t Instr::mulIRegWithIReg(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t Instr::mul_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;
     constexpr uint32_t IREG_A_OFFSET = 2;
     constexpr uint32_t IREG_B_OFFSET = 3;
@@ -161,7 +161,7 @@ uint32_t Instr::mulIRegWithIReg(UVM* vm, uint32_t width, uint32_t flag) {
     return UVM_SUCCESS;
 }
 
-uint32_t Instr::divIRegByIReg(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t Instr::div_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;
     constexpr uint32_t IREG_A_OFFSET = 2;
     constexpr uint32_t IREG_B_OFFSET = 3;
@@ -209,7 +209,7 @@ uint32_t Instr::divIRegByIReg(UVM* vm, uint32_t width, uint32_t flag) {
     return UVM_SUCCESS;
 }
 
-uint32_t Instr::uIntConvert(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t Instr::unsigned_cast_to_long(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t IREG_OFFSET = 1;
 
     constexpr uint64_t I8_MASK = 0xF;
