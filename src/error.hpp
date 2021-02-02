@@ -27,3 +27,7 @@ constexpr uint32_t E_INVALID_SEC_TABLE = 2;
 constexpr uint32_t E_VADDR_NOT_FOUND = 3;
 constexpr uint32_t E_MISSING_PERM = 4;
 constexpr uint32_t E_DEALLOC_INVALID_ADDR = 5;
+constexpr uint32_t E_INVALID_TARGET_REG = 6;
+constexpr uint32_t E_INVALID_TYPE = 7;
+constexpr uint32_t E_INVALID_REG_OFFSET = 8;
+constexpr uint32_t E_INVALID_READ = 9;

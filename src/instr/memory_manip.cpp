@@ -209,6 +209,7 @@ uint32_t Instr::popIReg(UVM* vm, uint32_t width, uint32_t flag) {
  * @return On success return true otherwise false
  */
 uint32_t Instr::loadIntToIReg(UVM* vm, uint32_t width, uint32_t flag) {
+    // TODO: Should be int offset
     constexpr uint32_t IREG_OFFSET = 1;
 
     IntType intType = static_cast<IntType>(flag);
@@ -302,6 +303,103 @@ uint32_t Instr::loadROToIReg(UVM* vm, uint32_t width, uint32_t flag) {
 
     if (vm->MMU.setIntReg(iReg, intVal, intType) != 0) {
         return 0xFF;
+    }
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Loads immediate float into float register
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag FloatType of instruction version
+ * @return On success returns UVM_SUCCESS otherwise error state
+ * [E_INVALID_TARGET_REG]
+ */
+uint32_t Instr::loadf_float_reg(UVM* vm, uint32_t width, uint32_t flag) {
+    // Versions:
+    // loadf <f32> <fR>
+    // loadf <f64> <fR>
+
+    constexpr uint32_t FLOAT_OFFSET = 1;
+
+    FloatType floatType = static_cast<FloatType>(flag);
+    FloatVal val;
+    switch (floatType) {
+    case FloatType::F32:
+        std::memcpy(&val.F32, &vm->MMU.InstrBuffer[FLOAT_OFFSET], 4);
+        break;
+    case FloatType::F64:
+        std::memcpy(&val.F64, &vm->MMU.InstrBuffer[FLOAT_OFFSET], 8);
+        break;
+    }
+
+    uint8_t reg = vm->MMU.InstrBuffer[width - 1];
+    if (vm->MMU.setFloatReg(reg, val, floatType) != 0) {
+        return E_INVALID_TARGET_REG;
+    }
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Loads float at register offset into float register
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
+ * E_INVALID_REG_OFFSET, E_INVALID_READ, E_INVALID_TARGET_REG]
+ */
+uint32_t Instr::loadf_ro_reg(UVM* vm, uint32_t width, uint32_t flag) {
+    // Versions:
+    // loadf <fT> <RO> <fR>
+
+    constexpr uint32_t TYPE_OFFSET = 1;
+    constexpr uint32_t RO_OFFSET = 2;
+    constexpr uint32_t FREG_OFFSET = 8;
+
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    uint8_t fReg = vm->MMU.InstrBuffer[FREG_OFFSET];
+
+    FloatType floatType = FloatType::F32;
+    if (!parseFloatType(type, &floatType)) {
+        return E_INVALID_TYPE;
+    }
+
+    uint64_t roAddress = 0;
+    if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[RO_OFFSET], &roAddress)) {
+        return E_INVALID_REG_OFFSET;
+    }
+
+    UVMDataSize readSize = UVMDataSize::BYTE;
+    switch (floatType) {
+    case FloatType::F32:
+        readSize = UVMDataSize::DWORD;
+        break;
+    case FloatType::F64:
+        readSize = UVMDataSize::QWORD;
+        break;
+    }
+
+    uint64_t readBuff = 0;
+    uint32_t readRes = vm->MMU.read(
+        roAddress, reinterpret_cast<uint8_t*>(&readBuff), readSize, 0);
+    if (readRes != UVM_SUCCESS) {
+        return E_INVALID_READ;
+    }
+
+    FloatVal floatVal;
+    switch (floatType) {
+    case FloatType::F32:
+        std::memcpy(&floatVal.F32, &readBuff, 4);
+        break;
+    case FloatType::F64:
+        std::memcpy(&floatVal.F64, &readBuff, 8);
+        break;
+    }
+
+    if (vm->MMU.setFloatReg(fReg, floatVal, floatType) != 0) {
+        return E_INVALID_TARGET_REG;
     }
 
     return UVM_SUCCESS;

@@ -371,6 +371,20 @@ bool UVM::nextInstr() {
         instrWidth = 9;
         instrCall = Instr::loadROToIReg;
         break;
+    case OP_LOAD_F32_FR:
+        instrWidth = 6;
+        instrFlag = static_cast<uint32_t>(FloatType::F32);
+        instrCall = Instr::loadf_float_reg;
+        break;
+    case OP_LOAD_F64_FR:
+        instrWidth = 10;
+        instrFlag = static_cast<uint32_t>(FloatType::F64);
+        instrCall = Instr::loadf_float_reg;
+        break;
+    case OP_LOAD_RO_FR:
+        instrWidth = 9;
+        instrCall = Instr::loadf_ro_reg;
+        break;
 
     /********************************
         STORE INSTRUCTION

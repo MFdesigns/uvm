@@ -15,6 +15,7 @@
 // ======================================================================== //
 
 #include "debugger.hpp"
+#include "../instr/instructions.hpp"
 #include "http.hpp"
 #include <iostream>
 #include <memory>
