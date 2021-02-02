@@ -19,15 +19,15 @@
 
 // Successful values
 constexpr uint32_t UVM_SUCCESS = 0;
-constexpr uint32_t UVM_SUCCESS_JUMPED = 5;
+constexpr uint32_t UVM_SUCCESS_JUMPED = 1;
 
 // Error values
-constexpr uint32_t E_INVALID_HEADER = 1;
-constexpr uint32_t E_INVALID_SEC_TABLE = 2;
-constexpr uint32_t E_VADDR_NOT_FOUND = 3;
-constexpr uint32_t E_MISSING_PERM = 4;
-constexpr uint32_t E_DEALLOC_INVALID_ADDR = 5;
-constexpr uint32_t E_INVALID_TARGET_REG = 6;
-constexpr uint32_t E_INVALID_TYPE = 7;
-constexpr uint32_t E_INVALID_REG_OFFSET = 8;
-constexpr uint32_t E_INVALID_READ = 9;
+constexpr uint32_t E_INVALID_HEADER = 20;
+constexpr uint32_t E_INVALID_SEC_TABLE = 21;
+constexpr uint32_t E_VADDR_NOT_FOUND = 22;
+constexpr uint32_t E_MISSING_PERM = 23;
+constexpr uint32_t E_DEALLOC_INVALID_ADDR = 24;
+constexpr uint32_t E_INVALID_TARGET_REG = 25;
+constexpr uint32_t E_INVALID_TYPE = 26;
+constexpr uint32_t E_INVALID_REG_OFFSET = 27;
+constexpr uint32_t E_INVALID_READ = 28;
