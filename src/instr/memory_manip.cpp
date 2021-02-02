@@ -822,27 +822,33 @@ uint32_t instr_copyf_ro_ro(UVM* vm, uint32_t width, uint32_t flag) {
     return UVM_SUCCESS;
 }
 
-// TODO: Update docs
 /**
- * Loads the computed address of register offset into integer register
- * @param vm Pointer to current UVM instance
- * @return On success return true otherwise false
+ * Loads the computed address of register offset into destination integer
+ * register
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state
+ * [E_INVALID_SOURCE_REG_OFFSET]
  */
 uint32_t instr_lea_ro_ireg(UVM* vm, uint32_t width, uint32_t flag) {
+    // Version:
+    // lea <RO> <iR>
+
     constexpr uint32_t RO_OFFSET = 1;
     constexpr uint32_t IREG_OFFSET = 7;
 
-    uint8_t iReg = vm->MMU.InstrBuffer[IREG_OFFSET];
+    uint8_t destRegId = vm->MMU.InstrBuffer[IREG_OFFSET];
 
     uint64_t roAddress = 0;
     if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[RO_OFFSET], &roAddress)) {
-        return 0xFF;
+        return E_INVALID_SOURCE_REG_OFFSET;
     }
 
-    IntVal val;
-    val.I64 = roAddress;
-    if (vm->MMU.setIntReg(iReg, val, IntType::I64)) {
-        return 0xFF;
+    IntVal destRegVal;
+    destRegVal.I64 = roAddress;
+    if (vm->MMU.setIntReg(destRegId, destRegVal, IntType::I64)) {
+        return E_INVALID_TARGET_REG;
     }
 
     return UVM_SUCCESS;
