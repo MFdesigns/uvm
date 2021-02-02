@@ -18,7 +18,19 @@
 #include "instructions.hpp"
 #include <iostream>
 
+/**
+ * Call instruction pushes the ip on top off the stack and performs an
+ * unconditional jump the target virtual address.
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS_JUMPED otherwise error state
+ * [E_INVALID_STACK_OPERATION, E_INVALID_JUMP_DEST, E_MISSING_PERM]
+ */
 uint32_t instr_call(UVM* vm, uint32_t width, uint32_t flag) {
+    // Version:
+    // call <vAddr>
+
     constexpr uint32_t ADDR_OFFSET = 1;
 
     // Get target vAddr
@@ -26,23 +38,18 @@ uint32_t instr_call(UVM* vm, uint32_t width, uint32_t flag) {
         reinterpret_cast<uint64_t*>(&vm->MMU.InstrBuffer[ADDR_OFFSET]);
 
     // Push next instruction pointer
-    uint64_t currentIP = vm->MMU.IP + 9;
+    uint64_t currentIP = vm->MMU.IP + width;
     if (vm->MMU.stackPush(&currentIP, UVMDataSize::QWORD) != 0) {
-        return 0xFF;
+        return E_INVALID_STACK_OPERATION;
     }
 
     MemSection* memSec = vm->MMU.findSection(*targetAddr, 1);
     if (memSec == nullptr) {
-        std::cout << "[Error] Call to unknown memory address 0x" << std::hex
-                  << *targetAddr << '\n';
-        return 0xFF;
+        return E_INVALID_JUMP_DEST;
     }
 
     if ((memSec->Perm & PERM_EXE_MASK) != PERM_EXE_MASK) {
-        std::cout << "[Error] Call to section with missing executable "
-                     "permisson at address 0x"
-                  << std::hex << *targetAddr << '\n';
-        return 0xFF;
+        return E_MISSING_PERM;
     }
 
     vm->MMU.IP = *targetAddr;
@@ -50,24 +57,28 @@ uint32_t instr_call(UVM* vm, uint32_t width, uint32_t flag) {
     return UVM_SUCCESS_JUMPED;
 }
 
+/**
+ * Return instruction pops the virtual address on top of the stack into the
+ * instruction pointer and thus return to the caller.
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS_JUMPED otherwise error state
+ * [E_INVALID_STACK_OPERATION, E_INVALID_JUMP_DEST, E_MISSING_PERM]
+ */
 uint32_t instr_ret(UVM* vm, uint32_t width, uint32_t flag) {
     uint64_t targetIP = 0;
     if (vm->MMU.stackPop(&targetIP, UVMDataSize::QWORD) != 0) {
-        return 0xFF;
+        return E_INVALID_STACK_OPERATION;
     }
 
     MemSection* memSec = vm->MMU.findSection(targetIP, 1);
     if (memSec == nullptr) {
-        std::cout << "[Error] Ret instruction to unknown memory address 0x"
-                  << std::hex << targetIP << '\n';
-        return 0xFF;
+        return E_INVALID_JUMP_DEST;
     }
 
     if ((memSec->Perm & PERM_EXE_MASK) != PERM_EXE_MASK) {
-        std::cout << "[Error] Ret instruction to section with missing "
-                     "executable permisson at address 0x"
-                  << std::hex << targetIP << '\n';
-        return 0xFF;
+        return E_MISSING_PERM;
     }
 
     vm->MMU.IP = targetIP;
