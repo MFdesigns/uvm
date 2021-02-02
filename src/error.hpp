@@ -21,6 +21,8 @@
 constexpr uint32_t UVM_SUCCESS = 0;
 constexpr uint32_t UVM_SUCCESS_JUMPED = 1;
 
+// TODO: Replace E_INVALID_REG_OFFSET with E_INVALID_SOURCE_REG_OFFSET or E_INVALID_DEST_REG_OFFSET
+
 // Error values
 constexpr uint32_t E_INVALID_HEADER = 20;
 constexpr uint32_t E_INVALID_SEC_TABLE = 21;
@@ -33,3 +35,5 @@ constexpr uint32_t E_INVALID_REG_OFFSET = 27;
 constexpr uint32_t E_INVALID_READ = 28;
 constexpr uint32_t E_INVALID_SOURCE_REG = 29;
 constexpr uint32_t E_INVALID_WRITE = 30;
+constexpr uint32_t E_INVALID_SOURCE_REG_OFFSET = 31;
+constexpr uint32_t E_INVALID_DEST_REG_OFFSET = 32;
