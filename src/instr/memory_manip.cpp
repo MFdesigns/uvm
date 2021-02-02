@@ -221,36 +221,43 @@ uint32_t instr_pop_ireg(UVM* vm, uint32_t width, uint32_t flag) {
 
 /**
  * Loads an immedate integer value into an integer register
- * @param vm Pointer to current UVM instance
+ * @param vm UVM instance
  * @param width Instruction width
- * @param type Operation width deducted from opcode
- * @return On success return true otherwise false
+ * @param flag IntType determining instruction version
+ * @return On success returns UVM_SUCCESS otherwise error state
+ * [E_INVALID_TARGET_REG]
  */
 uint32_t instr_load_int_ireg(UVM* vm, uint32_t width, uint32_t flag) {
-    // TODO: Should be int offset
-    constexpr uint32_t IREG_OFFSET = 1;
+    // Versions:
+    // load <i8> <iR>
+    // load <i16> <iR>
+    // load <i32> <iR>
+    // load <i64> <iR>
+
+    constexpr uint32_t INT_OFFSET = 1;
 
     IntType intType = static_cast<IntType>(flag);
+
     IntVal val;
     switch (intType) {
     case IntType::I8:
-        val.I8 = vm->MMU.InstrBuffer[IREG_OFFSET];
+        val.I8 = vm->MMU.InstrBuffer[INT_OFFSET];
         break;
     case IntType::I16:
-        std::memcpy(&val.I16, &vm->MMU.InstrBuffer[IREG_OFFSET], 2);
+        std::memcpy(&val.I16, &vm->MMU.InstrBuffer[INT_OFFSET], 2);
         break;
     case IntType::I32:
-        std::memcpy(&val.I32, &vm->MMU.InstrBuffer[IREG_OFFSET], 4);
+        std::memcpy(&val.I32, &vm->MMU.InstrBuffer[INT_OFFSET], 4);
         break;
     case IntType::I64:
-        std::memcpy(&val.I64, &vm->MMU.InstrBuffer[IREG_OFFSET], 8);
+        std::memcpy(&val.I64, &vm->MMU.InstrBuffer[INT_OFFSET], 8);
         break;
     }
 
     // Target register is at the last byte in instruction
     uint8_t reg = vm->MMU.InstrBuffer[width - 1];
     if (vm->MMU.setIntReg(reg, val, intType) != 0) {
-        return 0xFF;
+        return E_INVALID_TARGET_REG;
     }
 
     return UVM_SUCCESS;
@@ -259,25 +266,31 @@ uint32_t instr_load_int_ireg(UVM* vm, uint32_t width, uint32_t flag) {
 /**
  * Loads an integer value from address at register offset into an integer
  * register
- * @param vm Pointer to current UVM instance
- * @return On success return true otherwise false
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
+ * E_INVALID_DEST_REG_OFFSET, E_INVALID_READ, E_INVALID_TARGET_REG]
  */
 uint32_t instr_load_ro_ireg(UVM* vm, uint32_t width, uint32_t flag) {
+    // Version:
+    // load <iT> <RO> <iR>
+
     constexpr uint32_t TYPE_OFFSET = 1;
     constexpr uint32_t RO_OFFSET = 2;
     constexpr uint32_t IREG_OFFSET = 8;
 
     uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
-    uint8_t iReg = vm->MMU.InstrBuffer[IREG_OFFSET];
+    uint8_t srcRegId = vm->MMU.InstrBuffer[IREG_OFFSET];
 
     IntType intType = IntType::I32;
     if (!parseIntType(type, &intType)) {
-        return 0xFF;
+        return E_INVALID_TYPE;
     }
 
     uint64_t roAddress = 0;
     if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[RO_OFFSET], &roAddress)) {
-        return 0xFF;
+        return E_INVALID_DEST_REG_OFFSET;
     }
 
     UVMDataSize readSize = UVMDataSize::BYTE;
@@ -300,7 +313,7 @@ uint32_t instr_load_ro_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     uint32_t readRes = vm->MMU.read(
         roAddress, reinterpret_cast<uint8_t*>(&readBuff), readSize, 0);
     if (readRes != UVM_SUCCESS) {
-        return 0xFF;
+        return E_INVALID_READ;
     }
 
     IntVal intVal;
@@ -319,8 +332,8 @@ uint32_t instr_load_ro_ireg(UVM* vm, uint32_t width, uint32_t flag) {
         break;
     }
 
-    if (vm->MMU.setIntReg(iReg, intVal, intType) != 0) {
-        return 0xFF;
+    if (vm->MMU.setIntReg(srcRegId, intVal, intType) != 0) {
+        return E_INVALID_TARGET_REG;
     }
 
     return UVM_SUCCESS;

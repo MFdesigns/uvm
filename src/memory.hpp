@@ -77,7 +77,7 @@ union IntVal {
 
 union FloatVal {
     float F32;
-    double F64;
+    double F64 = 0.0f;
 };
 
 struct UVMInt {
