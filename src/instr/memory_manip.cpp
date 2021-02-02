@@ -22,43 +22,49 @@
 /**
  * Pushes an integer value of given size on top of the stack and increases the
  * stack pointer by the size of the pushed value
- * @param vm Pointer to current UVM instance
+ * @param vm UVM instance
  * @param width Instruction width
- * @param type Operation width deducted from opcode
- * @return On success return true otherwise false
+ * @param flag IntType determining instruction version
+ * @return On success returns UVM_SUCCESS otherwise error state
+ * [E_INVALID_STACK_OPERATION]
  */
 uint32_t instr_push_int(UVM* vm, uint32_t width, uint32_t flag) {
+    // Versions:
+    // push <i8>
+    // push <i16>
+    // push <i32>
+    // push <i64>
+
     constexpr uint32_t INT_OFFSET = 1;
 
     IntType type = static_cast<IntType>(flag);
-    IntVal val;
+
+    IntVal srcIntVal;
     UVMDataSize dataSize = UVMDataSize::BYTE;
     switch (type) {
     case IntType::I8:
-        val.I8 = vm->MMU.InstrBuffer[INT_OFFSET];
+        srcIntVal.I8 = vm->MMU.InstrBuffer[INT_OFFSET];
         break;
     case IntType::I16:
-        val.I16 =
+        srcIntVal.I16 =
             *reinterpret_cast<uint16_t*>(&vm->MMU.InstrBuffer[INT_OFFSET]);
         dataSize = UVMDataSize::WORD;
         break;
     case IntType::I32:
-        val.I32 =
+        srcIntVal.I32 =
             *reinterpret_cast<uint32_t*>(&vm->MMU.InstrBuffer[INT_OFFSET]);
         dataSize = UVMDataSize::DWORD;
         break;
     case IntType::I64:
-        val.I64 =
+        srcIntVal.I64 =
             *reinterpret_cast<uint64_t*>(&vm->MMU.InstrBuffer[INT_OFFSET]);
         dataSize = UVMDataSize::QWORD;
         break;
     }
 
-    uint32_t status = vm->MMU.stackPush(&val, dataSize);
+    uint32_t status = vm->MMU.stackPush(&srcIntVal, dataSize);
     if (status != 0) {
-        std::cout << "[Runtime] Error code " << std::hex << "0x" << status
-                  << '\n';
-        return 0xFF;
+        return E_INVALID_STACK_OPERATION;
     }
 
     return UVM_SUCCESS;
@@ -67,27 +73,32 @@ uint32_t instr_push_int(UVM* vm, uint32_t width, uint32_t flag) {
 /**
  * Pushes an integer value of given size from a register on top of the stack and
  * increases the stack pointer by the size of the pushed value
- * @param vm Pointer to current UVM instance
- * @return On success return true otherwise false
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state
+ * [E_INVALID_SOURCE_REG, E_INVALID_TYPE, E_INVALID_STACK_OPERATION]
  */
 uint32_t instr_push_ireg(UVM* vm, uint32_t width, uint32_t flag) {
+    // Version:
+    // push <iT> <iR>
+
     constexpr uint32_t TYPE_OFFSET = 1;
     constexpr uint32_t IREG_OFFSET = 2;
 
     uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
-    uint8_t iReg = vm->MMU.InstrBuffer[IREG_OFFSET];
+    uint8_t srcRegId = vm->MMU.InstrBuffer[IREG_OFFSET];
 
-    IntVal intReg{};
-    if (vm->MMU.getIntReg(iReg, intReg) != 0) {
-        return 0xFF;
+    IntVal srcRegVal{};
+    if (vm->MMU.getIntReg(srcRegId, srcRegVal) != 0) {
+        return E_INVALID_SOURCE_REG;
     }
 
     IntType intType = IntType::I32;
     if (!parseIntType(type, &intType)) {
-        return 0xFF;
+        return E_INVALID_TYPE;
     }
 
-    IntVal val;
     UVMDataSize dataSize = UVMDataSize::BYTE;
     switch (intType) {
     case IntType::I8:
@@ -104,11 +115,9 @@ uint32_t instr_push_ireg(UVM* vm, uint32_t width, uint32_t flag) {
         break;
     }
 
-    uint32_t status = vm->MMU.stackPush(&intReg, dataSize);
+    uint32_t status = vm->MMU.stackPush(&srcRegVal, dataSize);
     if (status != 0) {
-        std::cout << "[Runtime] Error code " << std::hex << "0x" << status
-                  << '\n';
-        return 0xFF;
+        return E_INVALID_STACK_OPERATION;
     }
 
     return UVM_SUCCESS;
@@ -116,16 +125,22 @@ uint32_t instr_push_ireg(UVM* vm, uint32_t width, uint32_t flag) {
 
 /**
  * Decreases the stack pointer by given size
- * @param vm Pointer to current UVM instance
- * @return On success return true otherwise false
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
+ * E_INVALID_STACK_OPERATION]
  */
 uint32_t instr_pop(UVM* vm, uint32_t width, uint32_t flag) {
+    // Version:
+    // pop <iT>
+
     constexpr uint32_t TYPE_OFFSET = 1;
 
     uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
     IntType intType = IntType::I32;
     if (!parseIntType(type, &intType)) {
-        return 0xFF;
+        return E_INVALID_TYPE;
     }
 
     UVMDataSize dataSize = UVMDataSize::BYTE;
@@ -146,8 +161,7 @@ uint32_t instr_pop(UVM* vm, uint32_t width, uint32_t flag) {
 
     uint32_t stackStatus = vm->MMU.stackPop(nullptr, dataSize);
     if (stackStatus != 0) {
-        std::cout << "Stack error: 0x" << std::hex << stackStatus << '\n';
-        return 0xFF;
+        return E_INVALID_STACK_OPERATION;
     }
 
     return UVM_SUCCESS;
@@ -155,19 +169,25 @@ uint32_t instr_pop(UVM* vm, uint32_t width, uint32_t flag) {
 
 /**
  * Decreases the stack pointer by given size and pops the value into a register
- * @param vm Pointer to current UVM instance
- * @return On success return true otherwise false
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
+ * E_INVALID_STACK_OPERATION, E_INVALID_TARGET_REG]
  */
 uint32_t instr_pop_ireg(UVM* vm, uint32_t width, uint32_t flag) {
+    // Version:
+    // pop <iT> <iR>
+
     constexpr uint32_t TYPE_OFFSET = 1;
     constexpr uint32_t IREG_OFFSET = 2;
 
     uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
-    uint8_t reg = vm->MMU.InstrBuffer[IREG_OFFSET];
+    uint8_t destRegId = vm->MMU.InstrBuffer[IREG_OFFSET];
 
     IntType intType = IntType::I32;
     if (!parseIntType(type, &intType)) {
-        return 0xFF;
+        return E_INVALID_TYPE;
     }
 
     UVMDataSize dataSize = UVMDataSize::BYTE;
@@ -189,13 +209,11 @@ uint32_t instr_pop_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     IntVal stackVal;
     uint32_t stackStatus = vm->MMU.stackPop(&stackVal.I64, dataSize);
     if (stackStatus != 0) {
-        std::cout << "Stack error: 0x" << std::hex << stackStatus << '\n';
-        return 0xFF;
+        return E_INVALID_STACK_OPERATION;
     }
 
-    // TODO: Handle errors
-    if (vm->MMU.setIntReg(reg, stackVal, intType)) {
-        return 0xFF;
+    if (vm->MMU.setIntReg(destRegId, stackVal, intType)) {
+        return E_INVALID_TARGET_REG;
     }
 
     return UVM_SUCCESS;
