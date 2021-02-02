@@ -334,7 +334,7 @@ uint32_t MemManager::getIntReg(uint8_t id, IntVal& val) {
 uint32_t MemManager::getFloatReg(uint8_t id, FloatVal& val) {
     if (id >= REG_FP_START && id <= REG_FP_END) {
         uint32_t regIndex = id - REG_FP_START;
-        FP[regIndex].F64 = val.F64;
+        val.F64 = FP[regIndex].F64;
     } else if (id == REG_INSTR_PTR || id == REG_STACK_PTR ||
                id == REG_BASE_PTR || (id >= REG_GP_START && id <= REG_GP_END)) {
         return ERR_REG_TYPE_MISMATCH;
