@@ -16,38 +16,44 @@
 
 #include "../error.hpp"
 #include "instructions.hpp"
-#include <iostream>
+#include <cstdio>
 #include <memory>
 
 /**
- * Takes the syscall arguments in register r0-r15 and prints to console
- * @param vm Current UVM instance
- * @return On success return true otherwise false
+ * Performs syscall for printing to console
+ * @param vm UVM instance
+ * @return On success returns true otherwise false
  */
-bool internalPrint(UVM* vm) {
-    // r0 contains string pointer
-    // r1 contains string length
-    IntVal r0;
-    IntVal r1;
-    vm->MMU.getIntReg(0x05, r0);
-    vm->MMU.getIntReg(0x06, r1);
+bool syscall_print(UVM* vm) {
+    // Arguments:
+    // r0: uint64_t string pointer
+    // r1: uint32_t string size
 
-    uint32_t allocSize = r1.I32;
+    // Return values:
+    // r0: uint64_t ptr to allocated mem block
 
-    std::unique_ptr<uint8_t[]> buff = std::make_unique<uint8_t[]>(allocSize);
+    IntVal r0 = vm->MMU.GP[0];
+    IntVal r1 = vm->MMU.GP[1];
 
-    uint32_t readRes = vm->MMU.readBig(r0.I64, buff.get(), allocSize, 0);
+    uint32_t stringSize = r1.I32;
+
+    // Create temporary string buffer (is not \0 terminated)
+    std::unique_ptr<char[]> buff = std::make_unique<char[]>(stringSize);
+
+    uint32_t readRes = vm->MMU.readBig(r0.I64, buff.get(), stringSize, 0);
     if (readRes != UVM_SUCCESS) {
         return false;
     }
 
-    std::string tmpStr{(char*)buff.get(), allocSize};
+    // Depending from what context the VM was started the output will either go
+    // to stdout or into a console buffer which will later be sent to the debug
+    // client
     switch (vm->Mode) {
     case ExecutionMode::USER:
-        std::cout << tmpStr;
+        fwrite(buff.get(), 1, stringSize, stdout);
         break;
     case ExecutionMode::DEBUGGER:
-        vm->DbgConsole << tmpStr;
+        vm->DbgConsole.write(buff.get(), stringSize);
         break;
     }
 
@@ -55,58 +61,78 @@ bool internalPrint(UVM* vm) {
 }
 
 /**
- * Performs the corresponding syscall
- * @param vm Current UVM instance
- * @return On success return true otherwise false
+ * Performs syscall for memory allocation
+ * @param vm UVM instance
+ */
+void syscall_alloc(UVM* vm) {
+    // Arguments:
+    // r0: uint32_t alloc size
+
+    // Return values:
+    // r0: uint64_t ptr to allocated mem block
+
+    IntVal allocSize = vm->MMU.GP[0];
+
+    IntVal allocAddr;
+    allocAddr.I64 = vm->MMU.allocHeap(allocSize.I32);
+
+    vm->MMU.GP[0] = allocAddr;
+}
+
+/**
+ * Performs syscall for deallocating previously allocated memory
+ * @param vm UVM instance
+ * @return On success returns true otherwise false
+ */
+bool syscall_dealloc(UVM* vm) {
+    // Arguments:
+    // r0: uint64_t heap address
+
+    // Return values:
+    // -
+
+    IntVal vAddr = vm->MMU.GP[0];
+
+    uint32_t deallocRes = vm->MMU.deallocHeap(vAddr.I64);
+    if (deallocRes != UVM_SUCCESS) {
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Selects correct syscall and executes it
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state
+ * [E_SYSCALL_UNKNOWN, E_SYSCALL_FAILURE]
  */
 uint32_t instr_syscall(UVM* vm, uint32_t width, uint32_t flag) {
-    constexpr uint32_t SYS_TYPE_OFFSET = 1;
+    // Version:
+    // sys <sysID>
 
-    constexpr uint8_t SYS_PRINT = 0x1;
-    constexpr uint8_t SYS_ALLOC = 0x41;
-    constexpr uint8_t SYS_DEALLOC = 0x44;
-    constexpr uint8_t REG_R0 = 0x5;
+    constexpr uint32_t SYS_TYPE_OFFSET = 1;
 
     uint8_t syscallType = vm->MMU.InstrBuffer[SYS_TYPE_OFFSET];
     bool callSuccess = true;
     switch (syscallType) {
-    case SYS_PRINT:
-        callSuccess = internalPrint(vm);
+    case SYSCALL_PRINT:
+        callSuccess = syscall_print(vm);
         break;
-    case SYS_ALLOC: {
-        IntVal allocSize;
-        if (vm->MMU.getIntReg(REG_R0, allocSize) != 0) {
-            return 0xFF;
-        }
-
-        IntVal allocAddr;
-        allocAddr.I64 = vm->MMU.allocHeap(allocSize.I32);
-
-        if (allocAddr.I64 == UVM_NULLPTR) {
-            return 0xFF;
-        }
-
-        if (vm->MMU.setIntReg(REG_R0, allocAddr, IntType::I64) != 0) {
-            return 0xFF;
-        }
+    case SYSCALL_ALLOC: {
+        syscall_alloc(vm);
     } break;
-    case SYS_DEALLOC: {
-        IntVal vAddr;
-        if (vm->MMU.getIntReg(REG_R0, vAddr) != 0) {
-            return 0xFF;
-        }
-
-        uint32_t deallocRes = vm->MMU.deallocHeap(vAddr.I64);
-        if (deallocRes != UVM_SUCCESS) {
-            return 0xFF;
-        }
+    case SYSCALL_DEALLOC: {
+        callSuccess = syscall_dealloc(vm);
     } break;
     default:
-        return 0xFF;
+        return E_SYSCALL_UNKNOWN;
     }
 
     if (!callSuccess) {
-        return 0xFF;
+        return E_SYSCALL_FAILURE;
     }
 
     return UVM_SUCCESS;

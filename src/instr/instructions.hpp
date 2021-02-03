@@ -68,6 +68,11 @@ constexpr uint8_t OP_JLT = 0xE5;
 constexpr uint8_t OP_JGE = 0xE6;
 constexpr uint8_t OP_JLE = 0xE7;
 
+// Syscalls
+constexpr uint8_t SYSCALL_PRINT = 0x1;
+constexpr uint8_t SYSCALL_ALLOC = 0x41;
+constexpr uint8_t SYSCALL_DEALLOC = 0x44;
+
 enum class JumpCondition {
     UNCONDITIONAL,
     IF_EQUALS,
@@ -77,9 +82,6 @@ enum class JumpCondition {
     IF_GREATER_EQUALS,
     IF_LESS_EQUALS,
 };
-
-// TODO: Move into UVM
-bool internalPrint(UVM* vm);
 
 // Note: For readability use snake_case for instruction function names
 #define MAKE_INSTR(name)                                                       \

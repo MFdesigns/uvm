@@ -39,3 +39,5 @@ constexpr uint32_t E_INVALID_SOURCE_REG_OFFSET = 31;
 constexpr uint32_t E_INVALID_DEST_REG_OFFSET = 32;
 constexpr uint32_t E_INVALID_STACK_OPERATION = 33;
 constexpr uint32_t E_INVALID_JUMP_DEST = 34;
+constexpr uint32_t E_SYSCALL_UNKNOWN = 35;
+constexpr uint32_t E_SYSCALL_FAILURE = 36;
