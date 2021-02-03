@@ -451,25 +451,108 @@ bool UVM::nextInstr() {
     /********************************
         ARITHMETIC INSTRUCTIONS
     ********************************/
+    case OP_ADD_IR_I8:
+        instrWidth = 3;
+        instrFlag = INSTR_FLAG_OP_ADD | INSTR_FLAG_TYPE_I8;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_ADD_IR_I16:
+        instrWidth = 4;
+        instrFlag = INSTR_FLAG_OP_ADD | INSTR_FLAG_TYPE_I16;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_ADD_IR_I32:
+        instrWidth = 6;
+        instrFlag = INSTR_FLAG_OP_ADD | INSTR_FLAG_TYPE_I32;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_ADD_IR_I64:
+        instrWidth = 10;
+        instrFlag = INSTR_FLAG_OP_ADD | INSTR_FLAG_TYPE_I64;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
     case OP_ADD_IT_IR_IR:
         instrWidth = 4;
         instrFlag = INSTR_FLAG_OP_ADD;
-        instrCall = instr_arithm_common_int_ireg_ireg;
+        instrCall = instr_arithm_common_ireg_ireg;
+        break;
+
+    case OP_SUB_IR_I8:
+        instrWidth = 3;
+        instrFlag = INSTR_FLAG_OP_SUB | INSTR_FLAG_TYPE_I8;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_SUB_IR_I16:
+        instrWidth = 4;
+        instrFlag = INSTR_FLAG_OP_SUB | INSTR_FLAG_TYPE_I16;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_SUB_IR_I32:
+        instrWidth = 6;
+        instrFlag = INSTR_FLAG_OP_SUB | INSTR_FLAG_TYPE_I32;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_SUB_IR_I64:
+        instrWidth = 10;
+        instrFlag = INSTR_FLAG_OP_SUB | INSTR_FLAG_TYPE_I64;
+        instrCall = instr_arithm_common_ireg_int;
         break;
     case OP_SUB_IT_IR_IR:
         instrWidth = 4;
         instrFlag = INSTR_FLAG_OP_SUB;
-        instrCall = instr_arithm_common_int_ireg_ireg;
+        instrCall = instr_arithm_common_ireg_ireg;
+        break;
+
+    case OP_MUL_IR_I8:
+        instrWidth = 3;
+        instrFlag = INSTR_FLAG_OP_MUL | INSTR_FLAG_TYPE_I8;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_MUL_IR_I16:
+        instrWidth = 4;
+        instrFlag = INSTR_FLAG_OP_MUL | INSTR_FLAG_TYPE_I16;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_MUL_IR_I32:
+        instrWidth = 6;
+        instrFlag = INSTR_FLAG_OP_MUL | INSTR_FLAG_TYPE_I32;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_MUL_IR_I64:
+        instrWidth = 10;
+        instrFlag = INSTR_FLAG_OP_MUL | INSTR_FLAG_TYPE_I64;
+        instrCall = instr_arithm_common_ireg_int;
         break;
     case OP_MUL_IT_IR_IR:
         instrWidth = 4;
         instrFlag = INSTR_FLAG_OP_MUL;
-        instrCall = instr_arithm_common_int_ireg_ireg;
+        instrCall = instr_arithm_common_ireg_ireg;
+        break;
+
+    case OP_DIV_IR_I8:
+        instrWidth = 3;
+        instrFlag = INSTR_FLAG_OP_DIV | INSTR_FLAG_TYPE_I8;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_DIV_IR_I16:
+        instrWidth = 4;
+        instrFlag = INSTR_FLAG_OP_DIV | INSTR_FLAG_TYPE_I16;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_DIV_IR_I32:
+        instrWidth = 6;
+        instrFlag = INSTR_FLAG_OP_DIV | INSTR_FLAG_TYPE_I32;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_DIV_IR_I64:
+        instrWidth = 10;
+        instrFlag = INSTR_FLAG_OP_DIV | INSTR_FLAG_TYPE_I64;
+        instrCall = instr_arithm_common_ireg_int;
         break;
     case OP_DIV_IT_IR_IR:
         instrWidth = 4;
         instrFlag = INSTR_FLAG_OP_DIV;
-        instrCall = instr_arithm_common_int_ireg_ireg;
+        instrCall = instr_arithm_common_ireg_ireg;
         break;
 
     /********************************

@@ -49,10 +49,31 @@ constexpr uint8_t OP_COPY_F64_RO = 0x28;
 constexpr uint8_t OP_COPY_FT_FR_FR = 0x29;
 constexpr uint8_t OP_COPY_FT_RO_RO = 0x2A;
 constexpr uint8_t OP_RET = 0x30;
+
+constexpr uint8_t OP_ADD_IR_I8 = 0x31;
+constexpr uint8_t OP_ADD_IR_I16 = 0x32;
+constexpr uint8_t OP_ADD_IR_I32 = 0x33;
+constexpr uint8_t OP_ADD_IR_I64 = 0x34;
 constexpr uint8_t OP_ADD_IT_IR_IR = 0x35;
+
+constexpr uint8_t OP_SUB_IR_I8 = 0x41;
+constexpr uint8_t OP_SUB_IR_I16 = 0x42;
+constexpr uint8_t OP_SUB_IR_I32 = 0x43;
+constexpr uint8_t OP_SUB_IR_I64 = 0x44;
 constexpr uint8_t OP_SUB_IT_IR_IR = 0x45;
+
+constexpr uint8_t OP_MUL_IR_I8 = 0x51;
+constexpr uint8_t OP_MUL_IR_I16 = 0x52;
+constexpr uint8_t OP_MUL_IR_I32 = 0x53;
+constexpr uint8_t OP_MUL_IR_I64 = 0x54;
 constexpr uint8_t OP_MUL_IT_IR_IR = 0x55;
+
+constexpr uint8_t OP_DIV_IR_I8 = 0x61;
+constexpr uint8_t OP_DIV_IR_I16 = 0x62;
+constexpr uint8_t OP_DIV_IR_I32 = 0x63;
+constexpr uint8_t OP_DIV_IR_I64 = 0x64;
 constexpr uint8_t OP_DIV_IT_IR_IR = 0x65;
+
 constexpr uint8_t OP_SYS = 0x40;
 constexpr uint8_t OP_EXIT = 0x50;
 constexpr uint8_t OP_NOP = 0xA0;
@@ -74,10 +95,16 @@ constexpr uint8_t SYSCALL_ALLOC = 0x41;
 constexpr uint8_t SYSCALL_DEALLOC = 0x44;
 
 // Instruction flags
-constexpr uint32_t INSTR_FLAG_OP_ADD = 0b00000000000000000000000000000001;
-constexpr uint32_t INSTR_FLAG_OP_SUB = 0b00000000000000000000000000000010;
-constexpr uint32_t INSTR_FLAG_OP_MUL = 0b00000000000000000000000000000100;
-constexpr uint32_t INSTR_FLAG_OP_DIV = 0b00000000000000000000000000001000;
+constexpr uint32_t INSTR_FLAG_TYPE_I8 = 0b00000000000000000000000000000001;
+constexpr uint32_t INSTR_FLAG_TYPE_I16 = 0b00000000000000000000000000000010;
+constexpr uint32_t INSTR_FLAG_TYPE_I32 = 0b00000000000000000000000000000100;
+constexpr uint32_t INSTR_FLAG_TYPE_I64 = 0b00000000000000000000000000001000;
+constexpr uint32_t INSTR_FLAG_OP_ADD = 0b00000000000000000000000000010000;
+constexpr uint32_t INSTR_FLAG_OP_SUB = 0b00000000000000000000000000100000;
+constexpr uint32_t INSTR_FLAG_OP_MUL = 0b00000000000000000000000001000000;
+constexpr uint32_t INSTR_FLAG_OP_DIV = 0b00000000000000000000000010000000;
+// Instruction masks
+constexpr uint32_t INSTR_FLAG_TYPE_MASK = 0b00000000000000000000000000001111;
 
 enum class JumpCondition {
     UNCONDITIONAL,
@@ -91,34 +118,35 @@ enum class JumpCondition {
 
 // Note: For readability use snake_case for instruction function names
 #define MAKE_INSTR(name)                                                       \
-    uint32_t instr_##name(UVM* vm, uint32_t width, uint32_t flag);
+    uint32_t instr_##name(UVM* vm, uint32_t width, uint32_t flag)
 
 // Arithmetic
-MAKE_INSTR(arithm_common_int_ireg_ireg)
-MAKE_INSTR(unsigned_cast_to_long)
+MAKE_INSTR(arithm_common_ireg_ireg);
+MAKE_INSTR(arithm_common_ireg_int);
+MAKE_INSTR(unsigned_cast_to_long);
 // Branching
-MAKE_INSTR(cmp_ireg_ireg)
-MAKE_INSTR(jmp)
+MAKE_INSTR(cmp_ireg_ireg);
+MAKE_INSTR(jmp);
 // Function
-MAKE_INSTR(call)
-MAKE_INSTR(ret)
+MAKE_INSTR(call);
+MAKE_INSTR(ret);
 // Memory manip
-MAKE_INSTR(push_int)
-MAKE_INSTR(push_ireg)
-MAKE_INSTR(pop)
-MAKE_INSTR(pop_ireg)
-MAKE_INSTR(load_int_ireg)
-MAKE_INSTR(load_ro_ireg)
-MAKE_INSTR(loadf_float_freg)
-MAKE_INSTR(loadf_ro_freg)
-MAKE_INSTR(store_ireg_ro)
-MAKE_INSTR(storef_freg_ro)
-MAKE_INSTR(copy_int_ro)
-MAKE_INSTR(copy_ireg_ireg)
-MAKE_INSTR(copy_ro_ro)
-MAKE_INSTR(copyf_float_ro)
-MAKE_INSTR(copyf_freg_freg)
-MAKE_INSTR(copyf_ro_ro)
-MAKE_INSTR(lea_ro_ireg)
+MAKE_INSTR(push_int);
+MAKE_INSTR(push_ireg);
+MAKE_INSTR(pop);
+MAKE_INSTR(pop_ireg);
+MAKE_INSTR(load_int_ireg);
+MAKE_INSTR(load_ro_ireg);
+MAKE_INSTR(loadf_float_freg);
+MAKE_INSTR(loadf_ro_freg);
+MAKE_INSTR(store_ireg_ro);
+MAKE_INSTR(storef_freg_ro);
+MAKE_INSTR(copy_int_ro);
+MAKE_INSTR(copy_ireg_ireg);
+MAKE_INSTR(copy_ro_ro);
+MAKE_INSTR(copyf_float_ro);
+MAKE_INSTR(copyf_freg_freg);
+MAKE_INSTR(copyf_ro_ro);
+MAKE_INSTR(lea_ro_ireg);
 // Syscall
-MAKE_INSTR(syscall)
+MAKE_INSTR(syscall);

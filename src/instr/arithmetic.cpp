@@ -18,15 +18,15 @@
 #include "instructions.hpp"
 
 /**
- * Performs operations for instructions add, sub, mul and div
+ * Performs operations for instructions add, sub, mul and div with arguments
+ * <ireg> <ireg>
  * @param vm UVM instance
  * @param width Instruction width
  * @param flag Type of INSTR_FLAG_OP_* flag
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
  * E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG, E_DIVISON_ZERO]
  */
-uint32_t
-instr_arithm_common_int_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
+uint32_t instr_arithm_common_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
     // add <iT> <iR1> <iR2>
     // sub<iT> <iR1> <iR2>
@@ -134,6 +134,150 @@ instr_arithm_common_int_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     // No need to evaluate reg id because this was already done by the earlier
     // get
     vm->MMU.setIntReg(destRegId, result, intType);
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Performs operations for instructions add, sub, mul and div with arguments
+ * <ireg> <int>
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Bitmask of INSTR_FLAG_TYPE_* and INSTR_FLAG_OP_*
+ * @return On success returns UVM_SUCCESS otherwise error state
+ * [E_INVALID_SOURCE_REG, E_DIVISON_ZERO]
+ */
+uint32_t instr_arithm_common_ireg_int(UVM* vm, uint32_t width, uint32_t flag) {
+    // Versions:
+    // add <iR> <i8>
+    // add <iR> <i16>
+    // add <iR> <i32>
+    // add <iR> <i64>
+    // sub <iR> <i8>
+    // sub <iR> <i16>
+    // sub <iR> <i32>
+    // sub <iR> <i64>
+    // mul <iR> <i8>
+    // mul <iR> <i16>
+    // mul <iR> <i32>
+    // mul <iR> <i64>
+    // div <iR> <i8>
+    // div <iR> <i16>
+    // div <iR> <i32>
+    // div <iR> <i64>
+
+    constexpr uint32_t REG_OFFSET = 1;
+    constexpr uint32_t INT_OFFSET = 2;
+
+    uint8_t regId = vm->MMU.InstrBuffer[REG_OFFSET];
+
+    IntVal regVal;
+    if (vm->MMU.getIntReg(regId, regVal) != 0) {
+        return E_INVALID_SOURCE_REG;
+    }
+
+    uint32_t type = flag & INSTR_FLAG_TYPE_MASK;
+
+    IntType intType = IntType::I8;
+    IntVal operandVal;
+    switch (type) {
+    case INSTR_FLAG_TYPE_I8:
+        intType = IntType::I8;
+        operandVal.I8 = vm->MMU.InstrBuffer[INT_OFFSET];
+        break;
+    case INSTR_FLAG_TYPE_I16:
+        intType = IntType::I16;
+        operandVal.I16 =
+            *reinterpret_cast<uint16_t*>(&vm->MMU.InstrBuffer[INT_OFFSET]);
+        break;
+    case INSTR_FLAG_TYPE_I32:
+        intType = IntType::I32;
+        operandVal.I32 =
+            *reinterpret_cast<uint32_t*>(&vm->MMU.InstrBuffer[INT_OFFSET]);
+        break;
+    case INSTR_FLAG_TYPE_I64:
+        intType = IntType::I64;
+        operandVal.I64 =
+            *reinterpret_cast<uint64_t*>(&vm->MMU.InstrBuffer[INT_OFFSET]);
+        break;
+    }
+
+    IntVal result;
+    if ((flag & INSTR_FLAG_OP_ADD) != 0) {
+        switch (type) {
+        case INSTR_FLAG_TYPE_I8:
+            result.I8 = regVal.I8 + operandVal.I8;
+            break;
+        case INSTR_FLAG_TYPE_I16:
+            result.I16 = regVal.I16 + operandVal.I16;
+            break;
+        case INSTR_FLAG_TYPE_I32:
+            result.I32 = regVal.I32 + operandVal.I32;
+            break;
+        case INSTR_FLAG_TYPE_I64:
+            result.I64 = regVal.I64 + operandVal.I64;
+            break;
+        }
+    } else if ((flag & INSTR_FLAG_OP_SUB) != 0) {
+        switch (type) {
+        case INSTR_FLAG_TYPE_I8:
+            result.I8 = regVal.I8 - operandVal.I8;
+            break;
+        case INSTR_FLAG_TYPE_I16:
+            result.I16 = regVal.I16 - operandVal.I16;
+            break;
+        case INSTR_FLAG_TYPE_I32:
+            result.I32 = regVal.I32 - operandVal.I32;
+            break;
+        case INSTR_FLAG_TYPE_I64:
+            result.I64 = regVal.I64 - operandVal.I64;
+            break;
+        }
+    } else if ((flag & INSTR_FLAG_OP_MUL) != 0) {
+        switch (type) {
+        case INSTR_FLAG_TYPE_I8:
+            result.I8 = regVal.I8 * operandVal.I8;
+            break;
+        case INSTR_FLAG_TYPE_I16:
+            result.I16 = regVal.I16 * operandVal.I16;
+            break;
+        case INSTR_FLAG_TYPE_I32:
+            result.I32 = regVal.I32 * operandVal.I32;
+            break;
+        case INSTR_FLAG_TYPE_I64:
+            result.I64 = regVal.I64 * operandVal.I64;
+            break;
+        }
+    } else if ((flag & INSTR_FLAG_OP_DIV) != 0) {
+        switch (type) {
+        case INSTR_FLAG_TYPE_I8:
+            if (operandVal.I8 == 0) {
+                return E_DIVISON_ZERO;
+            }
+            result.I8 = regVal.I8 / operandVal.I8;
+            break;
+        case INSTR_FLAG_TYPE_I16:
+            if (operandVal.I16 == 0) {
+                return E_DIVISON_ZERO;
+            }
+            result.I16 = regVal.I16 / operandVal.I16;
+            break;
+        case INSTR_FLAG_TYPE_I32:
+            if (operandVal.I32 == 0) {
+                return E_DIVISON_ZERO;
+            }
+            result.I32 = regVal.I32 / operandVal.I32;
+            break;
+        case INSTR_FLAG_TYPE_I64:
+            if (operandVal.I64 == 0) {
+                return E_DIVISON_ZERO;
+            }
+            result.I64 = regVal.I64 / operandVal.I64;
+            break;
+        }
+    }
+
+    vm->MMU.setIntReg(regId, result, intType);
 
     return UVM_SUCCESS;
 }
