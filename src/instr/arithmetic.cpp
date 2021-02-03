@@ -29,7 +29,7 @@
 uint32_t instr_arithm_common_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
     // add <iT> <iR1> <iR2>
-    // sub<iT> <iR1> <iR2>
+    // sub <iT> <iR1> <iR2>
     // mul <iT> <iR1> <iR2>
     // div <iT> <iR1> <iR2>
 
@@ -134,6 +134,97 @@ uint32_t instr_arithm_common_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     // No need to evaluate reg id because this was already done by the earlier
     // get
     vm->MMU.setIntReg(destRegId, result, intType);
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Performs operations for instructions addf, subf, mulf and divf with arguments
+ * <freg> <freg>
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Type of INSTR_FLAG_OP_* flag
+ * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
+ * E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG, E_DIVISON_ZERO]
+ */
+uint32_t instr_arithm_common_freg_freg(UVM* vm, uint32_t width, uint32_t flag) {
+    // Versions:
+    // addf <iT> <iR1> <iR2>
+    // subf <iT> <iR1> <iR2>
+    // mulf <iT> <iR1> <iR2>
+    // divf <iT> <iR1> <iR2>
+
+    constexpr uint32_t TYPE_OFFSET = 1;
+    constexpr uint32_t SRC_REG_OFFSET = 2;
+    constexpr uint32_t DEST_REG_OFFSET = 3;
+
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    uint8_t srcRegId = vm->MMU.InstrBuffer[SRC_REG_OFFSET];
+    uint8_t destRegId = vm->MMU.InstrBuffer[DEST_REG_OFFSET];
+
+    FloatType floatType = FloatType::F32;
+    if (!parseFloatType(type, &floatType)) {
+        return E_INVALID_TYPE;
+    }
+
+    FloatVal srcRegVal;
+    FloatVal destRegVal;
+
+    if (vm->MMU.getFloatReg(srcRegId, srcRegVal) != 0) {
+        return E_INVALID_SOURCE_REG;
+    }
+    if (vm->MMU.getFloatReg(destRegId, destRegVal) != 0) {
+        return E_INVALID_TARGET_REG;
+    }
+
+    FloatVal result;
+    if ((flag & INSTR_FLAG_OP_ADD) != 0) {
+        switch (floatType) {
+        case FloatType::F32:
+            result.F32 = srcRegVal.F32 + destRegVal.F32;
+            break;
+        case FloatType::F64:
+            result.F64 = srcRegVal.F64 + destRegVal.F64;
+            break;
+        }
+    } else if ((flag & INSTR_FLAG_OP_SUB) != 0) {
+        switch (floatType) {
+        case FloatType::F32:
+            result.F32 = srcRegVal.F32 - destRegVal.F32;
+            break;
+        case FloatType::F64:
+            result.F64 = srcRegVal.F64 - destRegVal.F64;
+            break;
+        }
+    } else if ((flag & INSTR_FLAG_OP_MUL) != 0) {
+        switch (floatType) {
+        case FloatType::F32:
+            result.F32 = srcRegVal.F32 * destRegVal.F32;
+            break;
+        case FloatType::F64:
+            result.F64 = srcRegVal.F64 * destRegVal.F64;
+            break;
+        }
+    } else if ((flag & INSTR_FLAG_OP_DIV) != 0) {
+        switch (floatType) {
+        case FloatType::F32:
+            if (destRegVal.F32 == 0) {
+                return E_DIVISON_ZERO;
+            }
+            result.F32 = srcRegVal.F32 / destRegVal.F32;
+            break;
+        case FloatType::F64:
+            if (destRegVal.F64 == 0) {
+                return E_DIVISON_ZERO;
+            }
+            result.F64 = srcRegVal.F64 / destRegVal.F64;
+            break;
+        }
+    }
+
+    // No need to evaluate reg id because this was already done by the earlier
+    // get
+    vm->MMU.setFloatReg(destRegId, result, floatType);
 
     return UVM_SUCCESS;
 }
@@ -278,6 +369,98 @@ uint32_t instr_arithm_common_ireg_int(UVM* vm, uint32_t width, uint32_t flag) {
     }
 
     vm->MMU.setIntReg(regId, result, intType);
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Performs operations for instructions addf, subf, mulf and divf with arguments
+ * <freg> <float>
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Bitmask of INSTR_FLAG_TYPE_* and INSTR_FLAG_OP_*
+ * @return On success returns UVM_SUCCESS otherwise error state
+ * [E_INVALID_SOURCE_REG]
+ */
+uint32_t
+instr_arithm_common_freg_float(UVM* vm, uint32_t width, uint32_t flag) {
+    // Versions:
+    // addf <fR> <f32>
+    // addf <fR> <f64>
+    // subf <fR> <f32>
+    // subf <fR> <f64>
+    // mulf <fR> <f32>
+    // mulf <fR> <f64>
+    // divf <fR> <f32>
+    // divf <fR> <f64>
+
+    constexpr uint32_t REG_OFFSET = 1;
+    constexpr uint32_t FLOAT_OFFSET = 2;
+
+    uint8_t regId = vm->MMU.InstrBuffer[REG_OFFSET];
+
+    FloatVal regVal;
+    if (vm->MMU.getFloatReg(regId, regVal) != 0) {
+        return E_INVALID_SOURCE_REG;
+    }
+
+    uint32_t type = flag & INSTR_FLAG_TYPE_MASK;
+
+    FloatType floatType = FloatType::F32;
+    FloatVal operandVal;
+    switch (type) {
+    case INSTR_FLAG_TYPE_F32:
+        floatType = FloatType::F32;
+        operandVal.F32 =
+            *reinterpret_cast<uint32_t*>(&vm->MMU.InstrBuffer[FLOAT_OFFSET]);
+        break;
+    case INSTR_FLAG_TYPE_F64:
+        floatType = FloatType::F64;
+        operandVal.F64 =
+            *reinterpret_cast<uint64_t*>(&vm->MMU.InstrBuffer[FLOAT_OFFSET]);
+        break;
+    }
+
+    FloatVal result;
+    if ((flag & INSTR_FLAG_OP_ADD) != 0) {
+        switch (type) {
+        case INSTR_FLAG_TYPE_F32:
+            result.F32 = regVal.F32 + operandVal.F32;
+            break;
+        case INSTR_FLAG_TYPE_F64:
+            result.F64 = regVal.F64 + operandVal.F64;
+            break;
+        }
+    } else if ((flag & INSTR_FLAG_OP_SUB) != 0) {
+        switch (type) {
+        case INSTR_FLAG_TYPE_F32:
+            result.F32 = regVal.F32 - operandVal.F32;
+            break;
+        case INSTR_FLAG_TYPE_F64:
+            result.F64 = regVal.F64 - operandVal.F64;
+            break;
+        }
+    } else if ((flag & INSTR_FLAG_OP_MUL) != 0) {
+        switch (type) {
+        case INSTR_FLAG_TYPE_F32:
+            result.F32 = regVal.F32 * operandVal.F32;
+            break;
+        case INSTR_FLAG_TYPE_F64:
+            result.F64 = regVal.F64 * operandVal.F64;
+            break;
+        }
+    } else if ((flag & INSTR_FLAG_OP_DIV) != 0) {
+        switch (type) {
+        case INSTR_FLAG_TYPE_F32:
+            result.F32 = regVal.F32 / operandVal.F32;
+            break;
+        case INSTR_FLAG_TYPE_F64:
+            result.F64 = regVal.F64 / operandVal.F64;
+            break;
+        }
+    }
+
+    vm->MMU.setFloatReg(regId, result, floatType);
 
     return UVM_SUCCESS;
 }

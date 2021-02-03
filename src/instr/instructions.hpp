@@ -49,31 +49,38 @@ constexpr uint8_t OP_COPY_F64_RO = 0x28;
 constexpr uint8_t OP_COPY_FT_FR_FR = 0x29;
 constexpr uint8_t OP_COPY_FT_RO_RO = 0x2A;
 constexpr uint8_t OP_RET = 0x30;
-
 constexpr uint8_t OP_ADD_IR_I8 = 0x31;
 constexpr uint8_t OP_ADD_IR_I16 = 0x32;
 constexpr uint8_t OP_ADD_IR_I32 = 0x33;
 constexpr uint8_t OP_ADD_IR_I64 = 0x34;
 constexpr uint8_t OP_ADD_IT_IR_IR = 0x35;
-
+constexpr uint8_t OP_ADDF_FR_F32 = 0x36;
+constexpr uint8_t OP_ADDF_FR_F64 = 0x37;
+constexpr uint8_t OP_ADDF_FT_FR_FR = 0x38;
 constexpr uint8_t OP_SUB_IR_I8 = 0x41;
 constexpr uint8_t OP_SUB_IR_I16 = 0x42;
 constexpr uint8_t OP_SUB_IR_I32 = 0x43;
 constexpr uint8_t OP_SUB_IR_I64 = 0x44;
 constexpr uint8_t OP_SUB_IT_IR_IR = 0x45;
-
+constexpr uint8_t OP_SUBF_FR_F32 = 0x46;
+constexpr uint8_t OP_SUBF_FR_F64 = 0x47;
+constexpr uint8_t OP_SUBF_FT_FR_FR = 0x48;
 constexpr uint8_t OP_MUL_IR_I8 = 0x51;
 constexpr uint8_t OP_MUL_IR_I16 = 0x52;
 constexpr uint8_t OP_MUL_IR_I32 = 0x53;
 constexpr uint8_t OP_MUL_IR_I64 = 0x54;
 constexpr uint8_t OP_MUL_IT_IR_IR = 0x55;
-
+constexpr uint8_t OP_MULF_FR_F32 = 0x56;
+constexpr uint8_t OP_MULF_FR_F64 = 0x57;
+constexpr uint8_t OP_MULF_FT_FR_FR = 0x58;
 constexpr uint8_t OP_DIV_IR_I8 = 0x61;
 constexpr uint8_t OP_DIV_IR_I16 = 0x62;
 constexpr uint8_t OP_DIV_IR_I32 = 0x63;
 constexpr uint8_t OP_DIV_IR_I64 = 0x64;
 constexpr uint8_t OP_DIV_IT_IR_IR = 0x65;
-
+constexpr uint8_t OP_DIVF_FR_F32 = 0x66;
+constexpr uint8_t OP_DIVF_FR_F64 = 0x67;
+constexpr uint8_t OP_DIVF_FT_FR_FR = 0x68;
 constexpr uint8_t OP_SYS = 0x40;
 constexpr uint8_t OP_EXIT = 0x50;
 constexpr uint8_t OP_NOP = 0xA0;
@@ -99,12 +106,14 @@ constexpr uint32_t INSTR_FLAG_TYPE_I8 = 0b00000000000000000000000000000001;
 constexpr uint32_t INSTR_FLAG_TYPE_I16 = 0b00000000000000000000000000000010;
 constexpr uint32_t INSTR_FLAG_TYPE_I32 = 0b00000000000000000000000000000100;
 constexpr uint32_t INSTR_FLAG_TYPE_I64 = 0b00000000000000000000000000001000;
+constexpr uint32_t INSTR_FLAG_TYPE_F32 = 0b00000000000000000000000000010000;
+constexpr uint32_t INSTR_FLAG_TYPE_F64 = 0b00000000000000000000000000100000;
 constexpr uint32_t INSTR_FLAG_OP_ADD = 0b00000000000000000000000000010000;
 constexpr uint32_t INSTR_FLAG_OP_SUB = 0b00000000000000000000000000100000;
 constexpr uint32_t INSTR_FLAG_OP_MUL = 0b00000000000000000000000001000000;
 constexpr uint32_t INSTR_FLAG_OP_DIV = 0b00000000000000000000000010000000;
 // Instruction masks
-constexpr uint32_t INSTR_FLAG_TYPE_MASK = 0b00000000000000000000000000001111;
+constexpr uint32_t INSTR_FLAG_TYPE_MASK = 0b00000000000000000000000000111111;
 
 enum class JumpCondition {
     UNCONDITIONAL,
@@ -122,7 +131,9 @@ enum class JumpCondition {
 
 // Arithmetic
 MAKE_INSTR(arithm_common_ireg_ireg);
+MAKE_INSTR(arithm_common_freg_freg);
 MAKE_INSTR(arithm_common_ireg_int);
+MAKE_INSTR(arithm_common_freg_float);
 MAKE_INSTR(unsigned_cast_to_long);
 // Branching
 MAKE_INSTR(cmp_ireg_ireg);

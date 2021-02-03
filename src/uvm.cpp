@@ -476,6 +476,21 @@ bool UVM::nextInstr() {
         instrFlag = INSTR_FLAG_OP_ADD;
         instrCall = instr_arithm_common_ireg_ireg;
         break;
+    case OP_ADDF_FT_FR_FR:
+        instrWidth = 4;
+        instrFlag = INSTR_FLAG_OP_ADD;
+        instrCall = instr_arithm_common_freg_freg;
+        break;
+    case OP_ADDF_FR_F32:
+        instrWidth = 6;
+        instrFlag = INSTR_FLAG_OP_ADD | INSTR_FLAG_TYPE_F32;
+        instrCall = instr_arithm_common_freg_float;
+        break;
+    case OP_ADDF_FR_F64:
+        instrWidth = 10;
+        instrFlag = INSTR_FLAG_OP_ADD | INSTR_FLAG_TYPE_F64;
+        instrCall = instr_arithm_common_freg_float;
+        break;
 
     case OP_SUB_IR_I8:
         instrWidth = 3;
@@ -501,6 +516,21 @@ bool UVM::nextInstr() {
         instrWidth = 4;
         instrFlag = INSTR_FLAG_OP_SUB;
         instrCall = instr_arithm_common_ireg_ireg;
+        break;
+    case OP_SUBF_FT_FR_FR:
+        instrWidth = 4;
+        instrFlag = INSTR_FLAG_OP_SUB;
+        instrCall = instr_arithm_common_freg_freg;
+        break;
+    case OP_SUBF_FR_F32:
+        instrWidth = 6;
+        instrFlag = INSTR_FLAG_OP_SUB | INSTR_FLAG_TYPE_F32;
+        instrCall = instr_arithm_common_freg_float;
+        break;
+    case OP_SUBF_FR_F64:
+        instrWidth = 10;
+        instrFlag = INSTR_FLAG_OP_SUB | INSTR_FLAG_TYPE_F64;
+        instrCall = instr_arithm_common_freg_float;
         break;
 
     case OP_MUL_IR_I8:
@@ -528,6 +558,21 @@ bool UVM::nextInstr() {
         instrFlag = INSTR_FLAG_OP_MUL;
         instrCall = instr_arithm_common_ireg_ireg;
         break;
+    case OP_MULF_FT_FR_FR:
+        instrWidth = 4;
+        instrFlag = INSTR_FLAG_OP_MUL;
+        instrCall = instr_arithm_common_freg_freg;
+        break;
+    case OP_MULF_FR_F32:
+        instrWidth = 6;
+        instrFlag = INSTR_FLAG_OP_MUL | INSTR_FLAG_TYPE_F32;
+        instrCall = instr_arithm_common_freg_float;
+        break;
+    case OP_MULF_FR_F64:
+        instrWidth = 10;
+        instrFlag = INSTR_FLAG_OP_MUL | INSTR_FLAG_TYPE_F64;
+        instrCall = instr_arithm_common_freg_float;
+        break;
 
     case OP_DIV_IR_I8:
         instrWidth = 3;
@@ -553,6 +598,21 @@ bool UVM::nextInstr() {
         instrWidth = 4;
         instrFlag = INSTR_FLAG_OP_DIV;
         instrCall = instr_arithm_common_ireg_ireg;
+        break;
+    case OP_DIVF_FT_FR_FR:
+        instrWidth = 4;
+        instrFlag = INSTR_FLAG_OP_DIV;
+        instrCall = instr_arithm_common_freg_freg;
+        break;
+    case OP_DIVF_FR_F32:
+        instrWidth = 6;
+        instrFlag = INSTR_FLAG_OP_DIV | INSTR_FLAG_TYPE_F32;
+        instrCall = instr_arithm_common_freg_float;
+        break;
+    case OP_DIVF_FR_F64:
+        instrWidth = 10;
+        instrFlag = INSTR_FLAG_OP_DIV | INSTR_FLAG_TYPE_F64;
+        instrCall = instr_arithm_common_freg_float;
         break;
 
     /********************************
