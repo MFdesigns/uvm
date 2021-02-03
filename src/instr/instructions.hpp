@@ -73,6 +73,12 @@ constexpr uint8_t SYSCALL_PRINT = 0x1;
 constexpr uint8_t SYSCALL_ALLOC = 0x41;
 constexpr uint8_t SYSCALL_DEALLOC = 0x44;
 
+// Instruction flags
+constexpr uint32_t INSTR_FLAG_OP_ADD = 0b00000000000000000000000000000001;
+constexpr uint32_t INSTR_FLAG_OP_SUB = 0b00000000000000000000000000000010;
+constexpr uint32_t INSTR_FLAG_OP_MUL = 0b00000000000000000000000000000100;
+constexpr uint32_t INSTR_FLAG_OP_DIV = 0b00000000000000000000000000001000;
+
 enum class JumpCondition {
     UNCONDITIONAL,
     IF_EQUALS,
@@ -88,10 +94,7 @@ enum class JumpCondition {
     uint32_t instr_##name(UVM* vm, uint32_t width, uint32_t flag);
 
 // Arithmetic
-MAKE_INSTR(add_ireg_ireg)
-MAKE_INSTR(sub_ireg_ireg)
-MAKE_INSTR(mul_ireg_ireg)
-MAKE_INSTR(div_ireg_ireg)
+MAKE_INSTR(arithm_common_int_ireg_ireg)
 MAKE_INSTR(unsigned_cast_to_long)
 // Branching
 MAKE_INSTR(cmp_ireg_ireg)

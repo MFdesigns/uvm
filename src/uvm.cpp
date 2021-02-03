@@ -453,19 +453,23 @@ bool UVM::nextInstr() {
     ********************************/
     case OP_ADD_IT_IR_IR:
         instrWidth = 4;
-        instrCall = instr_add_ireg_ireg;
+        instrFlag = INSTR_FLAG_OP_ADD;
+        instrCall = instr_arithm_common_int_ireg_ireg;
         break;
     case OP_SUB_IT_IR_IR:
         instrWidth = 4;
-        instrCall = instr_sub_ireg_ireg;
+        instrFlag = INSTR_FLAG_OP_SUB;
+        instrCall = instr_arithm_common_int_ireg_ireg;
         break;
     case OP_MUL_IT_IR_IR:
         instrWidth = 4;
-        instrCall = instr_mul_ireg_ireg;
+        instrFlag = INSTR_FLAG_OP_MUL;
+        instrCall = instr_arithm_common_int_ireg_ireg;
         break;
     case OP_DIV_IT_IR_IR:
         instrWidth = 4;
-        instrCall = instr_div_ireg_ireg;
+        instrFlag = INSTR_FLAG_OP_DIV;
+        instrCall = instr_arithm_common_int_ireg_ireg;
         break;
 
     /********************************
