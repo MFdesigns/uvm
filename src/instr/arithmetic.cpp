@@ -18,8 +18,8 @@
 #include "instructions.hpp"
 
 /**
- * Performs operations for instructions add, sub, mul and div with arguments
- * <ireg> <ireg>
+ * Performs operations for instructions add, sub, mul, muls, div and divs with
+ * arguments <ireg> <ireg>
  * @param vm UVM instance
  * @param width Instruction width
  * @param flag Type of INSTR_FLAG_OP_* flag
@@ -31,7 +31,9 @@ uint32_t instr_arithm_common_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     // add <iT> <iR1> <iR2>
     // sub <iT> <iR1> <iR2>
     // mul <iT> <iR1> <iR2>
+    // muls <iT> <iR1> <iR2>
     // div <iT> <iR1> <iR2>
+    // divs <iT> <iR1> <iR2>
 
     constexpr uint32_t TYPE_OFFSET = 1;
     constexpr uint32_t SRC_REG_OFFSET = 2;
@@ -102,6 +104,21 @@ uint32_t instr_arithm_common_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
             result.I64 = srcRegVal.I64 * destRegVal.I64;
             break;
         }
+    } else if ((flag & INSTR_FLAG_OP_MULS) != 0) {
+        switch (intType) {
+        case IntType::I8:
+            result.S8 = srcRegVal.S8 * destRegVal.S8;
+            break;
+        case IntType::I16:
+            result.S16 = srcRegVal.S16 * destRegVal.S16;
+            break;
+        case IntType::I32:
+            result.S32 = srcRegVal.S32 * destRegVal.S32;
+            break;
+        case IntType::I64:
+            result.S64 = srcRegVal.S64 * destRegVal.S64;
+            break;
+        }
     } else if ((flag & INSTR_FLAG_OP_DIV) != 0) {
         switch (intType) {
         case IntType::I8:
@@ -127,6 +144,33 @@ uint32_t instr_arithm_common_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
                 return E_DIVISON_ZERO;
             }
             result.I64 = srcRegVal.I64 / destRegVal.I64;
+            break;
+        }
+    } else if ((flag & INSTR_FLAG_OP_DIVS) != 0) {
+        switch (intType) {
+        case IntType::I8:
+            if (destRegVal.S8 == 0) {
+                return E_DIVISON_ZERO;
+            }
+            result.S8 = srcRegVal.S8 / destRegVal.S8;
+            break;
+        case IntType::I16:
+            if (destRegVal.S16 == 0) {
+                return E_DIVISON_ZERO;
+            }
+            result.S16 = srcRegVal.S16 / destRegVal.S16;
+            break;
+        case IntType::I32:
+            if (destRegVal.S32 == 0) {
+                return E_DIVISON_ZERO;
+            }
+            result.S32 = srcRegVal.S32 / destRegVal.S32;
+            break;
+        case IntType::I64:
+            if (destRegVal.S64 == 0) {
+                return E_DIVISON_ZERO;
+            }
+            result.S64 = srcRegVal.S64 / destRegVal.S64;
             break;
         }
     }
@@ -230,8 +274,8 @@ uint32_t instr_arithm_common_freg_freg(UVM* vm, uint32_t width, uint32_t flag) {
 }
 
 /**
- * Performs operations for instructions add, sub, mul and div with arguments
- * <ireg> <int>
+ * Performs operations for instructions add, sub, mul, muls, div and divs with
+ * arguments <ireg> <int>
  * @param vm UVM instance
  * @param width Instruction width
  * @param flag Bitmask of INSTR_FLAG_TYPE_* and INSTR_FLAG_OP_*
@@ -252,6 +296,10 @@ uint32_t instr_arithm_common_ireg_int(UVM* vm, uint32_t width, uint32_t flag) {
     // mul <iR> <i16>
     // mul <iR> <i32>
     // mul <iR> <i64>
+    // muls <iR> <i8>
+    // muls <iR> <i16>
+    // muls <iR> <i32>
+    // muls <iR> <i64>
     // div <iR> <i8>
     // div <iR> <i16>
     // div <iR> <i32>
@@ -339,6 +387,21 @@ uint32_t instr_arithm_common_ireg_int(UVM* vm, uint32_t width, uint32_t flag) {
             result.I64 = regVal.I64 * operandVal.I64;
             break;
         }
+    } else if ((flag & INSTR_FLAG_OP_MULS) != 0) {
+        switch (type) {
+        case INSTR_FLAG_TYPE_I8:
+            result.S8 = regVal.S8 * operandVal.S8;
+            break;
+        case INSTR_FLAG_TYPE_I16:
+            result.S16 = regVal.S16 * operandVal.S16;
+            break;
+        case INSTR_FLAG_TYPE_I32:
+            result.S32 = regVal.S32 * operandVal.S32;
+            break;
+        case INSTR_FLAG_TYPE_I64:
+            result.S64 = regVal.S64 * operandVal.S64;
+            break;
+        }
     } else if ((flag & INSTR_FLAG_OP_DIV) != 0) {
         switch (type) {
         case INSTR_FLAG_TYPE_I8:
@@ -364,6 +427,33 @@ uint32_t instr_arithm_common_ireg_int(UVM* vm, uint32_t width, uint32_t flag) {
                 return E_DIVISON_ZERO;
             }
             result.I64 = regVal.I64 / operandVal.I64;
+            break;
+        }
+    } else if ((flag & INSTR_FLAG_OP_DIVS) != 0) {
+        switch (type) {
+        case INSTR_FLAG_TYPE_I8:
+            if (operandVal.S8 == 0) {
+                return E_DIVISON_ZERO;
+            }
+            result.S8 = regVal.S8 / operandVal.S8;
+            break;
+        case INSTR_FLAG_TYPE_I16:
+            if (operandVal.S16 == 0) {
+                return E_DIVISON_ZERO;
+            }
+            result.S16 = regVal.S16 / operandVal.S16;
+            break;
+        case INSTR_FLAG_TYPE_I32:
+            if (operandVal.S32 == 0) {
+                return E_DIVISON_ZERO;
+            }
+            result.S32 = regVal.S32 / operandVal.S32;
+            break;
+        case INSTR_FLAG_TYPE_I64:
+            if (operandVal.S64 == 0) {
+                return E_DIVISON_ZERO;
+            }
+            result.S64 = regVal.S64 / operandVal.S64;
             break;
         }
     }

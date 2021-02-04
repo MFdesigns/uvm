@@ -573,6 +573,31 @@ bool UVM::nextInstr() {
         instrFlag = INSTR_FLAG_OP_MUL | INSTR_FLAG_TYPE_F64;
         instrCall = instr_arithm_common_freg_float;
         break;
+    case OP_MULS_IR_I8:
+        instrWidth = 3;
+        instrFlag = INSTR_FLAG_OP_MULS | INSTR_FLAG_TYPE_I8;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_MULS_IR_I16:
+        instrWidth = 4;
+        instrFlag = INSTR_FLAG_OP_MULS | INSTR_FLAG_TYPE_I16;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_MULS_IR_I32:
+        instrWidth = 6;
+        instrFlag = INSTR_FLAG_OP_MULS | INSTR_FLAG_TYPE_I32;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_MULS_IR_I64:
+        instrWidth = 10;
+        instrFlag = INSTR_FLAG_OP_MULS | INSTR_FLAG_TYPE_I64;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_MULS_IT_IR_IR:
+        instrWidth = 4;
+        instrFlag = INSTR_FLAG_OP_MULS;
+        instrCall = instr_arithm_common_ireg_ireg;
+        break;
 
     case OP_DIV_IR_I8:
         instrWidth = 3;
@@ -613,6 +638,31 @@ bool UVM::nextInstr() {
         instrWidth = 10;
         instrFlag = INSTR_FLAG_OP_DIV | INSTR_FLAG_TYPE_F64;
         instrCall = instr_arithm_common_freg_float;
+        break;
+    case OP_DIVS_IR_I8:
+        instrWidth = 3;
+        instrFlag = INSTR_FLAG_OP_DIVS | INSTR_FLAG_TYPE_I8;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_DIVS_IR_I16:
+        instrWidth = 4;
+        instrFlag = INSTR_FLAG_OP_DIVS | INSTR_FLAG_TYPE_I16;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_DIVS_IR_I32:
+        instrWidth = 6;
+        instrFlag = INSTR_FLAG_OP_DIVS | INSTR_FLAG_TYPE_I32;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_DIVS_IR_I64:
+        instrWidth = 10;
+        instrFlag = INSTR_FLAG_OP_DIVS | INSTR_FLAG_TYPE_I64;
+        instrCall = instr_arithm_common_ireg_int;
+        break;
+    case OP_DIVS_IT_IR_IR:
+        instrWidth = 4;
+        instrFlag = INSTR_FLAG_OP_DIVS;
+        instrCall = instr_arithm_common_ireg_ireg;
         break;
 
     /********************************

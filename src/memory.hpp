@@ -72,7 +72,11 @@ union IntVal {
     uint8_t I8;
     uint16_t I16;
     uint32_t I32;
-    uint64_t I64 = 0;
+    uint64_t I64;
+    int8_t S8;
+    int16_t S16;
+    int32_t S32;
+    int64_t S64 = 0;
 };
 
 union FloatVal {
