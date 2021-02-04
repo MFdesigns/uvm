@@ -93,6 +93,7 @@ constexpr uint8_t OP_DIVS_IR_I64 = 0x6C;
 constexpr uint8_t OP_DIVS_IT_IR_IR = 0x6D;
 constexpr uint8_t OP_SYS = 0x40;
 constexpr uint8_t OP_EXIT = 0x50;
+constexpr uint8_t OP_SQRT = 0x86;
 constexpr uint8_t OP_NOP = 0xA0;
 constexpr uint8_t OP_B2L = 0xB1;
 constexpr uint8_t OP_S2L = 0xB2;
@@ -148,6 +149,7 @@ MAKE_INSTR(arithm_common_ireg_ireg);
 MAKE_INSTR(arithm_common_freg_freg);
 MAKE_INSTR(arithm_common_ireg_int);
 MAKE_INSTR(arithm_common_freg_float);
+MAKE_INSTR(sqrt);
 MAKE_INSTR(unsigned_cast_to_long);
 // Branching
 MAKE_INSTR(cmp_ireg_ireg);

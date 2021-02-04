@@ -16,6 +16,7 @@
 
 #include "../error.hpp"
 #include "instructions.hpp"
+#include <cmath>
 
 /**
  * Performs operations for instructions add, sub, mul, muls, div and divs with
@@ -551,6 +552,49 @@ instr_arithm_common_freg_float(UVM* vm, uint32_t width, uint32_t flag) {
     }
 
     vm->MMU.setFloatReg(regId, result, floatType);
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Computes square root of source register
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
+ * E_INVALID_SOURCE_REG]
+ */
+uint32_t instr_sqrt(UVM* vm, uint32_t width, uint32_t flag) {
+    // Versions:
+    // sqrt <fT> <fR>
+
+    constexpr uint32_t TYPE_OFFSET = 1;
+    constexpr uint32_t REG_OFFSET = 2;
+
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    uint8_t regId = vm->MMU.InstrBuffer[REG_OFFSET];
+
+    FloatType fType = FloatType::F32;
+    if (!parseFloatType(type, &fType)) {
+        return E_INVALID_TYPE;
+    }
+
+    FloatVal regVal;
+    if (vm->MMU.getFloatReg(regId, regVal) != 0) {
+        return E_INVALID_SOURCE_REG;
+    }
+
+    FloatVal result;
+    switch (fType) {
+    case FloatType::F32:
+        result.F32 = std::sqrt(regVal.F32);
+        break;
+    case FloatType::F64:
+        result.F64 = std::sqrt(regVal.F64);
+        break;
+    }
+
+    vm->MMU.setFloatReg(regId, result, fType);
 
     return UVM_SUCCESS;
 }

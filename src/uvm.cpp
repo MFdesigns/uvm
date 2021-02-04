@@ -665,6 +665,11 @@ bool UVM::nextInstr() {
         instrCall = instr_arithm_common_ireg_ireg;
         break;
 
+    case OP_SQRT:
+        instrWidth = 3;
+        instrCall = instr_sqrt;
+        break;
+
     /********************************
         LEA INSTRUCTION
     ********************************/
