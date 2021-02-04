@@ -669,6 +669,10 @@ bool UVM::nextInstr() {
         instrWidth = 3;
         instrCall = instr_sqrt;
         break;
+    case OP_MOD:
+        instrWidth = 4;
+        instrCall = instr_mod;
+        break;
 
     /********************************
         LEA INSTRUCTION
