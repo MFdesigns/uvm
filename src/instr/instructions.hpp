@@ -91,6 +91,10 @@ constexpr uint8_t OP_DIVS_IR_I16 = 0x6A;
 constexpr uint8_t OP_DIVS_IR_I32 = 0x6B;
 constexpr uint8_t OP_DIVS_IR_I64 = 0x6C;
 constexpr uint8_t OP_DIVS_IT_IR_IR = 0x6D;
+constexpr uint8_t OP_AND_IT_IR_IR = 0x75;
+constexpr uint8_t OP_OR_IT_IR_IR = 0x85;
+constexpr uint8_t OP_XOR_IT_IR_IR = 0x95;
+constexpr uint8_t OP_NOT_IT_IR = 0xA5;
 constexpr uint8_t OP_SYS = 0x40;
 constexpr uint8_t OP_EXIT = 0x50;
 constexpr uint8_t OP_SQRT = 0x86;
@@ -127,8 +131,12 @@ constexpr uint32_t INSTR_FLAG_OP_MUL    = 0b00000000000000000000000100000000;
 constexpr uint32_t INSTR_FLAG_OP_DIV    = 0b00000000000000000000001000000000;
 constexpr uint32_t INSTR_FLAG_OP_MULS   = 0b00000000000000000000010000000000;
 constexpr uint32_t INSTR_FLAG_OP_DIVS   = 0b00000000000000000000100000000000;
+constexpr uint32_t INSTR_FLAG_OP_AND    = 0b00000000000000000001000000000000;
+constexpr uint32_t INSTR_FLAG_OP_OR     = 0b00000000000000000010000000000000;
+constexpr uint32_t INSTR_FLAG_OP_XOR    = 0b00000000000000000100000000000000;
+constexpr uint32_t INSTR_FLAG_OP_NOT    = 0b00000000000000001000000000000000;
 // Instruction masks
-constexpr uint32_t INSTR_FLAG_TYPE_MASK = 0b00000000000000000000111111111111;
+constexpr uint32_t INSTR_FLAG_TYPE_MASK = 0b00000000000000001111111111111111;
 // clang-format on
 
 enum class JumpCondition {
@@ -145,11 +153,14 @@ enum class JumpCondition {
 #define MAKE_INSTR(name)                                                       \
     uint32_t instr_##name(UVM* vm, uint32_t width, uint32_t flag)
 
+// TODO: *_itype_ireg_ireg vs *_ireg_ireg
 // Arithmetic
 MAKE_INSTR(arithm_common_ireg_ireg);
 MAKE_INSTR(arithm_common_freg_freg);
 MAKE_INSTR(arithm_common_ireg_int);
 MAKE_INSTR(arithm_common_freg_float);
+MAKE_INSTR(bitwise_common_itype_ireg_ireg);
+MAKE_INSTR(not_itype_ireg);
 MAKE_INSTR(sqrt);
 MAKE_INSTR(mod);
 MAKE_INSTR(unsigned_cast_to_long);

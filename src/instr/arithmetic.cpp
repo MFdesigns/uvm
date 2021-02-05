@@ -655,6 +655,148 @@ uint32_t instr_mod(UVM* vm, uint32_t width, uint32_t flag) {
 }
 
 /**
+ * Performs instructions add, or, xor and with arguments <itype> <ireg> <ireg>
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Version of INSTR_FLAG_OP_* [AND, OR, XOR]
+ * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
+ * E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ */
+uint32_t
+instr_bitwise_common_itype_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
+    // Versions:
+    // and <iT> <iR> <iR>
+    // or  <iT> <iR> <iR>
+    // xor <iT> <iR> <iR>
+    // not <iT> <iR> <iR>
+
+    constexpr uint32_t TYPE_OFFSET = 1;
+    constexpr uint32_t SRC_REG_OFFSET = 2;
+    constexpr uint32_t DEST_REG_OFFSET = 3;
+
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    uint8_t srcRegId = vm->MMU.InstrBuffer[SRC_REG_OFFSET];
+    uint8_t destRegId = vm->MMU.InstrBuffer[DEST_REG_OFFSET];
+
+    IntType intType = IntType::I32;
+    if (!parseIntType(type, &intType)) {
+        return E_INVALID_TYPE;
+    }
+
+    IntVal srcRegVal;
+    IntVal destRegVal;
+
+    if (vm->MMU.getIntReg(srcRegId, srcRegVal) != 0) {
+        return E_INVALID_SOURCE_REG;
+    }
+    if (vm->MMU.getIntReg(destRegId, destRegVal) != 0) {
+        return E_INVALID_TARGET_REG;
+    }
+
+    IntVal result;
+    if ((flag & INSTR_FLAG_OP_AND) != 0) {
+        switch (intType) {
+        case IntType::I8:
+            result.I8 = srcRegVal.I8 & destRegVal.I8;
+            break;
+        case IntType::I16:
+            result.I16 = srcRegVal.I16 & destRegVal.I16;
+            break;
+        case IntType::I32:
+            result.I32 = srcRegVal.I32 & destRegVal.I32;
+            break;
+        case IntType::I64:
+            result.I64 = srcRegVal.I64 & destRegVal.I64;
+            break;
+        }
+    } else if ((flag & INSTR_FLAG_OP_OR) != 0) {
+        switch (intType) {
+        case IntType::I8:
+            result.I8 = srcRegVal.I8 | destRegVal.I8;
+            break;
+        case IntType::I16:
+            result.I16 = srcRegVal.I16 | destRegVal.I16;
+            break;
+        case IntType::I32:
+            result.I32 = srcRegVal.I32 | destRegVal.I32;
+            break;
+        case IntType::I64:
+            result.I64 = srcRegVal.I64 | destRegVal.I64;
+            break;
+        }
+    } else if ((flag & INSTR_FLAG_OP_XOR) != 0) {
+        switch (intType) {
+        case IntType::I8:
+            result.I8 = srcRegVal.I8 ^ destRegVal.I8;
+            break;
+        case IntType::I16:
+            result.I16 = srcRegVal.I16 ^ destRegVal.I16;
+            break;
+        case IntType::I32:
+            result.I32 = srcRegVal.I32 ^ destRegVal.I32;
+            break;
+        case IntType::I64:
+            result.I64 = srcRegVal.I64 ^ destRegVal.I64;
+            break;
+        }
+    }
+
+    vm->MMU.setIntReg(destRegId, result, intType);
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Performs bitwise not operation
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
+ * E_INVALID_SOURCE_REG]
+ */
+uint32_t instr_not_itype_ireg(UVM* vm, uint32_t width, uint32_t flag) {
+    // Versions:
+    // not <iT> <iR>
+
+    constexpr uint32_t TYPE_OFFSET = 1;
+    constexpr uint32_t SRC_REG_OFFSET = 2;
+
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    uint8_t srcRegId = vm->MMU.InstrBuffer[SRC_REG_OFFSET];
+
+    IntType intType = IntType::I32;
+    if (!parseIntType(type, &intType)) {
+        return E_INVALID_TYPE;
+    }
+
+    IntVal srcRegVal;
+
+    if (vm->MMU.getIntReg(srcRegId, srcRegVal) != 0) {
+        return E_INVALID_SOURCE_REG;
+    }
+
+    IntVal result;
+    switch (intType) {
+    case IntType::I8:
+        result.I8 = ~srcRegVal.I8;
+        break;
+    case IntType::I16:
+        result.I16 = ~srcRegVal.I16;
+        break;
+    case IntType::I32:
+        result.I32 = ~srcRegVal.I32;
+        break;
+    case IntType::I64:
+        result.I64 = ~srcRegVal.I64;
+        break;
+    }
+
+    vm->MMU.setIntReg(srcRegId, result, intType);
+
+    return UVM_SUCCESS;
+}
+
+/**
  * Typecasts unsigned i8, i16 or i32 to i64
  * @param vm UVM instance
  * @param width Instruction width

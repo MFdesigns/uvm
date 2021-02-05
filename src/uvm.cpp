@@ -674,6 +674,26 @@ bool UVM::nextInstr() {
         instrCall = instr_mod;
         break;
 
+    case OP_AND_IT_IR_IR:
+        instrWidth = 4;
+        instrFlag = INSTR_FLAG_OP_AND;
+        instrCall = instr_bitwise_common_itype_ireg_ireg;
+        break;
+    case OP_OR_IT_IR_IR:
+        instrWidth = 4;
+        instrFlag = INSTR_FLAG_OP_OR;
+        instrCall = instr_bitwise_common_itype_ireg_ireg;
+        break;
+    case OP_XOR_IT_IR_IR:
+        instrWidth = 4;
+        instrFlag = INSTR_FLAG_OP_XOR;
+        instrCall = instr_bitwise_common_itype_ireg_ireg;
+        break;
+    case OP_NOT_IT_IR:
+        instrWidth = 3;
+        instrCall = instr_not_itype_ireg;
+        break;
+
     /********************************
         LEA INSTRUCTION
     ********************************/
