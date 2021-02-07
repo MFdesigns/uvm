@@ -823,6 +823,31 @@ bool UVM::nextInstr() {
         instrCall = instr_signed_cast_to_long;
         break;
 
+    case OP_F2D:
+        instrWidth = 2;
+        instrCall = instr_f2d;
+        break;
+    case OP_D2F:
+        instrWidth = 2;
+        instrCall = instr_d2f;
+        break;
+    case OP_I2F:
+        instrWidth = 3;
+        instrCall = instr_i2f;
+        break;
+    case OP_I2D:
+        instrWidth = 3;
+        instrCall = instr_i2d;
+        break;
+    case OP_F2I:
+        instrWidth = 3;
+        instrCall = instr_f2i;
+        break;
+    case OP_D2I:
+        instrWidth = 3;
+        instrCall = instr_d2i;
+        break;
+
     /********************************
         EXIT
     ********************************/

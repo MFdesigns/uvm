@@ -109,6 +109,12 @@ constexpr uint8_t OP_I2L = 0xB3;
 constexpr uint8_t OP_B2SL = 0xC1;
 constexpr uint8_t OP_S2SL = 0xC2;
 constexpr uint8_t OP_I2SL = 0xC3;
+constexpr uint8_t OP_F2D = 0xB4;
+constexpr uint8_t OP_D2F = 0xC4;
+constexpr uint8_t OP_I2F = 0xB5;
+constexpr uint8_t OP_I2D = 0xC5;
+constexpr uint8_t OP_F2I = 0xB6;
+constexpr uint8_t OP_D2I = 0xC6;
 constexpr uint8_t OP_CMP_IT_IR_IR = 0xD1;
 constexpr uint8_t OP_JMP = 0xE1;
 constexpr uint8_t OP_JE = 0xE2;
@@ -145,7 +151,7 @@ constexpr uint32_t INSTR_FLAG_OP_LSH    = 0b00000000000000010000000000000000;
 constexpr uint32_t INSTR_FLAG_OP_RSH    = 0b00000000000000100000000000000000;
 constexpr uint32_t INSTR_FLAG_OP_SRSH   = 0b00000000000001000000000000000000;
 // Instruction masks
-constexpr uint32_t INSTR_FLAG_TYPE_MASK = 0b00000000000001111111111111111111;
+constexpr uint32_t INSTR_FLAG_TYPE_MASK = 0b00000000000001111111111111000000;
 // clang-format on
 
 enum class JumpCondition {
@@ -175,6 +181,12 @@ MAKE_INSTR(sqrt);
 MAKE_INSTR(mod);
 MAKE_INSTR(unsigned_cast_to_long);
 MAKE_INSTR(signed_cast_to_long);
+MAKE_INSTR(f2d);
+MAKE_INSTR(d2f);
+MAKE_INSTR(i2f);
+MAKE_INSTR(i2d);
+MAKE_INSTR(f2i);
+MAKE_INSTR(d2i);
 // Branching
 MAKE_INSTR(cmp_ireg_ireg);
 MAKE_INSTR(jmp);

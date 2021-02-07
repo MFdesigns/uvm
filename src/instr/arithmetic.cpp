@@ -930,3 +930,199 @@ uint32_t instr_signed_cast_to_long(UVM* vm, uint32_t width, uint32_t flag) {
 
     return UVM_SUCCESS;
 }
+
+/**
+ * Typecasts 32-bit float to 64-bit double
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state
+ * [E_INVALID_SOURCE_REG]
+ */
+uint32_t instr_f2d(UVM* vm, uint32_t width, uint32_t flag) {
+    // Versions:
+    // f2d <iR>
+
+    constexpr uint32_t REG_OFFSET = 1;
+
+    uint8_t srcRegId = vm->MMU.InstrBuffer[REG_OFFSET];
+
+    FloatVal srcRegVal;
+    if (vm->MMU.getFloatReg(srcRegId, srcRegVal) != 0) {
+        return E_INVALID_SOURCE_REG;
+    }
+
+    srcRegVal.F64 = static_cast<double>(srcRegVal.F32);
+
+    vm->MMU.setFloatReg(srcRegId, srcRegVal, FloatType::F64);
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Typecasts 64-bit double to 32-bit float
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state
+ * [E_INVALID_SOURCE_REG]
+ */
+uint32_t instr_d2f(UVM* vm, uint32_t width, uint32_t flag) {
+    // Versions:
+    // d2f <iR>
+
+    constexpr uint32_t REG_OFFSET = 1;
+
+    uint8_t srcRegId = vm->MMU.InstrBuffer[REG_OFFSET];
+
+    FloatVal srcRegVal;
+    if (vm->MMU.getFloatReg(srcRegId, srcRegVal) != 0) {
+        return E_INVALID_SOURCE_REG;
+    }
+
+    srcRegVal.F32 = static_cast<float>(srcRegVal.F64);
+
+    vm->MMU.setFloatReg(srcRegId, srcRegVal, FloatType::F32);
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Typecasts 32-bit signed integer to 32-bit float
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state
+ * [E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ */
+uint32_t instr_i2f(UVM* vm, uint32_t width, uint32_t flag) {
+    // Versions:
+    // i2f <iR> <fR>
+
+    constexpr uint32_t SRC_REG_OFFSET = 1;
+    constexpr uint32_t DEST_REG_OFFSET = 2;
+
+    uint8_t srcRegId = vm->MMU.InstrBuffer[SRC_REG_OFFSET];
+    uint8_t destRegId = vm->MMU.InstrBuffer[DEST_REG_OFFSET];
+
+    IntVal srcRegVal;
+    FloatVal destRegVal;
+
+    if (vm->MMU.getIntReg(srcRegId, srcRegVal) != 0) {
+        return E_INVALID_SOURCE_REG;
+    }
+    if (vm->MMU.getFloatReg(destRegId, destRegVal) != 0) {
+        return E_INVALID_TARGET_REG;
+    }
+
+    destRegVal.F32 = static_cast<float>(srcRegVal.I32);
+
+    vm->MMU.setFloatReg(destRegId, destRegVal, FloatType::F32);
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Typecasts 32-bit signed integer to 64-bit double
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state
+ * [E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ */
+uint32_t instr_i2d(UVM* vm, uint32_t width, uint32_t flag) {
+    // Versions:
+    // i2d <iR> <fR>
+
+    constexpr uint32_t SRC_REG_OFFSET = 1;
+    constexpr uint32_t DEST_REG_OFFSET = 2;
+
+    uint8_t srcRegId = vm->MMU.InstrBuffer[SRC_REG_OFFSET];
+    uint8_t destRegId = vm->MMU.InstrBuffer[DEST_REG_OFFSET];
+
+    IntVal srcRegVal;
+    FloatVal destRegVal;
+
+    if (vm->MMU.getIntReg(srcRegId, srcRegVal) != 0) {
+        return E_INVALID_SOURCE_REG;
+    }
+    if (vm->MMU.getFloatReg(destRegId, destRegVal) != 0) {
+        return E_INVALID_TARGET_REG;
+    }
+
+    destRegVal.F64 = static_cast<double>(srcRegVal.I32);
+
+    vm->MMU.setFloatReg(destRegId, destRegVal, FloatType::F64);
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Typecasts 32-bit float to 32-bit signed integer
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state
+ * [E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ */
+uint32_t instr_f2i(UVM* vm, uint32_t width, uint32_t flag) {
+    // Versions:
+    // f2i <fR> <iR>
+
+    constexpr uint32_t SRC_REG_OFFSET = 1;
+    constexpr uint32_t DEST_REG_OFFSET = 2;
+
+    uint8_t srcRegId = vm->MMU.InstrBuffer[SRC_REG_OFFSET];
+    uint8_t destRegId = vm->MMU.InstrBuffer[DEST_REG_OFFSET];
+
+    FloatVal srcRegVal;
+    IntVal destRegVal;
+
+    if (vm->MMU.getFloatReg(srcRegId, srcRegVal) != 0) {
+        return E_INVALID_SOURCE_REG;
+    }
+    if (vm->MMU.getIntReg(destRegId, destRegVal) != 0) {
+        return E_INVALID_TARGET_REG;
+    }
+
+    destRegVal.I32 = static_cast<int32_t>(srcRegVal.F32);
+
+    vm->MMU.setIntReg(destRegId, destRegVal, IntType::I32);
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Typecasts 64-bit double to 32-bit signed integer
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state
+ * [E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ */
+uint32_t instr_d2i(UVM* vm, uint32_t width, uint32_t flag) {
+    // Versions:
+    // d2i <fR> <iR>
+
+    constexpr uint32_t SRC_REG_OFFSET = 1;
+    constexpr uint32_t DEST_REG_OFFSET = 2;
+
+    uint8_t srcRegId = vm->MMU.InstrBuffer[SRC_REG_OFFSET];
+    uint8_t destRegId = vm->MMU.InstrBuffer[DEST_REG_OFFSET];
+
+    FloatVal srcRegVal;
+    IntVal destRegVal;
+
+    if (vm->MMU.getFloatReg(srcRegId, srcRegVal) != 0) {
+        return E_INVALID_SOURCE_REG;
+    }
+    if (vm->MMU.getIntReg(destRegId, destRegVal) != 0) {
+        return E_INVALID_TARGET_REG;
+    }
+
+    destRegVal.I32 = static_cast<int32_t>(srcRegVal.F64);
+
+    vm->MMU.setIntReg(destRegId, destRegVal, IntType::I32);
+
+    return UVM_SUCCESS;
+}
