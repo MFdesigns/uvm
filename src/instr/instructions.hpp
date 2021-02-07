@@ -100,6 +100,11 @@ constexpr uint8_t OP_EXIT = 0x50;
 constexpr uint8_t OP_SQRT = 0x86;
 constexpr uint8_t OP_MOD = 0x96;
 constexpr uint8_t OP_NOP = 0xA0;
+
+constexpr uint8_t OP_LSH = 0x76;
+constexpr uint8_t OP_RSH = 0x77;
+constexpr uint8_t OP_SRSH = 0x78;
+
 constexpr uint8_t OP_B2L = 0xB1;
 constexpr uint8_t OP_S2L = 0xB2;
 constexpr uint8_t OP_I2L = 0xB3;
@@ -135,8 +140,11 @@ constexpr uint32_t INSTR_FLAG_OP_AND    = 0b00000000000000000001000000000000;
 constexpr uint32_t INSTR_FLAG_OP_OR     = 0b00000000000000000010000000000000;
 constexpr uint32_t INSTR_FLAG_OP_XOR    = 0b00000000000000000100000000000000;
 constexpr uint32_t INSTR_FLAG_OP_NOT    = 0b00000000000000001000000000000000;
+constexpr uint32_t INSTR_FLAG_OP_LSH    = 0b00000000000000010000000000000000;
+constexpr uint32_t INSTR_FLAG_OP_RSH    = 0b00000000000000100000000000000000;
+constexpr uint32_t INSTR_FLAG_OP_SRSH   = 0b00000000000001000000000000000000;
 // Instruction masks
-constexpr uint32_t INSTR_FLAG_TYPE_MASK = 0b00000000000000001111111111111111;
+constexpr uint32_t INSTR_FLAG_TYPE_MASK = 0b00000000000001111111111111111111;
 // clang-format on
 
 enum class JumpCondition {
@@ -160,6 +168,7 @@ MAKE_INSTR(arithm_common_freg_freg);
 MAKE_INSTR(arithm_common_ireg_int);
 MAKE_INSTR(arithm_common_freg_float);
 MAKE_INSTR(bitwise_common_itype_ireg_ireg);
+MAKE_INSTR(shift_common_ireg_ireg);
 MAKE_INSTR(not_itype_ireg);
 MAKE_INSTR(sqrt);
 MAKE_INSTR(mod);

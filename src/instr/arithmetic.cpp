@@ -797,6 +797,55 @@ uint32_t instr_not_itype_ireg(UVM* vm, uint32_t width, uint32_t flag) {
 }
 
 /**
+ * Performs instructions lsh, rsh and srsh
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Type of INSTR_FLAG_OP_* determining the version
+ * @return On success returns UVM_SUCCESS otherwise error state
+ * [E_INVALID_TARGET_REG, E_INVALID_SOURCE_REG]
+ */
+uint32_t instr_shift_common_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
+    // lsh <iR> <iR>
+    // rsh <iR> <iR>
+    // srsh <iR> <iR>
+
+    constexpr uint32_t TARGET_REG_OFFSET = 1;
+    constexpr uint32_t SHIFT_REG_OFFSET = 2;
+
+    uint8_t targetRegId = vm->MMU.InstrBuffer[TARGET_REG_OFFSET];
+    uint8_t shiftRegId = vm->MMU.InstrBuffer[SHIFT_REG_OFFSET];
+
+    IntVal targetRegVal;
+    IntVal shiftRegVal;
+
+    if (vm->MMU.getIntReg(targetRegId, targetRegVal) != 0) {
+        return E_INVALID_TARGET_REG;
+    }
+    if (vm->MMU.getIntReg(shiftRegId, shiftRegVal) != 0) {
+        return E_INVALID_SOURCE_REG;
+    }
+
+    IntVal result;
+    uint32_t instrVersion = flag & INSTR_FLAG_TYPE_MASK;
+    switch (instrVersion) {
+    case INSTR_FLAG_OP_LSH:
+        result.I64 = targetRegVal.I64 << shiftRegVal.I8;
+        break;
+    case INSTR_FLAG_OP_RSH:
+        result.I64 = targetRegVal.I64 >> shiftRegVal.I8;
+        break;
+    case INSTR_FLAG_OP_SRSH:
+        // Use signed S64 to generate signed right shift instruction
+        result.I64 = targetRegVal.S64 >> shiftRegVal.I8;
+        break;
+    }
+
+    vm->MMU.setIntReg(targetRegId, result, IntType::I64);
+
+    return UVM_SUCCESS;
+}
+
+/**
  * Typecasts unsigned i8, i16 or i32 to i64
  * @param vm UVM instance
  * @param width Instruction width

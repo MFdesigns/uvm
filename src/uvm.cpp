@@ -694,6 +694,22 @@ bool UVM::nextInstr() {
         instrCall = instr_not_itype_ireg;
         break;
 
+    case OP_LSH:
+        instrWidth = 3;
+        instrFlag = INSTR_FLAG_OP_LSH;
+        instrCall = instr_shift_common_ireg_ireg;
+        break;
+    case OP_RSH:
+        instrWidth = 3;
+        instrFlag = INSTR_FLAG_OP_RSH;
+        instrCall = instr_shift_common_ireg_ireg;
+        break;
+    case OP_SRSH:
+        instrWidth = 3;
+        instrFlag = INSTR_FLAG_OP_SRSH;
+        instrCall = instr_shift_common_ireg_ireg;
+        break;
+
     /********************************
         LEA INSTRUCTION
     ********************************/
