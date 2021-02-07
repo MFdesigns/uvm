@@ -807,6 +807,22 @@ bool UVM::nextInstr() {
         instrCall = instr_unsigned_cast_to_long;
         break;
 
+    case OP_B2SL:
+        instrWidth = 2;
+        instrFlag = INSTR_FLAG_TYPE_I8;
+        instrCall = instr_signed_cast_to_long;
+        break;
+    case OP_S2SL:
+        instrWidth = 2;
+        instrFlag = INSTR_FLAG_TYPE_I16;
+        instrCall = instr_signed_cast_to_long;
+        break;
+    case OP_I2SL:
+        instrWidth = 2;
+        instrFlag = INSTR_FLAG_TYPE_I32;
+        instrCall = instr_signed_cast_to_long;
+        break;
+
     /********************************
         EXIT
     ********************************/

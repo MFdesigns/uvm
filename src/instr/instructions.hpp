@@ -100,14 +100,15 @@ constexpr uint8_t OP_EXIT = 0x50;
 constexpr uint8_t OP_SQRT = 0x86;
 constexpr uint8_t OP_MOD = 0x96;
 constexpr uint8_t OP_NOP = 0xA0;
-
 constexpr uint8_t OP_LSH = 0x76;
 constexpr uint8_t OP_RSH = 0x77;
 constexpr uint8_t OP_SRSH = 0x78;
-
 constexpr uint8_t OP_B2L = 0xB1;
 constexpr uint8_t OP_S2L = 0xB2;
 constexpr uint8_t OP_I2L = 0xB3;
+constexpr uint8_t OP_B2SL = 0xC1;
+constexpr uint8_t OP_S2SL = 0xC2;
+constexpr uint8_t OP_I2SL = 0xC3;
 constexpr uint8_t OP_CMP_IT_IR_IR = 0xD1;
 constexpr uint8_t OP_JMP = 0xE1;
 constexpr uint8_t OP_JE = 0xE2;
@@ -173,6 +174,7 @@ MAKE_INSTR(not_itype_ireg);
 MAKE_INSTR(sqrt);
 MAKE_INSTR(mod);
 MAKE_INSTR(unsigned_cast_to_long);
+MAKE_INSTR(signed_cast_to_long);
 // Branching
 MAKE_INSTR(cmp_ireg_ireg);
 MAKE_INSTR(jmp);

@@ -889,3 +889,44 @@ uint32_t instr_unsigned_cast_to_long(UVM* vm, uint32_t width, uint32_t flag) {
 
     return UVM_SUCCESS;
 }
+
+/**
+ * Typecasts signed i8, i16 or i32 to i64
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag IntType determining instruction version
+ * @return On success returns UVM_SUCCESS otherwise error state
+ * [E_INVALID_SOURCE_REG]
+ */
+uint32_t instr_signed_cast_to_long(UVM* vm, uint32_t width, uint32_t flag) {
+    // Versions:
+    // b2sl <iR>
+    // s2sl <iR>
+    // i2sl <iR>
+
+    constexpr uint32_t IREG_OFFSET = 1;
+
+    uint8_t srcRegId = vm->MMU.InstrBuffer[IREG_OFFSET];
+
+    IntVal srcRegVal;
+    if (vm->MMU.getIntReg(srcRegId, srcRegVal) != 0) {
+        return E_INVALID_SOURCE_REG;
+    }
+
+    uint32_t type = flag & INSTR_FLAG_TYPE_MASK;
+    switch (type) {
+    case INSTR_FLAG_TYPE_I8:
+        srcRegVal.S64 = static_cast<int64_t>(srcRegVal.S8);
+        break;
+    case INSTR_FLAG_TYPE_I16:
+        srcRegVal.S64 = static_cast<int64_t>(srcRegVal.S16);
+        break;
+    case INSTR_FLAG_TYPE_I32:
+        srcRegVal.S64 = static_cast<int64_t>(srcRegVal.S32);
+        break;
+    }
+
+    vm->MMU.setIntReg(srcRegId, srcRegVal, IntType::I64);
+
+    return UVM_SUCCESS;
+}
