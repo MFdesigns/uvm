@@ -941,7 +941,7 @@ uint32_t instr_signed_cast_to_long(UVM* vm, uint32_t width, uint32_t flag) {
  */
 uint32_t instr_f2d(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
-    // f2d <iR>
+    // f2d <fR>
 
     constexpr uint32_t REG_OFFSET = 1;
 
@@ -969,7 +969,7 @@ uint32_t instr_f2d(UVM* vm, uint32_t width, uint32_t flag) {
  */
 uint32_t instr_d2f(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
-    // d2f <iR>
+    // d2f <fR>
 
     constexpr uint32_t REG_OFFSET = 1;
 
