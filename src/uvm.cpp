@@ -785,7 +785,11 @@ bool UVM::nextInstr() {
     }
     case OP_CMP_IT_IR_IR:
         instrWidth = 4;
-        instrCall = instr_cmp_ireg_ireg;
+        instrCall = instr_cmp;
+        break;
+    case OP_CMPF_FT_FR_FR:
+        instrWidth = 4;
+        instrCall = instr_cmpf;
         break;
 
     /********************************

@@ -116,6 +116,7 @@ constexpr uint8_t OP_I2D = 0xC5;
 constexpr uint8_t OP_F2I = 0xB6;
 constexpr uint8_t OP_D2I = 0xC6;
 constexpr uint8_t OP_CMP_IT_IR_IR = 0xD1;
+constexpr uint8_t OP_CMPF_FT_FR_FR = 0xD5;
 constexpr uint8_t OP_JMP = 0xE1;
 constexpr uint8_t OP_JE = 0xE2;
 constexpr uint8_t OP_JNE = 0xE3;
@@ -188,7 +189,8 @@ MAKE_INSTR(i2d);
 MAKE_INSTR(f2i);
 MAKE_INSTR(d2i);
 // Branching
-MAKE_INSTR(cmp_ireg_ireg);
+MAKE_INSTR(cmp);
+MAKE_INSTR(cmpf);
 MAKE_INSTR(jmp);
 // Function
 MAKE_INSTR(call);

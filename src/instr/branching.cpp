@@ -18,53 +18,61 @@
 #include "instructions.hpp"
 #include <iostream>
 
-uint32_t instr_cmp_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
+/**
+ * Compares two integer registers by subtraction and sets flags
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
+ * E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ */
+uint32_t instr_cmp(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;
-    constexpr uint32_t IREG_A_OFFSET = 2;
-    constexpr uint32_t IREG_B_OFFSET = 3;
+    constexpr uint32_t SRC_REG_OFFSET = 2;
+    constexpr uint32_t DEST_REG_OFFSET = 3;
 
     uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
-    uint8_t iRegA = vm->MMU.InstrBuffer[IREG_A_OFFSET];
-    uint8_t iRegB = vm->MMU.InstrBuffer[IREG_B_OFFSET];
+    uint8_t srcRegId = vm->MMU.InstrBuffer[SRC_REG_OFFSET];
+    uint8_t destRegId = vm->MMU.InstrBuffer[DEST_REG_OFFSET];
 
     IntType intType = IntType::I32;
     if (!parseIntType(type, &intType)) {
-        return 0xFF;
+        return E_INVALID_TYPE;
     }
 
-    IntVal iRegAVal;
-    IntVal iRegBVal;
+    IntVal srcRegVal;
+    IntVal destRegVal;
 
-    if (vm->MMU.getIntReg(iRegA, iRegAVal) != 0) {
-        return 0xFF;
+    if (vm->MMU.getIntReg(srcRegId, srcRegVal) != 0) {
+        return E_INVALID_SOURCE_REG;
     }
 
-    if (vm->MMU.getIntReg(iRegB, iRegBVal) != 0) {
-        return 0xFF;
+    if (vm->MMU.getIntReg(destRegId, destRegVal) != 0) {
+        return E_INVALID_TARGET_REG;
     }
 
     IntVal result;
     uint32_t shiftWidth = 0;
     switch (intType) {
     case IntType::I8:
-        result.I8 = iRegAVal.I8 - iRegBVal.I8;
+        result.I8 = srcRegVal.I8 - destRegVal.I8;
         shiftWidth = 7;
         break;
     case IntType::I16:
-        result.I16 = iRegAVal.I16 - iRegBVal.I16;
+        result.I16 = srcRegVal.I16 - destRegVal.I16;
         shiftWidth = 15;
         break;
     case IntType::I32:
-        result.I32 = iRegAVal.I32 - iRegBVal.I32;
+        result.I32 = srcRegVal.I32 - destRegVal.I32;
         shiftWidth = 31;
         break;
     case IntType::I64:
-        result.I64 = iRegAVal.I64 - iRegBVal.I64;
+        result.I64 = srcRegVal.I64 - destRegVal.I64;
         shiftWidth = 63;
         break;
     }
 
-    if (result.I64 == 0) {
+    if (result.I64 == 0.0f) {
         vm->MMU.Flags.Zero = true;
     } else {
         vm->MMU.Flags.Zero = false;
@@ -74,6 +82,68 @@ uint32_t instr_cmp_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
         vm->MMU.Flags.Signed = true;
     } else {
         vm->MMU.Flags.Signed = false;
+    }
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Compares two float registers by subtraction and sets flags
+ * @param vm UVM instance
+ * @param width Instruction width
+ * @param flag Unused (pass 0)
+ * @return On success returns UVM_SUCCESS otherwise error state
+ * [E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ */
+uint32_t instr_cmpf(UVM* vm, uint32_t width, uint32_t flag) {
+    constexpr uint32_t TYPE_OFFSET = 1;
+    constexpr uint32_t SRC_REG_OFFSET = 2;
+    constexpr uint32_t DEST_REG_OFFSET = 3;
+
+    uint8_t type = vm->MMU.InstrBuffer[TYPE_OFFSET];
+    uint8_t srcRegId = vm->MMU.InstrBuffer[SRC_REG_OFFSET];
+    uint8_t destRegId = vm->MMU.InstrBuffer[DEST_REG_OFFSET];
+
+    FloatType floatType = FloatType::F32;
+    if (!parseFloatType(type, &floatType)) {
+        return E_INVALID_TYPE;
+    }
+
+    FloatVal srcRegVal;
+    FloatVal destRegVal;
+
+    if (vm->MMU.getFloatReg(srcRegId, srcRegVal) != 0) {
+        return E_INVALID_SOURCE_REG;
+    }
+
+    if (vm->MMU.getFloatReg(destRegId, destRegVal) != 0) {
+        return E_INVALID_TARGET_REG;
+    }
+
+    FloatVal result;
+    // This bit mask is used to determin if the float/double is signed
+    uint64_t floatSignBitMask = 0;
+    switch (floatType) {
+    case FloatType::F32:
+        result.F32 = srcRegVal.F32 - destRegVal.F32;
+        floatSignBitMask = 0x80000000;
+        break;
+    case FloatType::F64:
+        result.F64 = srcRegVal.F64 - destRegVal.F64;
+        floatSignBitMask = 0x8000000000000000;
+        break;
+    }
+
+    if (result.F64 == 0) {
+        vm->MMU.Flags.Zero = true;
+    } else {
+        vm->MMU.Flags.Zero = false;
+    }
+
+    if ((*reinterpret_cast<uint64_t*>(&result.F64) & floatSignBitMask) == 0) {
+        vm->MMU.Flags.Signed = false;
+    } else {
+        vm->MMU.Flags.Signed = true;
     }
 
     return UVM_SUCCESS;
