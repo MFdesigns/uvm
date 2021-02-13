@@ -78,10 +78,10 @@ bool validateHeader(HeaderInfo* info, uint8_t* source, size_t size) {
     return true;
 }
 
-// TODO: Update section type range
 bool parseSectionType(uint8_t type, MemType& secType) {
-    // Outside of valid section type range
-    if (type < 0x1 || type > 0x5) {
+    // Range of valid user defined sections
+    if (type < static_cast<uint8_t>(MemType::NAME_STRING) ||
+        type > static_cast<uint8_t>(MemType::CODE)) {
         return false;
     }
 
@@ -238,7 +238,7 @@ bool UVM::init() {
  */
 uint8_t* UVM::readSource(std::filesystem::path p, size_t* size) {
     // Read source file into buffer
-    std::ifstream stream{p};
+    std::ifstream stream{p, std::ios_base::binary};
 
     // Get buffer size
     stream.seekg(0, std::ios::end);
@@ -439,11 +439,11 @@ bool UVM::nextInstr() {
         instrFlag = static_cast<uint32_t>(FloatType::F64);
         instrCall = instr_copyf_float_ro;
         break;
-    case  OP_COPY_FT_FR_FR:
+    case OP_COPY_FT_FR_FR:
         instrWidth = 4;
         instrCall = instr_copyf_freg_freg;
         break;
-    case  OP_COPY_FT_RO_RO:
+    case OP_COPY_FT_RO_RO:
         instrWidth = 14;
         instrCall = instr_copyf_ro_ro;
         break;

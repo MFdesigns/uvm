@@ -101,9 +101,10 @@ enum class MemType {
     META_DATA = 0x2,
     DEBUG = 0x3,
     STATIC = 0x4,
-    CODE = 0x5,
-    STACK = 0x6,
-    HEAP = 0x7,
+    GLOBAL = 0x5,
+    CODE = 0x6,
+    STACK = 0x7,
+    HEAP = 0x8,
 };
 
 struct MemBuffer {
