@@ -24,6 +24,7 @@
 
 constexpr uint64_t UVM_START_ADDR = 0;
 
+
 struct HeaderInfo {
     uint8_t Version = 0;
     uint8_t Mode = 0;
@@ -34,6 +35,8 @@ enum class ExecutionMode {
     USER,
     DEBUGGER,
 };
+
+bool validateHeader(HeaderInfo* info, uint8_t* source, size_t size);
 
 class UVM {
   public:
