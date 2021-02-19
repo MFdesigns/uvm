@@ -15,10 +15,12 @@
 // ======================================================================== //
 
 #include "debug/debugger.hpp"
+#include "error.hpp"
 #include "uvm.hpp"
 #include <cstring>
 #include <filesystem>
 #include <iostream>
+#include <memory>
 
 void printCLIUsage() {
     std::cout << "usage: uvm <path>\n";
@@ -31,6 +33,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
+    // Check if UVM was started with debug server flag
     if (strcmp(argv[1], "--debug-server") == 0) {
         Debugger dbg;
         dbg.startSession();
@@ -50,16 +53,21 @@ int main(int argc, char* argv[]) {
     size_t fileSize = 0;
     uint8_t* buffer = vmInstance.readSource(p, &fileSize);
     vmInstance.loadFile(buffer, fileSize);
-    delete[] buffer;
+
+    // Deallocate buffer because it has no use after loading the file sections
+    if (buffer != nullptr) {
+        delete[] buffer;
+    }
 
     bool initSuccess = vmInstance.init();
     if (!initSuccess) {
         return -1;
     }
 
-    bool exit = vmInstance.run();
-    if (!exit) {
-        std::cout << "VM exited with an error\n";
+    uint8_t status = vmInstance.run();
+    if (status != UVM_SUCCESS) {
+        std::cout << "[RUNTIME ERROR] " << translateRuntimeError(status)
+                  << "\nVM exited with an error\n";
         return -1;
     }
 }

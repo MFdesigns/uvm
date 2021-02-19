@@ -16,12 +16,14 @@
 
 #pragma once
 #include <cstdint>
+#include <iostream>
 
 // Successful values
 constexpr uint32_t UVM_SUCCESS = 0;
 constexpr uint32_t UVM_SUCCESS_JUMPED = 1;
 
-// TODO: Replace E_INVALID_REG_OFFSET with E_INVALID_SOURCE_REG_OFFSET or E_INVALID_DEST_REG_OFFSET
+// TODO: Replace E_INVALID_REG_OFFSET with E_INVALID_SOURCE_REG_OFFSET or
+// E_INVALID_DEST_REG_OFFSET
 
 // Error values
 constexpr uint32_t E_INVALID_HEADER = 20;
@@ -42,3 +44,6 @@ constexpr uint32_t E_INVALID_JUMP_DEST = 34;
 constexpr uint32_t E_SYSCALL_UNKNOWN = 35;
 constexpr uint32_t E_SYSCALL_FAILURE = 36;
 constexpr uint32_t E_DIVISON_ZERO = 37;
+constexpr uint32_t E_UNKNOWN_OP_CODE = 38;
+
+const char* translateRuntimeError(uint8_t errCode);

@@ -274,17 +274,23 @@ uint32_t UVM::loadFile(uint8_t* buff, size_t size) {
     return UVM_SUCCESS;
 }
 
-bool UVM::run() {
-    bool runtimeError = false;
-
-    while (Opcode != OP_EXIT && !runtimeError) {
-        runtimeError = !nextInstr();
+/**
+ * Fetches instruction until execution is stopped or an error occures
+ * @return On success returns UVM_SUCCESS otherwhise error code
+ */
+uint8_t UVM::run() {
+    uint8_t status = UVM_SUCCESS;
+    while (Opcode != OP_EXIT && status == UVM_SUCCESS) {
+        status = nextInstr();
     }
-
-    return !runtimeError;
+    return status;
 }
 
-bool UVM::nextInstr() {
+/**
+ * Fetches the next instruction and executes it
+ * @return On success returns UVM_SUCCESS otherwhise error code
+ */
+uint8_t UVM::nextInstr() {
     uint32_t instrWidth = 1;
 
     // Get opcode byte
@@ -856,32 +862,28 @@ bool UVM::nextInstr() {
         EXIT
     ********************************/
     case OP_EXIT:
-        return true;
+        return UVM_SUCCESS;
     default:
-        std::cout << "[Runtime] Unknow opcode 0x" << std::hex
-                  << (uint16_t)Opcode << '\n';
-        return false;
+        return E_UNKNOWN_OP_CODE;
     }
 
     uint32_t fetchRes =
         MMU.fetchInstruction(MMU.InstrBuffer.data(), instrWidth);
     if (fetchRes != UVM_SUCCESS) {
-        return false;
+        return E_INVALID_READ;
     }
 
     // If Opcode is NOP then instrCall will be nullptr
+    uint8_t instrStatus = UVM_SUCCESS;
     if (instrCall != nullptr) {
-        uint32_t instrCallRes = instrCall(this, instrWidth, instrFlag);
-        if (instrCallRes != UVM_SUCCESS) {
-            if (instrCallRes == UVM_SUCCESS_JUMPED) {
-                return true;
-            } else {
-                return false;
-            }
+        instrStatus = instrCall(this, instrWidth, instrFlag);
+        // TODO: This is quit ugly!
+        if (instrStatus == UVM_SUCCESS_JUMPED) {
+            instrStatus = UVM_SUCCESS;
         }
     }
 
     // TODO: Check IP perm
     MMU.IP += instrWidth;
-    return true;
+    return instrStatus;
 }

@@ -18,7 +18,7 @@ endif()
 set(SOURCE_FILES
     src/uvm.cpp src/uvm.hpp
     src/memory.cpp src/memory.hpp
-    src/error.hpp
+    src/error.cpp src/error.hpp
     src/debug/debugger.cpp src/debug/debugger.hpp
     src/debug/http.cpp src/debug/http.hpp
     src/instr/instructions.hpp

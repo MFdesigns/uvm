@@ -24,7 +24,6 @@
 
 constexpr uint64_t UVM_START_ADDR = 0;
 
-
 struct HeaderInfo {
     uint8_t Version = 0;
     uint8_t Mode = 0;
@@ -46,8 +45,8 @@ class UVM {
     std::stringstream DbgConsole;
     void setFilePath(std::filesystem::path p);
     bool init();
-    bool run();
-    bool nextInstr();
+    uint8_t run();
+    uint8_t nextInstr();
     uint8_t* readSource(std::filesystem::path p, size_t* size);
 
     uint32_t loadFile(uint8_t* buff, size_t size);

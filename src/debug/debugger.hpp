@@ -63,5 +63,5 @@ struct Debugger {
     bool handleRequest(Response& res);
     void appendRegisters(std::stringstream& stream);
     void appendConsole(std::stringstream& stream);
-    void continueToBreakpoint();
+    uint8_t continueToBreakpoint();
 };

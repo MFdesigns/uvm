@@ -15,6 +15,7 @@
 // ======================================================================== //
 
 #include "debugger.hpp"
+#include "../error.hpp"
 #include "../instr/instructions.hpp"
 #include "http.hpp"
 #include <iostream>
@@ -160,9 +161,16 @@ bool Debugger::handleRequest(Response& res) {
             return false;
         }
 
-        // TODO: Runtime error?
-        continueToBreakpoint();
-        if (VM->Opcode == OP_EXIT) {
+        // Either succeds or contains runtime error code
+        uint8_t status = continueToBreakpoint();
+
+        if (status != UVM_SUCCESS) {
+            res.Body << DBG_ERROR;
+            res.Body << ERR_RUNTIME_ERROR;
+            res.Body << status;
+            appendRegisters(res.Body);
+            appendConsole(res.Body);
+        } else if (VM->Opcode == OP_EXIT) {
             res.Body << DBG_EXE_FIN;
             appendRegisters(res.Body);
             appendConsole(res.Body);
@@ -175,13 +183,17 @@ bool Debugger::handleRequest(Response& res) {
         }
     } break;
     case DBG_NEXT_INSTR: {
-        // TODO: ERR_NO_UX_FILE and runtime error
+        // TODO: ERR_NO_UX_FILE
         if (State == DbgSessState::RUNNING) {
-            if (!VM->nextInstr()) {
-                return false;
-            }
+            uint8_t status = VM->nextInstr();
 
-            if (VM->Opcode == OP_EXIT) {
+            if (status != UVM_SUCCESS) {
+                res.Body << DBG_ERROR;
+                res.Body << ERR_RUNTIME_ERROR;
+                res.Body << status;
+                appendRegisters(res.Body);
+                appendConsole(res.Body);
+            } else if (VM->Opcode == OP_EXIT) {
                 res.Body << DBG_EXE_FIN;
                 appendRegisters(res.Body);
                 appendConsole(res.Body);
@@ -222,9 +234,16 @@ bool Debugger::handleRequest(Response& res) {
             return false;
         }
 
-        // TODO: Runtime error?
-        continueToBreakpoint();
-        if (VM->Opcode == OP_EXIT) {
+        // Either succeds or contains runtime error code
+        uint8_t status = continueToBreakpoint();
+
+        if (status != UVM_SUCCESS) {
+            res.Body << DBG_ERROR;
+            res.Body << ERR_RUNTIME_ERROR;
+            res.Body << status;
+            appendRegisters(res.Body);
+            appendConsole(res.Body);
+        } else if (VM->Opcode == OP_EXIT) {
             res.Body << DBG_EXE_FIN;
             appendRegisters(res.Body);
             appendConsole(res.Body);
@@ -301,18 +320,23 @@ void Debugger::appendConsole(std::stringstream& stream) {
 }
 
 /**
- * Executes virtual machine until next breakpoint is hit
+ * Executes bytecode until breakpoint is hit, runtime error occures or code is
+ * finished
+ * @return On success returns UVM_SUCCESS otherwhise returns error code
  */
-void Debugger::continueToBreakpoint() {
-    while (VM->Opcode != OP_EXIT) {
-        uint64_t ip = VM->MMU.IP;
+uint8_t Debugger::continueToBreakpoint() {
+    // Execute instruction until breakpoint is hit, runtime error occures or
+    // code is finished
+    uint8_t exeStatus = UVM_SUCCESS;
+    while (VM->Opcode != OP_EXIT && exeStatus == UVM_SUCCESS) {
         if (OnBreakpoint) {
-            VM->nextInstr();
+            exeStatus = VM->nextInstr();
             OnBreakpoint = false;
         } else {
+            // Check if current instruction pointer is a breakpoint
             bool isBreakpoint = false;
             for (uint32_t i = 0; i < Breakpoints.size(); i++) {
-                if (Breakpoints[i] == ip) {
+                if (Breakpoints[i] == VM->MMU.IP) {
                     isBreakpoint = true;
                     break;
                 }
@@ -320,10 +344,12 @@ void Debugger::continueToBreakpoint() {
 
             if (isBreakpoint) {
                 OnBreakpoint = true;
-                return;
+                break;
             } else {
-                VM->nextInstr();
+                exeStatus = VM->nextInstr();
             }
         }
     }
+
+    return exeStatus;
 }
