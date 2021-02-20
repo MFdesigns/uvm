@@ -879,7 +879,7 @@ uint8_t UVM::nextInstr() {
         instrStatus = instrCall(this, instrWidth, instrFlag);
         // TODO: This is quit ugly!
         if (instrStatus == UVM_SUCCESS_JUMPED) {
-            instrStatus = UVM_SUCCESS;
+            return UVM_SUCCESS;
         }
     }
 
