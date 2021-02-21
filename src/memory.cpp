@@ -652,7 +652,7 @@ MemManager::read(uint64_t vAddr, void* dest, UVMDataSize size, uint8_t perm) {
  * @param perm Required permissions of memory section
  */
 uint32_t
-MemManager::readBig(uint64_t vAddr, void* dest, uint32_t size, uint8_t perm) {
+MemManager::readLarge(uint64_t vAddr, void* dest, uint32_t size, uint8_t perm) {
     // Add the read permission
     perm |= PERM_READ_MASK;
 
@@ -692,6 +692,60 @@ MemManager::readBig(uint64_t vAddr, void* dest, uint32_t size, uint8_t perm) {
 
         readLeft -= actualReadSize;
         readIndex += actualReadSize;
+    }
+
+    return UVM_SUCCESS;
+}
+
+/**
+ * Writes to virtual memory at given address from source buffer with at least
+ * write permission
+ * @param src Pointer to source buffer of at least given size
+ * @param vAddr Source virtual address
+ * @param size Size of read
+ * @param perm Required permissions of memory section
+ */
+uint32_t
+MemManager::writeLarge(void* src, uint64_t vAddr, uint32_t size, uint8_t perm) {
+    // Add the write permission
+    perm |= PERM_WRITE_MASK;
+
+    // If memory range which should be read spans accross multiple memory
+    // buffers it has to perform multiple memcpy's. writeLeft contains the size
+    // of how much memory is left to be copied and writeIndex contains the
+    // virtual address of the start of the left memory to be copied.
+    int64_t writeLeft = size;
+    uint64_t writeIndex = vAddr;
+    while (writeLeft > 0) {
+        // Find the buffer of vAddr
+        MemBuffer* buffer = nullptr;
+        for (MemBuffer& buff : Buffers) {
+            if (writeIndex >= buff.VStartAddr &&
+                writeIndex < buff.VStartAddr + buff.Size) {
+                buffer = &buff;
+                break;
+            }
+        }
+
+        if (buffer == nullptr) {
+            return E_VADDR_NOT_FOUND;
+        }
+
+        if ((buffer->Perm & perm) != perm) {
+            return E_MISSING_PERM;
+        }
+
+        uint32_t actualWriteSize = size;
+        uint64_t buffVEnd = buffer->VStartAddr + buffer->Size;
+        if (writeIndex + writeLeft > buffVEnd) {
+            actualWriteSize = buffVEnd - writeIndex;
+        }
+
+        size_t buffIndex = vAddr - buffer->VStartAddr;
+        memcpy(&buffer->Buffer[buffIndex], src, actualWriteSize);
+
+        writeLeft -= actualWriteSize;
+        writeIndex += actualWriteSize;
     }
 
     return UVM_SUCCESS;

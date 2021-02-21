@@ -41,7 +41,7 @@ bool syscall_print(UVM* vm) {
     // Create temporary string buffer (is not \0 terminated)
     std::unique_ptr<char[]> buff = std::make_unique<char[]>(stringSize);
 
-    uint32_t readRes = vm->MMU.readBig(r0.I64, buff.get(), stringSize, 0);
+    uint32_t readRes = vm->MMU.readLarge(r0.I64, buff.get(), stringSize, 0);
     if (readRes != UVM_SUCCESS) {
         return false;
     }
@@ -56,6 +56,57 @@ bool syscall_print(UVM* vm) {
     case ExecutionMode::DEBUGGER:
         vm->DbgConsole.write(buff.get(), stringSize);
         break;
+    }
+
+    return true;
+}
+
+/**
+ * Performs syscall for reading from console
+ * @param vm UVM instance
+ * @return On success returns true otherwise false
+ */
+bool syscall_console_read(UVM* vm) {
+    // Arguments:
+    // r0: double ptr to heap allocated string
+    // r1: ptr to uint32_t string size
+
+    // Return values:
+    // -
+
+    // Console input is currently not supported if started from a debugger
+    if (vm->Mode == ExecutionMode::DEBUGGER) {
+        return false;
+    }
+
+    IntVal strPtrPtr = vm->MMU.GP[0];
+    IntVal strSizePtr = vm->MMU.GP[1];
+
+    std::string str;
+    std::getline(std::cin, str);
+    uint32_t strSize = str.size();
+
+    uint64_t strPtr = vm->MMU.allocHeap(strSize);
+
+    // Copy string into vm heap
+    bool writeStatus =
+        vm->MMU.writeLarge(const_cast<char*>(str.c_str()), strPtr, strSize, 0);
+    if (writeStatus != UVM_SUCCESS) {
+        return false;
+    }
+
+    // Write out vaddr of heap string
+    bool writeStrPtrStatus = vm->MMU.write(&strPtr, strPtrPtr.I64,
+                                           UVMDataSize::QWORD, PERM_WRITE_MASK);
+    if (writeStrPtrStatus != UVM_SUCCESS) {
+        return false;
+    }
+
+    // Write out string size
+    bool writeStrSizeStatus = vm->MMU.write(
+        &strSize, strSizePtr.I64, UVMDataSize::DWORD, PERM_WRITE_MASK);
+    if (writeStrSizeStatus != UVM_SUCCESS) {
+        return false;
     }
 
     return true;
@@ -144,12 +195,15 @@ uint32_t instr_syscall(UVM* vm, uint32_t width, uint32_t flag) {
     case SYSCALL_PRINT:
         callSuccess = syscall_print(vm);
         break;
+    case SYSCALL_CONSOLE_READ:
+        callSuccess = syscall_console_read(vm);
+        break;
     case SYSCALL_ALLOC:
         syscall_alloc(vm);
-    break;
+        break;
     case SYSCALL_DEALLOC:
         callSuccess = syscall_dealloc(vm);
-    break;
+        break;
     case SYSCALL_TIME: {
         callSuccess = syscall_time(vm);
     } break;

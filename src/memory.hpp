@@ -168,7 +168,8 @@ struct MemManager {
     MemSection* findSection(uint64_t vAddr, uint32_t size) const;
     uint32_t read(uint64_t vAddr, void* dest, UVMDataSize size, uint8_t perm);
     uint32_t write(void* src, uint64_t vAddr, UVMDataSize size, uint8_t perm);
-    uint32_t readBig(uint64_t vAddr, void* dest, uint32_t size, uint8_t perm);
+    uint32_t readLarge(uint64_t vAddr, void* dest, uint32_t size, uint8_t perm);
+    uint32_t writeLarge(void* src, uint64_t vAddr, uint32_t size, uint8_t perm);
     uint32_t fetchInstruction(uint8_t* dest, size_t size);
     uint32_t
     addBuffer(uint64_t vAddr, uint32_t size, MemType type, uint8_t perm);

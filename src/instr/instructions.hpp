@@ -127,6 +127,7 @@ constexpr uint8_t OP_JLE = 0xE7;
 
 // Syscalls
 constexpr uint8_t SYSCALL_PRINT = 0x1;
+constexpr uint8_t SYSCALL_CONSOLE_READ = 0x2;
 constexpr uint8_t SYSCALL_TIME = 0x10;
 constexpr uint8_t SYSCALL_ALLOC = 0x41;
 constexpr uint8_t SYSCALL_DEALLOC = 0x44;
