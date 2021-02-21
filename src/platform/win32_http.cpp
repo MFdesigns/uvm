@@ -25,6 +25,10 @@
 
 #pragma comment(lib, "Ws2_32.lib")
 
+/**
+ * Initializes the server
+ * @return On successful initialization returns true otherwise false
+ */
 bool HTTPServer::startup() {
     WSADATA wsaData{};
     // MAKEWORD = Version 2.2
@@ -81,6 +85,10 @@ bool HTTPServer::startup() {
     return true;
 }
 
+/**
+ * Listens for incoming requests
+ * @param rq Reference to request parser
+ */
 void HTTPServer::listenLoop(RequestParser& rq) {
     if (listen(reinterpret_cast<SOCKET>(ListenSock), SOMAXCONN) ==
         SOCKET_ERROR) {
@@ -126,6 +134,10 @@ void HTTPServer::listenLoop(RequestParser& rq) {
     } while (recResult > 0);
 }
 
+/**
+ * Sends a request to the current client socket
+ * @param stream Message content
+ */
 void HTTPServer::sendReq(std::ostream& stream) {
     std::stringstream ss;
     ss << stream.rdbuf();
@@ -142,6 +154,16 @@ void HTTPServer::sendReq(std::ostream& stream) {
     }
 }
 
+/**
+ * Shutsdown server and closes listen socket
+ */
+void HTTPServer::closeServer() {
+    WSACleanup();
+}
+
+/**
+ * Closes client socket
+ */
 void HTTPServer::shutdownSock() {
     uint32_t shutdownResult =
         shutdown(reinterpret_cast<SOCKET>(ClientSock), SD_SEND);
@@ -153,8 +175,4 @@ void HTTPServer::shutdownSock() {
     }
 
     closesocket(reinterpret_cast<SOCKET>(ClientSock));
-}
-
-void HTTPServer::closeServer() {
-    WSACleanup();
 }

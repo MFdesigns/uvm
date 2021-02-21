@@ -52,12 +52,19 @@ enum class DbgSessState {
 };
 
 struct Debugger {
+    /** Server handling HTTP requests and responses */
     HTTPServer Server;
+    /** Used to parse incoming requests from the Server */
     RequestParser Req;
+    /** Current UVM instance */
     std::unique_ptr<UVM> VM;
+    /** Session status */
     DbgSessState State = DbgSessState::OPEN;
+    /** List of all currently set breakpoints */
     std::vector<uint64_t> Breakpoints;
+    /** Is UVM currently on a breakpoint */
     bool OnBreakpoint = false;
+
     void startSession();
     void closeSession();
     bool handleRequest(Response& res);

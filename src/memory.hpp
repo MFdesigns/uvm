@@ -25,11 +25,6 @@ constexpr uint64_t UVM_STACK_SIZE = 4096;
 constexpr size_t HEAP_BLOCK_SIZE = 1024;
 constexpr size_t MAX_INSTR_SIZE = 15;
 
-// Register error codes
-constexpr uint32_t ERR_REG_NO_PERM = 0xE2;
-constexpr uint32_t ERR_REG_UNKNOWN_ID = 0xE3;
-constexpr uint32_t ERR_REG_TYPE_MISMATCH = 0xE4;
-
 constexpr uint8_t PERM_READ_MASK = 0b1000'0000;
 constexpr uint8_t PERM_WRITE_MASK = 0b0100'0000;
 constexpr uint8_t PERM_EXE_MASK = 0b0010'0000;
@@ -50,7 +45,6 @@ enum class UVMDataSize {
     QWORD = 8, // i64 / f64
 };
 
-// TODO: IntType and FlaotType should be flags (constexpr)
 enum class IntType {
     I8 = 0x1,
     I16 = 0x2,
@@ -126,9 +120,7 @@ struct MemBuffer {
     uint8_t* Buffer = nullptr;
 };
 
-// TODO: What about section name strings?
-class MemSection {
-  public:
+struct MemSection {
     MemSection(MemType type, uint8_t perm, uint64_t startAddr, uint32_t size);
     const MemType Type;
     /** Section permissions */
@@ -139,59 +131,61 @@ class MemSection {
     const uint32_t Size = 0;
 };
 
-bool parseIntType(uint8_t type, IntType* intType);
-bool parseFloatType(uint8_t type, FloatType* floatType);
-
 struct FlagsRegister {
     bool Carry = false;
     bool Zero = false;
     bool Signed = false;
 };
 
-// TODO: Cleanup
-class MemManager {
-  public:
+struct MemManager {
+    /** list of sections */
     std::vector<MemSection> Sections;
+    /** list of memory buffers */
     std::vector<MemBuffer> Buffers;
+    /** index to stack buffer inside buffers array */
     uint32_t StackBufferIndex = 0;
+    /** virtual address of stack start */
     uint64_t VStackStart = 0;
+    /** virtual address of stack end */
     uint64_t VStackEnd = 0;
     /** Pointer to top of heap */
     uint64_t VHeapStart = 0;
+    /** Instruction pointer */
     uint64_t IP = 0;
+    /** Stack pointer */
     uint64_t SP = 0;
+    /** Base pointer */
     uint64_t BP = 0;
-    std::array<IntVal, 16> GP = {0};
-    std::array<FloatVal, 16> FP = {0};
-    std::array<uint8_t, MAX_INSTR_SIZE> InstrBuffer;
+    /** Flags register */
     FlagsRegister Flags;
+    /** General purpose registers r0 - r15 */
+    std::array<IntVal, 16> GP = {0};
+    /** Floating point registers f0 - f15 */
+    std::array<FloatVal, 16> FP = {0};
+    /** Current instruction buffer */
+    std::array<uint8_t, MAX_INSTR_SIZE> InstrBuffer;
 
     MemSection* findSection(uint64_t vAddr, uint32_t size) const;
-
     uint32_t read(uint64_t vAddr, void* dest, UVMDataSize size, uint8_t perm);
     uint32_t write(void* src, uint64_t vAddr, UVMDataSize size, uint8_t perm);
     uint32_t readBig(uint64_t vAddr, void* dest, uint32_t size, uint8_t perm);
-
     uint32_t fetchInstruction(uint8_t* dest, size_t size);
     uint32_t
     addBuffer(uint64_t vAddr, uint32_t size, MemType type, uint8_t perm);
     void initStack();
-
     uint32_t setStackPtr(uint64_t vAddr);
     uint32_t setBasePtr(uint64_t vAddr);
     uint32_t stackPush(void* val, UVMDataSize size);
     uint32_t stackPop(uint64_t* out, UVMDataSize size);
-
     uint32_t setIntReg(uint8_t id, IntVal val, IntType type);
     uint32_t setFloatReg(uint8_t id, FloatVal val, FloatType type);
-
     uint32_t getIntReg(uint8_t id, IntVal& val);
     uint32_t getFloatReg(uint8_t id, FloatVal& val);
-
     bool evalRegOffset(uint8_t* buff, uint64_t* address);
-
     uint64_t allocHeap(size_t size);
     uint32_t deallocHeap(uint64_t vAddr);
-
     void loadSections(uint8_t* buff, size_t size);
 };
+
+bool parseIntType(uint8_t type, IntType* intType);
+bool parseFloatType(uint8_t type, FloatType* floatType);

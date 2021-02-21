@@ -22,6 +22,13 @@
 #include <fstream>
 #include <iostream>
 
+/**
+ * Validates UX file header
+ * @param info Pointer to HeaderInfo struct to be filled out
+ * @param source Pointer to source file buffer
+ * @param size Size of source file buffer
+ * @return On success return true otherwise false
+ */
 bool validateHeader(HeaderInfo* info, uint8_t* source, size_t size) {
     // Check if source file has minimal size to contain a valid header
     constexpr uint32_t MIN_HEADER_SIZE = 0x60;
@@ -78,6 +85,12 @@ bool validateHeader(HeaderInfo* info, uint8_t* source, size_t size) {
     return true;
 }
 
+/**
+ * Converts section table type into MemType
+ * @param type Input type byte
+ * @param secType Converted output type
+ * @return On valid type returns true otherwise false
+ */
 bool parseSectionType(uint8_t type, MemType& secType) {
     // Range of valid user defined sections
     if (type < static_cast<uint8_t>(MemType::NAME_STRING) ||
@@ -89,6 +102,11 @@ bool parseSectionType(uint8_t type, MemType& secType) {
     return true;
 }
 
+/**
+ * Validates section permisson
+ * @param perms Permission to be validated
+ * @return On valid permission returns true otherwise false
+ */
 bool validateSectionPermission(uint8_t perms) {
     constexpr uint8_t UNKNOW_MASK =
         (uint8_t) ~(PERM_READ_MASK | PERM_WRITE_MASK | PERM_EXE_MASK);
@@ -215,13 +233,17 @@ bool parseSectionTable(std::vector<MemSection>* sections,
     return validSectionTable;
 }
 
+/**
+ * File path setter
+ * @param p File path
+ */
 void UVM::setFilePath(std::filesystem::path p) {
     SourcePath = std::move(p);
 }
 
 /**
  * Initializes the vm's stack and validates the provided start address
- * @return On sucess returns true otherwhise false
+ * @return On sucess returns true otherwise false
  */
 bool UVM::init() {
     MMU.initStack();
@@ -289,7 +311,7 @@ uint32_t UVM::loadFile(uint8_t* buff, size_t size) {
 
 /**
  * Fetches instruction until execution is stopped or an error occures
- * @return On success returns UVM_SUCCESS otherwhise error code
+ * @return On success returns UVM_SUCCESS otherwise error code
  */
 uint8_t UVM::run() {
     uint8_t status = UVM_SUCCESS;
@@ -301,7 +323,7 @@ uint8_t UVM::run() {
 
 /**
  * Fetches the next instruction and executes it
- * @return On success returns UVM_SUCCESS otherwhise error code
+ * @return On success returns UVM_SUCCESS otherwise error code
  */
 uint8_t UVM::nextInstr() {
     uint32_t instrWidth = 1;
@@ -890,7 +912,7 @@ uint8_t UVM::nextInstr() {
     uint8_t instrStatus = UVM_SUCCESS;
     if (instrCall != nullptr) {
         instrStatus = instrCall(this, instrWidth, instrFlag);
-        // TODO: This is quit ugly!
+        // UVM_SUCCESS_JUMPED is not meaningful for caller of this function
         if (instrStatus == UVM_SUCCESS_JUMPED) {
             return UVM_SUCCESS;
         }

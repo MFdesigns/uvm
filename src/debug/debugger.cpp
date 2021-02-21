@@ -325,7 +325,7 @@ void Debugger::appendConsole(std::stringstream& stream) {
 /**
  * Executes bytecode until breakpoint is hit, runtime error occures or code is
  * finished
- * @return On success returns UVM_SUCCESS otherwhise returns error code
+ * @return On success returns UVM_SUCCESS otherwise returns error code
  */
 uint8_t Debugger::continueToBreakpoint() {
     // Execute instruction until breakpoint is hit, runtime error occures or

@@ -20,6 +20,10 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+/**
+ * Initializes the server
+ * @return On successful initialization returns true otherwise false
+ */
 bool HTTPServer::startup() {
     uint16_t portNr = atoi(PORT);
 
@@ -46,6 +50,10 @@ bool HTTPServer::startup() {
     return true;
 }
 
+/**
+ * Listens for incoming requests
+ * @param rq Reference to request parser
+ */
 void HTTPServer::listenLoop(RequestParser& rq) {
     uint32_t listenResult = listen(UnixListenSock, 5);
 
@@ -80,6 +88,10 @@ void HTTPServer::listenLoop(RequestParser& rq) {
     } while (recResult > 0);
 }
 
+/**
+ * Sends a request to the current client socket
+ * @param stream Message content
+ */
 void HTTPServer::sendReq(std::ostream& stream) {
     std::stringstream ss;
     ss << stream.rdbuf();
@@ -93,10 +105,16 @@ void HTTPServer::sendReq(std::ostream& stream) {
     }
 }
 
-void HTTPServer::shutdownSock() {
-    close(UnixClientSock);
-}
-
+/**
+ * Shutsdown server and closes listen socket
+ */
 void HTTPServer::closeServer() {
     close(UnixListenSock);
+}
+
+/**
+ * Closes client socket
+ */
+void HTTPServer::shutdownSock() {
+    close(UnixClientSock);
 }

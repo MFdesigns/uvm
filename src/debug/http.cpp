@@ -19,6 +19,9 @@
 #include <sstream>
 #include <string>
 
+/**
+ * Builds the response message and fills it into the buffer
+ */
 void Response::fillBuffer() {
     // Clear previous buffer
     Stream.str(std::string());
@@ -41,6 +44,19 @@ void Response::fillBuffer() {
     Stream << "\r\n" << Body.rdbuf();
 }
 
+/**
+ * Destructor
+ */
+RequestParser::~RequestParser() {
+    if (Content != nullptr) {
+        delete[] Content;
+    }
+}
+
+/**
+ * Returns char at cursor position and increases cursor
+ * @return Char at cursor position
+ */
 uint8_t RequestParser::eatChar() {
     if (Cursor > Size) {
         return 0;
@@ -48,6 +64,10 @@ uint8_t RequestParser::eatChar() {
     return Buffer[Cursor++];
 }
 
+/**
+ * Returns char at cursor position without incrementing cursor
+ * @return Char at cursor position
+ */
 uint8_t RequestParser::peekChar() {
     if (Cursor > Size) {
         return 0;
@@ -55,6 +75,12 @@ uint8_t RequestParser::peekChar() {
     return Buffer[Cursor];
 }
 
+/**
+ * Adds a buffer containing a segment of the incoming message to the complete
+ * message buffer
+ * @param buff Pointer to buffer
+ * @param size Size of buffer
+ */
 void RequestParser::addReqBuffer(uint8_t* buff, size_t size) {
     size_t reallocSize = Size + size;
     uint8_t* reallocBuff = new uint8_t[reallocSize];
@@ -71,6 +97,10 @@ void RequestParser::addReqBuffer(uint8_t* buff, size_t size) {
     Size = reallocSize;
 }
 
+/**
+ * Checks if content length header field is already available
+ * @return Content length value
+ */
 uint32_t RequestParser::hasContentLengthHeader() {
     auto result = Headers.find("Content-Length");
     if (result == Headers.end()) {
@@ -109,6 +139,10 @@ bool RequestParser::validateMethod(std::string& method) {
     return true;
 }
 
+/**
+ * Continues to parse at position where last left off
+ * @return On valid input returns true otherwise false
+ */
 bool RequestParser::parse() {
     uint8_t c = eatChar();
     uint8_t p = peekChar();
@@ -224,6 +258,9 @@ bool RequestParser::parse() {
     return false;
 }
 
+/**
+ * Resets the request parser to be reused
+ */
 void RequestParser::reset() {
     Type = HTTPMethod::GET;
     Path = "";
