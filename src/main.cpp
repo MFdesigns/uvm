@@ -23,7 +23,7 @@
 #include <memory>
 
 void printCLIUsage() {
-    std::cout << "usage: uvm <path>\n";
+    std::cout << "usage: uvm <source file> [<out file name>] [--debug-server]\n";
 }
 
 int main(int argc, char* argv[]) {
