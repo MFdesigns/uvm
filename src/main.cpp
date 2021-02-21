@@ -53,7 +53,12 @@ int main(int argc, char* argv[]) {
     vmInstance.setFilePath(p);
     size_t fileSize = 0;
     uint8_t* buffer = vmInstance.readSource(p, &fileSize);
-    vmInstance.loadFile(buffer, fileSize);
+
+    bool loadStatus = vmInstance.loadFile(buffer, fileSize);
+    if (loadStatus != UVM_SUCCESS) {
+        std::cerr << "Could not load file\n";
+        return -1;
+    }
 
     // Deallocate buffer because it has no use after loading the file sections
     if (buffer != nullptr) {

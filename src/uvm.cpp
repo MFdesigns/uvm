@@ -269,7 +269,7 @@ uint8_t* UVM::readSource(std::filesystem::path p, size_t* size) {
  * Loads an UX source file and initializes it
  * @param buff Pointer to source buffer
  * @param size Size of source buffer
- * @return On success return zero otherwise non-zero value
+ * @return On success return UVM_SUCCESS otherwise non-zero value
  */
 uint32_t UVM::loadFile(uint8_t* buff, size_t size) {
     bool validHeader = validateHeader(&HInfo, buff, size);

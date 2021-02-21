@@ -149,7 +149,10 @@ bool Debugger::handleRequest(Response& res) {
                 return false;
             }
 
-            VM->loadFile(fileBuff, fileSize);
+            if (VM->loadFile(fileBuff, fileSize) != UVM_SUCCESS) {
+                res.Body << DBG_ERROR << ERR_FILE_FORMAT_ERROR;
+                return false;
+            }
             VM->Mode = ExecutionMode::DEBUGGER;
 
             if (!VM->init()) {
