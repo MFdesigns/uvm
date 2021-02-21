@@ -17,6 +17,7 @@
 #include "../error.hpp"
 #include "instructions.hpp"
 #include <cstdio>
+#include <ctime>
 #include <memory>
 
 /**
@@ -102,6 +103,28 @@ bool syscall_dealloc(UVM* vm) {
 }
 
 /**
+ * Performs syscall for geting the current time
+ * @param vm UVM instance
+ * @return On success returns true otherwise false
+ */
+bool syscall_time(UVM* vm) {
+    // Arguments:
+    // -
+
+    // Return values:
+    // r0: uint64_t POSIX time
+
+    std::time_t currentTime = time(nullptr);
+    if (currentTime == (std::time_t)(-1)) {
+        return false;
+    }
+
+    vm->MMU.GP[0].I64 = static_cast<uint64_t>(currentTime);
+
+    return true;
+}
+
+/**
  * Selects correct syscall and executes it
  * @param vm UVM instance
  * @param width Instruction width
@@ -121,11 +144,14 @@ uint32_t instr_syscall(UVM* vm, uint32_t width, uint32_t flag) {
     case SYSCALL_PRINT:
         callSuccess = syscall_print(vm);
         break;
-    case SYSCALL_ALLOC: {
+    case SYSCALL_ALLOC:
         syscall_alloc(vm);
-    } break;
-    case SYSCALL_DEALLOC: {
+    break;
+    case SYSCALL_DEALLOC:
         callSuccess = syscall_dealloc(vm);
+    break;
+    case SYSCALL_TIME: {
+        callSuccess = syscall_time(vm);
     } break;
     default:
         return E_SYSCALL_UNKNOWN;
