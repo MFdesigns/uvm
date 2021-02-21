@@ -26,7 +26,7 @@
  * @param width Instruction width
  * @param flag IntType determining instruction version
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_STACK_OPERATION]
+ * [E_INVALID_STACK_OP]
  */
 uint32_t instr_push_int(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
@@ -64,7 +64,7 @@ uint32_t instr_push_int(UVM* vm, uint32_t width, uint32_t flag) {
 
     uint32_t status = vm->MMU.stackPush(&srcIntVal, dataSize);
     if (status != 0) {
-        return E_INVALID_STACK_OPERATION;
+        return E_INVALID_STACK_OP;
     }
 
     return UVM_SUCCESS;
@@ -77,7 +77,7 @@ uint32_t instr_push_int(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_SOURCE_REG, E_INVALID_TYPE, E_INVALID_STACK_OPERATION]
+ * [E_INVALID_SRC_REG, E_INVALID_TYPE, E_INVALID_STACK_OP]
  */
 uint32_t instr_push_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     // Version:
@@ -91,7 +91,7 @@ uint32_t instr_push_ireg(UVM* vm, uint32_t width, uint32_t flag) {
 
     IntVal srcRegVal{};
     if (vm->MMU.getIntReg(srcRegId, srcRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
 
     IntType intType = IntType::I32;
@@ -117,7 +117,7 @@ uint32_t instr_push_ireg(UVM* vm, uint32_t width, uint32_t flag) {
 
     uint32_t status = vm->MMU.stackPush(&srcRegVal, dataSize);
     if (status != 0) {
-        return E_INVALID_STACK_OPERATION;
+        return E_INVALID_STACK_OP;
     }
 
     return UVM_SUCCESS;
@@ -129,7 +129,7 @@ uint32_t instr_push_ireg(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
- * E_INVALID_STACK_OPERATION]
+ * E_INVALID_STACK_OP]
  */
 uint32_t instr_pop(UVM* vm, uint32_t width, uint32_t flag) {
     // Version:
@@ -161,7 +161,7 @@ uint32_t instr_pop(UVM* vm, uint32_t width, uint32_t flag) {
 
     uint32_t stackStatus = vm->MMU.stackPop(nullptr, dataSize);
     if (stackStatus != 0) {
-        return E_INVALID_STACK_OPERATION;
+        return E_INVALID_STACK_OP;
     }
 
     return UVM_SUCCESS;
@@ -173,7 +173,7 @@ uint32_t instr_pop(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
- * E_INVALID_STACK_OPERATION, E_INVALID_TARGET_REG]
+ * E_INVALID_STACK_OP, E_INVALID_DEST_REG]
  */
 uint32_t instr_pop_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     // Version:
@@ -209,11 +209,11 @@ uint32_t instr_pop_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     IntVal stackVal;
     uint32_t stackStatus = vm->MMU.stackPop(&stackVal.I64, dataSize);
     if (stackStatus != 0) {
-        return E_INVALID_STACK_OPERATION;
+        return E_INVALID_STACK_OP;
     }
 
     if (vm->MMU.setIntReg(destRegId, stackVal, intType)) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
 
     return UVM_SUCCESS;
@@ -225,7 +225,7 @@ uint32_t instr_pop_ireg(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag IntType determining instruction version
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_TARGET_REG]
+ * [E_INVALID_DEST_REG]
  */
 uint32_t instr_load_int_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
@@ -257,7 +257,7 @@ uint32_t instr_load_int_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     // Target register is at the last byte in instruction
     uint8_t reg = vm->MMU.InstrBuffer[width - 1];
     if (vm->MMU.setIntReg(reg, val, intType) != 0) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
 
     return UVM_SUCCESS;
@@ -270,7 +270,7 @@ uint32_t instr_load_int_ireg(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
- * E_INVALID_DEST_REG_OFFSET, E_INVALID_READ, E_INVALID_TARGET_REG]
+ * E_INVALID_DEST_REG_OFFSET, E_INVALID_READ, E_INVALID_DEST_REG]
  */
 uint32_t instr_load_ro_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     // Version:
@@ -333,7 +333,7 @@ uint32_t instr_load_ro_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     }
 
     if (vm->MMU.setIntReg(srcRegId, intVal, intType) != 0) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
 
     return UVM_SUCCESS;
@@ -345,7 +345,7 @@ uint32_t instr_load_ro_ireg(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag FloatType of instruction version
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_TARGET_REG]
+ * [E_INVALID_DEST_REG]
  */
 uint32_t instr_loadf_float_freg(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
@@ -367,7 +367,7 @@ uint32_t instr_loadf_float_freg(UVM* vm, uint32_t width, uint32_t flag) {
 
     uint8_t reg = vm->MMU.InstrBuffer[width - 1];
     if (vm->MMU.setFloatReg(reg, val, floatType) != 0) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
 
     return UVM_SUCCESS;
@@ -379,7 +379,7 @@ uint32_t instr_loadf_float_freg(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
- * E_INVALID_REG_OFFSET, E_INVALID_READ, E_INVALID_TARGET_REG]
+ * E_INVALID_SRC_REG_OFFSET, E_INVALID_READ, E_INVALID_DEST_REG]
  */
 uint32_t instr_loadf_ro_freg(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
@@ -399,7 +399,7 @@ uint32_t instr_loadf_ro_freg(UVM* vm, uint32_t width, uint32_t flag) {
 
     uint64_t roAddress = 0;
     if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[RO_OFFSET], &roAddress)) {
-        return E_INVALID_REG_OFFSET;
+        return E_INVALID_SRC_REG_OFFSET;
     }
 
     UVMDataSize readSize = UVMDataSize::BYTE;
@@ -430,7 +430,7 @@ uint32_t instr_loadf_ro_freg(UVM* vm, uint32_t width, uint32_t flag) {
     }
 
     if (vm->MMU.setFloatReg(fReg, floatVal, floatType) != 0) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
 
     return UVM_SUCCESS;
@@ -442,7 +442,7 @@ uint32_t instr_loadf_ro_freg(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
- * E_INVALID_SOURCE_REG, E_INVALID_REG_OFFSET, E_INVALID_WRITE]
+ * E_INVALID_SRC_REG, E_INVALID_DEST_REG_OFFSET, E_INVALID_WRITE]
  */
 uint32_t instr_store_ireg_ro(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;
@@ -459,12 +459,12 @@ uint32_t instr_store_ireg_ro(UVM* vm, uint32_t width, uint32_t flag) {
 
     IntVal intReg{};
     if (vm->MMU.getIntReg(iReg, intReg) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
 
     uint64_t roAddress = 0;
     if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[RO_OFFSET], &roAddress)) {
-        return E_INVALID_REG_OFFSET;
+        return E_INVALID_DEST_REG_OFFSET;
     }
 
     UVMDataSize writeSize = UVMDataSize::BYTE;
@@ -497,7 +497,7 @@ uint32_t instr_store_ireg_ro(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
- * E_INVALID_SOURCE_REG, E_INVALID_REG_OFFSET, E_INVALID_WRITE]
+ * E_INVALID_SRC_REG, E_INVALID_DEST_REG_OFFSET, E_INVALID_WRITE]
  */
 uint32_t instr_storef_freg_ro(UVM* vm, uint32_t width, uint32_t flag) {
     // Version:
@@ -517,12 +517,12 @@ uint32_t instr_storef_freg_ro(UVM* vm, uint32_t width, uint32_t flag) {
 
     FloatVal sourceRegVal{};
     if (vm->MMU.getFloatReg(sourceReg, sourceRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
 
     uint64_t roAddress = 0;
     if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[RO_OFFSET], &roAddress)) {
-        return E_INVALID_REG_OFFSET;
+        return E_INVALID_DEST_REG_OFFSET;
     }
 
     UVMDataSize writeSize = UVMDataSize::BYTE;
@@ -549,7 +549,7 @@ uint32_t instr_storef_freg_ro(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag IntType determines what instruction version is selected
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_REG_OFFSET, E_INVALID_WRITE]
+ * [E_INVALID_DEST_REG_OFFSET, E_INVALID_WRITE]
  */
 uint32_t instr_copy_int_ro(UVM* vm, uint32_t width, uint32_t flag) {
     // Version:
@@ -591,7 +591,7 @@ uint32_t instr_copy_int_ro(UVM* vm, uint32_t width, uint32_t flag) {
 
     uint64_t roAddress = 0;
     if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[roOffset], &roAddress)) {
-        return E_INVALID_REG_OFFSET;
+        return E_INVALID_DEST_REG_OFFSET;
     }
 
     uint32_t writeRes = vm->MMU.write(&immVal.I64, roAddress, intSize, 0);
@@ -608,7 +608,7 @@ uint32_t instr_copy_int_ro(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
- * E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ * E_INVALID_SRC_REG, E_INVALID_DEST_REG]
  */
 uint32_t instr_copy_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     // Version:
@@ -630,11 +630,11 @@ uint32_t instr_copy_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
 
     IntVal srcRegVal;
     if (vm->MMU.getIntReg(srcRegId, srcRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
 
     if (vm->MMU.setIntReg(destRegId, srcRegVal, intType) != 0) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
 
     return UVM_SUCCESS;
@@ -646,7 +646,7 @@ uint32_t instr_copy_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
- * E_INVALID_SOURCE_REG_OFFSET, E_INVALID_DEST_REG_OFFSET, E_INVALID_READ,
+ * E_INVALID_SRC_REG_OFFSET, E_INVALID_DEST_REG_OFFSET, E_INVALID_READ,
  * E_INVALID_WRITE]
  */
 uint32_t instr_copy_ro_ro(UVM* vm, uint32_t width, uint32_t flag) {
@@ -684,7 +684,7 @@ uint32_t instr_copy_ro_ro(UVM* vm, uint32_t width, uint32_t flag) {
     uint64_t destROAddr = 0;
     if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[SRC_RO_OFFSET],
                                &srcROAddr)) {
-        return E_INVALID_SOURCE_REG_OFFSET;
+        return E_INVALID_SRC_REG_OFFSET;
     }
 
     if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[DEST_RO_OFFSET],
@@ -713,7 +713,7 @@ uint32_t instr_copy_ro_ro(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag FloatType determines what instruction version is selected
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_REG_OFFSET, E_INVALID_WRITE]
+ * [E_INVALID_DEST_REG_OFFSET, E_INVALID_WRITE]
  */
 uint32_t instr_copyf_float_ro(UVM* vm, uint32_t width, uint32_t flag) {
     // Version:
@@ -743,7 +743,7 @@ uint32_t instr_copyf_float_ro(UVM* vm, uint32_t width, uint32_t flag) {
 
     uint64_t roAddress = 0;
     if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[roOffset], &roAddress)) {
-        return E_INVALID_REG_OFFSET;
+        return E_INVALID_DEST_REG_OFFSET;
     }
 
     uint32_t writeRes = vm->MMU.write(&immVal.F64, roAddress, intSize, 0);
@@ -760,7 +760,7 @@ uint32_t instr_copyf_float_ro(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
- * E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ * E_INVALID_SRC_REG, E_INVALID_DEST_REG]
  */
 uint32_t instr_copyf_freg_freg(UVM* vm, uint32_t width, uint32_t flag) {
     // Version:
@@ -782,11 +782,11 @@ uint32_t instr_copyf_freg_freg(UVM* vm, uint32_t width, uint32_t flag) {
 
     FloatVal srcRegVal;
     if (vm->MMU.getFloatReg(srcRegId, srcRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
 
     if (vm->MMU.setFloatReg(destRegId, srcRegVal, floatType) != 0) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
 
     return UVM_SUCCESS;
@@ -798,7 +798,7 @@ uint32_t instr_copyf_freg_freg(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
- * E_INVALID_SOURCE_REG_OFFSET, E_INVALID_DEST_REG_OFFSET, E_INVALID_READ,
+ * E_INVALID_SRC_REG_OFFSET, E_INVALID_DEST_REG_OFFSET, E_INVALID_READ,
  * E_INVALID_WRITE]
  */
 uint32_t instr_copyf_ro_ro(UVM* vm, uint32_t width, uint32_t flag) {
@@ -830,7 +830,7 @@ uint32_t instr_copyf_ro_ro(UVM* vm, uint32_t width, uint32_t flag) {
     uint64_t destROAddr = 0;
     if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[SRC_RO_OFFSET],
                                &srcROAddr)) {
-        return E_INVALID_SOURCE_REG_OFFSET;
+        return E_INVALID_SRC_REG_OFFSET;
     }
 
     if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[DEST_RO_OFFSET],
@@ -860,7 +860,7 @@ uint32_t instr_copyf_ro_ro(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_SOURCE_REG_OFFSET]
+ * [E_INVALID_SRC_REG_OFFSET]
  */
 uint32_t instr_lea_ro_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     // Version:
@@ -873,13 +873,13 @@ uint32_t instr_lea_ro_ireg(UVM* vm, uint32_t width, uint32_t flag) {
 
     uint64_t roAddress = 0;
     if (!vm->MMU.evalRegOffset(&vm->MMU.InstrBuffer[RO_OFFSET], &roAddress)) {
-        return E_INVALID_SOURCE_REG_OFFSET;
+        return E_INVALID_SRC_REG_OFFSET;
     }
 
     IntVal destRegVal;
     destRegVal.I64 = roAddress;
     if (vm->MMU.setIntReg(destRegId, destRegVal, IntType::I64)) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
 
     return UVM_SUCCESS;

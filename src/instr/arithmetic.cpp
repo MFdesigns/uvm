@@ -25,7 +25,7 @@
  * @param width Instruction width
  * @param flag Type of INSTR_FLAG_OP_* flag
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
- * E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG, E_DIVISON_ZERO]
+ * E_INVALID_SRC_REG, E_INVALID_DEST_REG, E_DIVISON_ZERO]
  */
 uint32_t instr_arithm_common_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
@@ -53,10 +53,10 @@ uint32_t instr_arithm_common_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     IntVal destRegVal;
 
     if (vm->MMU.getIntReg(srcRegId, srcRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
     if (vm->MMU.getIntReg(destRegId, destRegVal) != 0) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
 
     IntVal result;
@@ -190,7 +190,7 @@ uint32_t instr_arithm_common_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Type of INSTR_FLAG_OP_* flag
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
- * E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG, E_DIVISON_ZERO]
+ * E_INVALID_SRC_REG, E_INVALID_DEST_REG, E_DIVISON_ZERO]
  */
 uint32_t instr_arithm_common_freg_freg(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
@@ -216,10 +216,10 @@ uint32_t instr_arithm_common_freg_freg(UVM* vm, uint32_t width, uint32_t flag) {
     FloatVal destRegVal;
 
     if (vm->MMU.getFloatReg(srcRegId, srcRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
     if (vm->MMU.getFloatReg(destRegId, destRegVal) != 0) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
 
     FloatVal result;
@@ -281,7 +281,7 @@ uint32_t instr_arithm_common_freg_freg(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Bitmask of INSTR_FLAG_TYPE_* and INSTR_FLAG_OP_*
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_SOURCE_REG, E_DIVISON_ZERO]
+ * [E_INVALID_SRC_REG, E_DIVISON_ZERO]
  */
 uint32_t instr_arithm_common_ireg_int(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
@@ -313,7 +313,7 @@ uint32_t instr_arithm_common_ireg_int(UVM* vm, uint32_t width, uint32_t flag) {
 
     IntVal regVal;
     if (vm->MMU.getIntReg(regId, regVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
 
     uint32_t type = flag & INSTR_FLAG_TYPE_MASK;
@@ -471,7 +471,7 @@ uint32_t instr_arithm_common_ireg_int(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Bitmask of INSTR_FLAG_TYPE_* and INSTR_FLAG_OP_*
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_SOURCE_REG]
+ * [E_INVALID_SRC_REG]
  */
 uint32_t
 instr_arithm_common_freg_float(UVM* vm, uint32_t width, uint32_t flag) {
@@ -492,7 +492,7 @@ instr_arithm_common_freg_float(UVM* vm, uint32_t width, uint32_t flag) {
 
     FloatVal regVal;
     if (vm->MMU.getFloatReg(regId, regVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
 
     uint32_t type = flag & INSTR_FLAG_TYPE_MASK;
@@ -562,7 +562,7 @@ instr_arithm_common_freg_float(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
- * E_INVALID_SOURCE_REG]
+ * E_INVALID_SRC_REG]
  */
 uint32_t instr_sqrt(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
@@ -581,7 +581,7 @@ uint32_t instr_sqrt(UVM* vm, uint32_t width, uint32_t flag) {
 
     FloatVal regVal;
     if (vm->MMU.getFloatReg(regId, regVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
 
     FloatVal result;
@@ -605,7 +605,7 @@ uint32_t instr_sqrt(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
- * E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ * E_INVALID_SRC_REG, E_INVALID_DEST_REG]
  */
 uint32_t instr_mod(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
@@ -627,10 +627,10 @@ uint32_t instr_mod(UVM* vm, uint32_t width, uint32_t flag) {
     IntVal srcRegVal;
     IntVal destRegVal;
     if (vm->MMU.getIntReg(srcRegId, srcRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
     if (vm->MMU.getIntReg(destRegId, destRegVal) != 0) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
 
     IntVal result;
@@ -660,7 +660,7 @@ uint32_t instr_mod(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Version of INSTR_FLAG_OP_* [AND, OR, XOR]
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
- * E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ * E_INVALID_SRC_REG, E_INVALID_DEST_REG]
  */
 uint32_t
 instr_bitwise_common_itype_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
@@ -687,10 +687,10 @@ instr_bitwise_common_itype_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     IntVal destRegVal;
 
     if (vm->MMU.getIntReg(srcRegId, srcRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
     if (vm->MMU.getIntReg(destRegId, destRegVal) != 0) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
 
     IntVal result;
@@ -752,7 +752,7 @@ instr_bitwise_common_itype_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
- * E_INVALID_SOURCE_REG]
+ * E_INVALID_SRC_REG]
  */
 uint32_t instr_not_itype_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
@@ -772,7 +772,7 @@ uint32_t instr_not_itype_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     IntVal srcRegVal;
 
     if (vm->MMU.getIntReg(srcRegId, srcRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
 
     IntVal result;
@@ -802,7 +802,7 @@ uint32_t instr_not_itype_ireg(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Type of INSTR_FLAG_OP_* determining the version
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_TARGET_REG, E_INVALID_SOURCE_REG]
+ * [E_INVALID_DEST_REG, E_INVALID_SRC_REG]
  */
 uint32_t instr_shift_common_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     // lsh <iR> <iR>
@@ -819,10 +819,10 @@ uint32_t instr_shift_common_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     IntVal shiftRegVal;
 
     if (vm->MMU.getIntReg(targetRegId, targetRegVal) != 0) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
     if (vm->MMU.getIntReg(shiftRegId, shiftRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
 
     IntVal result;
@@ -851,7 +851,7 @@ uint32_t instr_shift_common_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag IntType determining instruction version
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_SOURCE_REG]
+ * [E_INVALID_SRC_REG]
  */
 uint32_t instr_unsigned_cast_to_long(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
@@ -869,7 +869,7 @@ uint32_t instr_unsigned_cast_to_long(UVM* vm, uint32_t width, uint32_t flag) {
 
     IntVal srcRegVal;
     if (vm->MMU.getIntReg(srcRegId, srcRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
 
     IntType type = static_cast<IntType>(flag);
@@ -896,7 +896,7 @@ uint32_t instr_unsigned_cast_to_long(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag IntType determining instruction version
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_SOURCE_REG]
+ * [E_INVALID_SRC_REG]
  */
 uint32_t instr_signed_cast_to_long(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
@@ -910,7 +910,7 @@ uint32_t instr_signed_cast_to_long(UVM* vm, uint32_t width, uint32_t flag) {
 
     IntVal srcRegVal;
     if (vm->MMU.getIntReg(srcRegId, srcRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
 
     uint32_t type = flag & INSTR_FLAG_TYPE_MASK;
@@ -937,7 +937,7 @@ uint32_t instr_signed_cast_to_long(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_SOURCE_REG]
+ * [E_INVALID_SRC_REG]
  */
 uint32_t instr_f2d(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
@@ -949,7 +949,7 @@ uint32_t instr_f2d(UVM* vm, uint32_t width, uint32_t flag) {
 
     FloatVal srcRegVal;
     if (vm->MMU.getFloatReg(srcRegId, srcRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
 
     srcRegVal.F64 = static_cast<double>(srcRegVal.F32);
@@ -965,7 +965,7 @@ uint32_t instr_f2d(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_SOURCE_REG]
+ * [E_INVALID_SRC_REG]
  */
 uint32_t instr_d2f(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
@@ -977,7 +977,7 @@ uint32_t instr_d2f(UVM* vm, uint32_t width, uint32_t flag) {
 
     FloatVal srcRegVal;
     if (vm->MMU.getFloatReg(srcRegId, srcRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
 
     srcRegVal.F32 = static_cast<float>(srcRegVal.F64);
@@ -993,7 +993,7 @@ uint32_t instr_d2f(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ * [E_INVALID_SRC_REG, E_INVALID_DEST_REG]
  */
 uint32_t instr_i2f(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
@@ -1009,10 +1009,10 @@ uint32_t instr_i2f(UVM* vm, uint32_t width, uint32_t flag) {
     FloatVal destRegVal;
 
     if (vm->MMU.getIntReg(srcRegId, srcRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
     if (vm->MMU.getFloatReg(destRegId, destRegVal) != 0) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
 
     destRegVal.F32 = static_cast<float>(srcRegVal.I32);
@@ -1028,7 +1028,7 @@ uint32_t instr_i2f(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ * [E_INVALID_SRC_REG, E_INVALID_DEST_REG]
  */
 uint32_t instr_i2d(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
@@ -1044,10 +1044,10 @@ uint32_t instr_i2d(UVM* vm, uint32_t width, uint32_t flag) {
     FloatVal destRegVal;
 
     if (vm->MMU.getIntReg(srcRegId, srcRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
     if (vm->MMU.getFloatReg(destRegId, destRegVal) != 0) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
 
     destRegVal.F64 = static_cast<double>(srcRegVal.I32);
@@ -1063,7 +1063,7 @@ uint32_t instr_i2d(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ * [E_INVALID_SRC_REG, E_INVALID_DEST_REG]
  */
 uint32_t instr_f2i(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
@@ -1079,10 +1079,10 @@ uint32_t instr_f2i(UVM* vm, uint32_t width, uint32_t flag) {
     IntVal destRegVal;
 
     if (vm->MMU.getFloatReg(srcRegId, srcRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
     if (vm->MMU.getIntReg(destRegId, destRegVal) != 0) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
 
     destRegVal.I32 = static_cast<int32_t>(srcRegVal.F32);
@@ -1098,7 +1098,7 @@ uint32_t instr_f2i(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ * [E_INVALID_SRC_REG, E_INVALID_DEST_REG]
  */
 uint32_t instr_d2i(UVM* vm, uint32_t width, uint32_t flag) {
     // Versions:
@@ -1114,10 +1114,10 @@ uint32_t instr_d2i(UVM* vm, uint32_t width, uint32_t flag) {
     IntVal destRegVal;
 
     if (vm->MMU.getFloatReg(srcRegId, srcRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
     if (vm->MMU.getIntReg(destRegId, destRegVal) != 0) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
 
     destRegVal.I32 = static_cast<int32_t>(srcRegVal.F64);

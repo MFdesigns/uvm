@@ -25,7 +25,7 @@
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS_JUMPED otherwise error state
- * [E_INVALID_STACK_OPERATION, E_INVALID_JUMP_DEST, E_MISSING_PERM]
+ * [E_INVALID_STACK_OP, E_INVALID_JUMP_DEST, E_MISSING_PERM]
  */
 uint32_t instr_call(UVM* vm, uint32_t width, uint32_t flag) {
     // Version:
@@ -40,7 +40,7 @@ uint32_t instr_call(UVM* vm, uint32_t width, uint32_t flag) {
     // Push next instruction pointer
     uint64_t currentIP = vm->MMU.IP + width;
     if (vm->MMU.stackPush(&currentIP, UVMDataSize::QWORD) != 0) {
-        return E_INVALID_STACK_OPERATION;
+        return E_INVALID_STACK_OP;
     }
 
     MemSection* memSec = vm->MMU.findSection(*targetAddr, 1);
@@ -64,12 +64,12 @@ uint32_t instr_call(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS_JUMPED otherwise error state
- * [E_INVALID_STACK_OPERATION, E_INVALID_JUMP_DEST, E_MISSING_PERM]
+ * [E_INVALID_STACK_OP, E_INVALID_JUMP_DEST, E_MISSING_PERM]
  */
 uint32_t instr_ret(UVM* vm, uint32_t width, uint32_t flag) {
     uint64_t targetIP = 0;
     if (vm->MMU.stackPop(&targetIP, UVMDataSize::QWORD) != 0) {
-        return E_INVALID_STACK_OPERATION;
+        return E_INVALID_STACK_OP;
     }
 
     MemSection* memSec = vm->MMU.findSection(targetIP, 1);

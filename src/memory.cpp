@@ -34,6 +34,7 @@ MemBuffer::MemBuffer(uint64_t startAddr,
     : VStartAddr(startAddr), Size(size), Type(type), Perm(perm), Capacity(size),
       Buffer(new uint8_t[size]) {}
 
+/** Move assignment operator */
 MemBuffer& MemBuffer::operator=(MemBuffer&& memBuffer) noexcept {
     VStartAddr = memBuffer.VStartAddr;
     Size = memBuffer.Size;
@@ -56,6 +57,7 @@ MemBuffer::MemBuffer(MemBuffer&& memBuffer) noexcept
     memBuffer.Buffer = nullptr;
 }
 
+/** Destructor */
 MemBuffer::~MemBuffer() {
     delete[] Buffer;
 }
@@ -82,7 +84,6 @@ MemSection::MemSection(MemType type,
                        uint32_t size)
     : Type(type), Perm(perm), VStartAddr(startAddr), Size(size) {}
 
-// TODO: Ever used ?
 /**
  * Finds a section which contains the given memory range
  * @param vAddr Memory range start address
@@ -103,44 +104,43 @@ MemSection* MemManager::findSection(uint64_t vAddr, uint32_t size) const {
 /**
  * Sets the stack pointer to the new address if it passes the stack range check
  * @param vAddr New stack address
- * @return On success returns 0 otherwise error code
+ * @return On success returns UVM_SUCCESS otherwise error code
  */
 uint32_t MemManager::setStackPtr(uint64_t vAddr) {
-    if (vAddr > VStackEnd) {
-        return ERR_STACK_OVERFLOW;
-    } else if (vAddr < VStackStart) {
-        return ERR_STACK_UNDERFLOW;
+    if (vAddr > VStackEnd || vAddr < VStackStart) {
+        return E_INVALID_STACK_OP;
     }
 
     SP = vAddr;
-    return 0;
+    return UVM_SUCCESS;
 }
 
 /**
  * Sets the base pointer to the new address if it passes the stack range check
  * @param vAddr New base pointer address
- * @return On success returns 0 otherwise error code
+ * @return On success returns UVM_SUCCESS otherwise error code
  */
 uint32_t MemManager::setBasePtr(uint64_t vAddr) {
     if (vAddr > VStackEnd || vAddr < VStackStart) {
-        return ERR_BASE_PTR_OUTSIDE_STACK;
+        return E_INVALID_BASE_PTR;
     }
+
     BP = vAddr;
-    return 0;
+    return UVM_SUCCESS;
 }
 
 /**
  * Pushes a value on top of the stack and validates stack pointer
  * @param val Pointer to source data
  * @param size Size of source data
- * @return On success returns 0 otherwise an error code
+ * @return On success returns UVM_SUCCESS otherwise an error code
  */
 uint32_t MemManager::stackPush(void* val, UVMDataSize size) {
     // Check if the stack increase invalidates the stack pointer
     uint64_t oldSP = SP;
     uint64_t newSP = SP + static_cast<uint32_t>(size);
     if (setStackPtr(newSP) != 0) {
-        return ERR_STACK_OVERFLOW;
+        return E_INVALID_STACK_OP;
     }
 
     uint64_t bufferOffset = oldSP - VStackStart;
@@ -148,7 +148,7 @@ uint32_t MemManager::stackPush(void* val, UVMDataSize size) {
     memcpy(const_cast<uint8_t*>(&stackBuffer[bufferOffset]), val,
            static_cast<uint32_t>(size));
 
-    return 0;
+    return UVM_SUCCESS;
 }
 
 /**
@@ -156,13 +156,13 @@ uint32_t MemManager::stackPush(void* val, UVMDataSize size) {
  * @param val Pointer to destination where the popped off value will be stored.
  * If nullptr value will be discarded
  * @param size Size of data to pop
- * @return On success returns 0 otherwise an error code
+ * @return On success returns UVM_SUCCESS otherwise an error code
  */
 uint32_t MemManager::stackPop(uint64_t* out, UVMDataSize size) {
     // Check if the stack increase invalidates the stack pointer
     uint64_t newSP = SP - static_cast<uint32_t>(size);
     if (setStackPtr(newSP) != 0) {
-        return ERR_STACK_UNDERFLOW;
+        return E_INVALID_STACK_OP;
     }
 
     if (out != nullptr) {
@@ -172,7 +172,7 @@ uint32_t MemManager::stackPop(uint64_t* out, UVMDataSize size) {
     }
 
     SP = newSP;
-    return 0;
+    return UVM_SUCCESS;
 }
 
 /**
@@ -208,12 +208,12 @@ void MemManager::initStack() {
  * @param id Register id
  * @param val Value to be set
  * @param type Size of data to be set
- * @return On success returns 0 otherwise returns error code
+ * @return On success returns UVM_SUCCESS otherwise returns error code
  */
 uint32_t MemManager::setIntReg(uint8_t id, IntVal val, IntType type) {
     switch (id) {
     case REG_INSTR_PTR:
-        return ERR_REG_NO_PERM;
+        return E_INVALID_DEST_REG;
         break;
     case REG_STACK_PTR: {
         uint32_t status = setStackPtr(val.I64);
@@ -228,7 +228,7 @@ uint32_t MemManager::setIntReg(uint8_t id, IntVal val, IntType type) {
         }
     } break;
     case REG_FLAGS:
-        return ERR_REG_NO_PERM;
+        return E_INVALID_DEST_REG;
         break;
     default: {
         if (id >= REG_GP_START && id <= REG_GP_END) {
@@ -248,16 +248,15 @@ uint32_t MemManager::setIntReg(uint8_t id, IntVal val, IntType type) {
                 break;
             }
         } else if (id >= REG_FP_START && id <= REG_FP_END) {
-            return ERR_REG_TYPE_MISMATCH;
+            return E_INVALID_TYPE;
         } else {
+            return E_INVALID_DEST_REG;
         }
         break;
     }
-
-        return ERR_REG_UNKNOWN_ID;
     }
 
-    return 0;
+    return UVM_SUCCESS;
 }
 
 /**
@@ -265,7 +264,7 @@ uint32_t MemManager::setIntReg(uint8_t id, IntVal val, IntType type) {
  * @param id Target register id
  * @param val Floating point value
  * @param type Float data size
- * @return On success returns 0 otherwise error code
+ * @return On success returns UVM_SUCCESS otherwise error code
  */
 uint32_t MemManager::setFloatReg(uint8_t id, FloatVal val, FloatType type) {
     if (id >= REG_FP_START && id <= REG_FP_END) {
@@ -280,21 +279,21 @@ uint32_t MemManager::setFloatReg(uint8_t id, FloatVal val, FloatType type) {
         }
     } else if (id == REG_INSTR_PTR || id == REG_STACK_PTR ||
                id == REG_BASE_PTR || (id >= REG_GP_START && id <= REG_GP_END)) {
-        return ERR_REG_TYPE_MISMATCH;
+        return E_INVALID_TYPE;
     } else if (id == REG_FLAGS) {
-        return ERR_REG_NO_PERM;
+        return E_INVALID_DEST_REG;
     } else {
-        return ERR_REG_UNKNOWN_ID;
+        return E_INVALID_DEST_REG;
     }
 
-    return 0;
+    return UVM_SUCCESS;
 }
 
 /**
  * Gets an integer register value if input is valid
  * @param id Target register id
  * @param val [out] Integer value
- * @return On success returns 0 otherwise error code
+ * @return On success returns UVM_SUCCESS otherwise error code
  */
 uint32_t MemManager::getIntReg(uint8_t id, IntVal& val) {
     switch (id) {
@@ -307,29 +306,29 @@ uint32_t MemManager::getIntReg(uint8_t id, IntVal& val) {
     case REG_BASE_PTR:
         val.I64 = BP;
         break;
-    // TODO: Should flags be readable ?
     case REG_FLAGS:
-        return ERR_REG_NO_PERM;
+        return E_INVALID_SRC_REG;
         break;
     default: {
         if (id >= REG_GP_START && id <= REG_GP_END) {
             uint32_t regIndex = id - REG_GP_START;
             val.I64 = GP[regIndex].I64;
         } else if (id >= REG_FP_START && id <= REG_FP_END) {
-            return ERR_REG_TYPE_MISMATCH;
+            return E_INVALID_TYPE;
         } else {
-            return ERR_REG_UNKNOWN_ID;
+            return E_INVALID_SRC_REG;
         }
     } break;
     }
-    return 0;
+
+    return UVM_SUCCESS;
 }
 
 /**
  * Gets a float register value if input is valid
  * @param id Target register id
  * @param val [out] Float value
- * @return On success returns 0 otherwise error code
+ * @return On success returns UVM_SUCCESS otherwise error code
  */
 uint32_t MemManager::getFloatReg(uint8_t id, FloatVal& val) {
     if (id >= REG_FP_START && id <= REG_FP_END) {
@@ -337,14 +336,14 @@ uint32_t MemManager::getFloatReg(uint8_t id, FloatVal& val) {
         val.F64 = FP[regIndex].F64;
     } else if (id == REG_INSTR_PTR || id == REG_STACK_PTR ||
                id == REG_BASE_PTR || (id >= REG_GP_START && id <= REG_GP_END)) {
-        return ERR_REG_TYPE_MISMATCH;
+        return E_INVALID_TYPE;
     } else if (id == REG_FLAGS) {
-        return ERR_REG_NO_PERM;
+        return E_INVALID_SRC_REG;
     } else {
-        return ERR_REG_UNKNOWN_ID;
+        return E_INVALID_SRC_REG;
     }
 
-    return 0;
+    return UVM_SUCCESS;
 }
 
 /**

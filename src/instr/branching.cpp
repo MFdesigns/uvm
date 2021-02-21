@@ -24,7 +24,7 @@
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state [E_INVALID_TYPE,
- * E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ * E_INVALID_SRC_REG, E_INVALID_DEST_REG]
  */
 uint32_t instr_cmp(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;
@@ -44,11 +44,11 @@ uint32_t instr_cmp(UVM* vm, uint32_t width, uint32_t flag) {
     IntVal destRegVal;
 
     if (vm->MMU.getIntReg(srcRegId, srcRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
 
     if (vm->MMU.getIntReg(destRegId, destRegVal) != 0) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
 
     IntVal result;
@@ -93,7 +93,7 @@ uint32_t instr_cmp(UVM* vm, uint32_t width, uint32_t flag) {
  * @param width Instruction width
  * @param flag Unused (pass 0)
  * @return On success returns UVM_SUCCESS otherwise error state
- * [E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ * [E_INVALID_SRC_REG, E_INVALID_DEST_REG]
  */
 uint32_t instr_cmpf(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t TYPE_OFFSET = 1;
@@ -113,11 +113,11 @@ uint32_t instr_cmpf(UVM* vm, uint32_t width, uint32_t flag) {
     FloatVal destRegVal;
 
     if (vm->MMU.getFloatReg(srcRegId, srcRegVal) != 0) {
-        return E_INVALID_SOURCE_REG;
+        return E_INVALID_SRC_REG;
     }
 
     if (vm->MMU.getFloatReg(destRegId, destRegVal) != 0) {
-        return E_INVALID_TARGET_REG;
+        return E_INVALID_DEST_REG;
     }
 
     FloatVal result;
@@ -156,7 +156,7 @@ uint32_t instr_cmpf(UVM* vm, uint32_t width, uint32_t flag) {
  * @param flag Type of JumpCondition
  * @return On success returns UVM_SUCCESS on success and jumped returns
  * UVM_SUCCESS_JUMPED otherwise error state [E_INVALID_JUMP_DEST,
- * E_MISSING_PERM, E_INVALID_SOURCE_REG, E_INVALID_TARGET_REG]
+ * E_MISSING_PERM, E_INVALID_SRC_REG, E_INVALID_DEST_REG]
  */
 uint32_t instr_jmp(UVM* vm, uint32_t width, uint32_t flag) {
     constexpr uint32_t ADDR_OFFSET = 1;

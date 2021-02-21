@@ -23,7 +23,8 @@
 #include <memory>
 
 void printCLIUsage() {
-    std::cout << "usage: uvm <source file> [<out file name>] [--debug-server]\n";
+    std::cout
+        << "usage: uvm <source file> [<out file name>] [--debug-server]\n";
 }
 
 int main(int argc, char* argv[]) {
@@ -67,7 +68,7 @@ int main(int argc, char* argv[]) {
 
     uint8_t status = vmInstance.run();
     if (status != UVM_SUCCESS) {
-        std::cerr << "[RUNTIME ERROR] " << translateRuntimeError(status)
+        std::cerr << "[RUNTIME ERROR] " << translateError(status)
                   << "\nVM exited with an error\n";
         return -1;
     }

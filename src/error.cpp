@@ -20,7 +20,7 @@
  * Translate error code into error message
  * @param errCode Error to translate
  */
-const char* translateRuntimeError(uint8_t errCode) {
+const char* translateError(uint8_t errCode) {
     char* strPtr = nullptr;
     switch (errCode) {
     case E_INVALID_HEADER:
@@ -28,6 +28,9 @@ const char* translateRuntimeError(uint8_t errCode) {
         break;
     case E_INVALID_SEC_TABLE:
         strPtr = "invalid section table";
+        break;
+    case E_INVALID_START_ADDR:
+        strPtr = "invalid start address";
         break;
     case E_VADDR_NOT_FOUND:
         strPtr = "virtual address not found";
@@ -38,28 +41,25 @@ const char* translateRuntimeError(uint8_t errCode) {
     case E_DEALLOC_INVALID_ADDR:
         strPtr = "provided invalid address to deallocation";
         break;
-    case E_INVALID_TARGET_REG:
+    case E_INVALID_DEST_REG:
         strPtr = "invalid target register";
-        break;
-    case E_INVALID_REG_OFFSET:
-        strPtr = "invalid register offset";
         break;
     case E_INVALID_READ:
         strPtr = "invalid read from given address";
         break;
-    case E_INVALID_SOURCE_REG:
+    case E_INVALID_SRC_REG:
         strPtr = "invalid source register";
         break;
     case E_INVALID_WRITE:
         strPtr = "invalid write to given address";
         break;
-    case E_INVALID_SOURCE_REG_OFFSET:
+    case E_INVALID_SRC_REG_OFFSET:
         strPtr = "invalid source register offset";
         break;
     case E_INVALID_DEST_REG_OFFSET:
         strPtr = "invalid destination register offset";
         break;
-    case E_INVALID_STACK_OPERATION:
+    case E_INVALID_STACK_OP:
         strPtr = "invalid stack operation";
         break;
     case E_INVALID_JUMP_DEST:
@@ -76,6 +76,9 @@ const char* translateRuntimeError(uint8_t errCode) {
         break;
     case E_UNKNOWN_OP_CODE:
         strPtr = "unknown opcode";
+        break;
+    case E_INVALID_BASE_PTR:
+        strPtr = "invalid base pointer address";
         break;
     }
 

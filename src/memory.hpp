@@ -25,11 +25,6 @@ constexpr uint64_t UVM_STACK_SIZE = 4096;
 constexpr size_t HEAP_BLOCK_SIZE = 1024;
 constexpr size_t MAX_INSTR_SIZE = 15;
 
-// Stack error codes
-constexpr uint32_t ERR_STACK_OVERFLOW = 0xE0;
-constexpr uint32_t ERR_STACK_UNDERFLOW = 0xE1;
-constexpr uint32_t ERR_BASE_PTR_OUTSIDE_STACK = 0xE1;
-
 // Register error codes
 constexpr uint32_t ERR_REG_NO_PERM = 0xE2;
 constexpr uint32_t ERR_REG_UNKNOWN_ID = 0xE3;
