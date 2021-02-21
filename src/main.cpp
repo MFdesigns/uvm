@@ -61,12 +61,13 @@ int main(int argc, char* argv[]) {
 
     bool initSuccess = vmInstance.init();
     if (!initSuccess) {
+        std::cerr << "Could not initialize the virtual machine\n";
         return -1;
     }
 
     uint8_t status = vmInstance.run();
     if (status != UVM_SUCCESS) {
-        std::cout << "[RUNTIME ERROR] " << translateRuntimeError(status)
+        std::cerr << "[RUNTIME ERROR] " << translateRuntimeError(status)
                   << "\nVM exited with an error\n";
         return -1;
     }

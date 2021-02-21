@@ -28,6 +28,7 @@ constexpr uint32_t UVM_SUCCESS_JUMPED = 1;
 // Error values
 constexpr uint32_t E_INVALID_HEADER = 20;
 constexpr uint32_t E_INVALID_SEC_TABLE = 21;
+constexpr uint32_t E_INVALID_START_ADDR = 39;
 constexpr uint32_t E_VADDR_NOT_FOUND = 22;
 constexpr uint32_t E_MISSING_PERM = 23;
 constexpr uint32_t E_DEALLOC_INVALID_ADDR = 24;

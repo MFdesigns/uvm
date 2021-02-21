@@ -219,13 +219,26 @@ void UVM::setFilePath(std::filesystem::path p) {
     SourcePath = std::move(p);
 }
 
+/**
+ * Initializes the vm's stack and validates the provided start address
+ * @return On sucess returns true otherwhise false
+ */
 bool UVM::init() {
     MMU.initStack();
 
     // Set the start address of the heap memory range
     MMU.VHeapStart = MMU.VStackEnd + 1;
 
-    // TODO: Validate start address
+    // Try to find a section where start address points to and validate it
+    MemSection* memSec = MMU.findSection(HInfo.StartAddress, 1);
+    if (memSec == nullptr) {
+        return false;
+    }
+
+    if ((memSec->Perm & PERM_EXE_MASK) != PERM_EXE_MASK) {
+        return false;
+    }
+
     MMU.IP = HInfo.StartAddress;
 
     return true;
@@ -883,7 +896,6 @@ uint8_t UVM::nextInstr() {
         }
     }
 
-    // TODO: Check IP perm
     MMU.IP += instrWidth;
     return instrStatus;
 }
