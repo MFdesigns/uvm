@@ -170,7 +170,7 @@ bool Debugger::handleRequest(Response& res) {
         if (status != UVM_SUCCESS) {
             res.Body << DBG_ERROR;
             res.Body << ERR_RUNTIME_ERROR;
-            res.Body << status;
+            res.Body.write(reinterpret_cast<char*>(&status), 4);
             appendRegisters(res.Body);
             appendConsole(res.Body);
         } else if (VM->Opcode == OP_EXIT) {

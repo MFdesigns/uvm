@@ -313,7 +313,7 @@ uint32_t UVM::loadFile(uint8_t* buff, size_t size) {
  * Fetches instruction until execution is stopped or an error occures
  * @return On success returns UVM_SUCCESS otherwise error code
  */
-uint8_t UVM::run() {
+uint32_t UVM::run() {
     uint32_t status = UVM_SUCCESS;
     while (Opcode != OP_EXIT && status == UVM_SUCCESS) {
         status = nextInstr();
@@ -325,7 +325,7 @@ uint8_t UVM::run() {
  * Fetches the next instruction and executes it
  * @return On success returns UVM_SUCCESS otherwise error code
  */
-uint8_t UVM::nextInstr() {
+uint32_t UVM::nextInstr() {
     uint32_t instrWidth = 1;
 
     // Get opcode byte

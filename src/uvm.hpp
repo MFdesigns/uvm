@@ -46,8 +46,8 @@ class UVM {
 
     void setFilePath(std::filesystem::path p);
     bool init();
-    uint8_t run();
-    uint8_t nextInstr();
+    uint32_t run();
+    uint32_t nextInstr();
     uint8_t* readSource(std::filesystem::path p, size_t* size);
     uint32_t loadFile(uint8_t* buff, size_t size);
 
