@@ -48,4 +48,4 @@ constexpr uint32_t E_INVALID_STACK_OP =         0xE00F;
 constexpr uint32_t E_INVALID_BASE_PTR =         0xE010;
 // clang-format on
 
-const char* translateError(uint8_t errCode);
+const char* translateError(uint32_t errCode);

@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    uint8_t status = vmInstance.run();
+    uint32_t status = vmInstance.run();
     if (status != UVM_SUCCESS) {
         std::cerr << "[RUNTIME ERROR] " << translateError(status)
                   << "\nVM exited with an error\n";

@@ -20,7 +20,7 @@
  * Translate error code into error message
  * @param errCode Error to translate
  */
-const char* translateError(uint8_t errCode) {
+const char* translateError(uint32_t errCode) {
     char* strPtr = nullptr;
     switch (errCode) {
     case E_INVALID_HEADER:
