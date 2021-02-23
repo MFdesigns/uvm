@@ -826,7 +826,7 @@ uint32_t instr_shift_common_ireg_ireg(UVM* vm, uint32_t width, uint32_t flag) {
     }
 
     IntVal result;
-    uint32_t instrVersion = flag & INSTR_FLAG_TYPE_MASK;
+    uint32_t instrVersion = flag & INSTR_OP_MASK;
     switch (instrVersion) {
     case INSTR_FLAG_OP_LSH:
         result.I64 = targetRegVal.I64 << shiftRegVal.I8;

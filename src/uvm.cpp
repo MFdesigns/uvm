@@ -314,7 +314,7 @@ uint32_t UVM::loadFile(uint8_t* buff, size_t size) {
  * @return On success returns UVM_SUCCESS otherwise error code
  */
 uint8_t UVM::run() {
-    uint8_t status = UVM_SUCCESS;
+    uint32_t status = UVM_SUCCESS;
     while (Opcode != OP_EXIT && status == UVM_SUCCESS) {
         status = nextInstr();
     }
@@ -909,7 +909,7 @@ uint8_t UVM::nextInstr() {
     }
 
     // If Opcode is NOP then instrCall will be nullptr
-    uint8_t instrStatus = UVM_SUCCESS;
+    uint32_t instrStatus = UVM_SUCCESS;
     if (instrCall != nullptr) {
         instrStatus = instrCall(this, instrWidth, instrFlag);
         // UVM_SUCCESS_JUMPED is not meaningful for caller of this function

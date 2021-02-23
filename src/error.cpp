@@ -80,6 +80,9 @@ const char* translateError(uint8_t errCode) {
     case E_INVALID_BASE_PTR:
         strPtr = "invalid base pointer address";
         break;
+    default:
+        strPtr = "Unknown error code\n";
+        break;
     }
 
     return const_cast<const char*>(strPtr);

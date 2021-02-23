@@ -165,7 +165,7 @@ bool Debugger::handleRequest(Response& res) {
         }
 
         // Either succeds or contains runtime error code
-        uint8_t status = continueToBreakpoint();
+        uint32_t status = continueToBreakpoint();
 
         if (status != UVM_SUCCESS) {
             res.Body << DBG_ERROR;
@@ -188,7 +188,7 @@ bool Debugger::handleRequest(Response& res) {
     case DBG_NEXT_INSTR: {
         // TODO: ERR_NO_UX_FILE
         if (State == DbgSessState::RUNNING) {
-            uint8_t status = VM->nextInstr();
+            uint32_t status = VM->nextInstr();
 
             if (status != UVM_SUCCESS) {
                 res.Body << DBG_ERROR;
@@ -238,7 +238,7 @@ bool Debugger::handleRequest(Response& res) {
         }
 
         // Either succeds or contains runtime error code
-        uint8_t status = continueToBreakpoint();
+        uint32_t status = continueToBreakpoint();
 
         if (status != UVM_SUCCESS) {
             res.Body << DBG_ERROR;
@@ -327,10 +327,10 @@ void Debugger::appendConsole(std::stringstream& stream) {
  * finished
  * @return On success returns UVM_SUCCESS otherwise returns error code
  */
-uint8_t Debugger::continueToBreakpoint() {
+uint32_t Debugger::continueToBreakpoint() {
     // Execute instruction until breakpoint is hit, runtime error occures or
     // code is finished
-    uint8_t exeStatus = UVM_SUCCESS;
+    uint32_t exeStatus = UVM_SUCCESS;
     while (VM->Opcode != OP_EXIT && exeStatus == UVM_SUCCESS) {
         if (OnBreakpoint) {
             exeStatus = VM->nextInstr();
