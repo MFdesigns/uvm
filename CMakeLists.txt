@@ -1,11 +1,10 @@
 cmake_minimum_required(VERSION 3.17.1)
 set(PROJECT_NAME uvm)
 
-project(${PROJECT_NAME} VERSION 0.1 LANGUAGES CXX)
+project(${PROJECT_NAME} VERSION 1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CTEST_CONFIGURATION_TYPE )
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -16,6 +15,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 
 set(SOURCE_FILES
+    src/main.cpp
     src/uvm.cpp src/uvm.hpp
     src/memory.cpp src/memory.hpp
     src/error.cpp src/error.hpp
@@ -45,9 +45,4 @@ elseif(UNIX)
     endif()
 endif()
 
-add_executable(${PROJECT_NAME} src/main.cpp ${SOURCE_FILES} ${PLATFORM_FILES})
-
-include(CTest)
-
-add_executable(test1 tests/test_main.cpp ${SOURCE_FILES} ${PLATFORM_FILES})
-add_test(NAME test1 COMMAND test1)
+add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${PLATFORM_FILES})
