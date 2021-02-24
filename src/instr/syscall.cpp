@@ -74,11 +74,6 @@ bool syscall_console_read(UVM* vm) {
     // Return values:
     // -
 
-    // Console input is currently not supported if started from a debugger
-    if (vm->Mode == ExecutionMode::DEBUGGER) {
-        return false;
-    }
-
     IntVal strPtrPtr = vm->MMU.GP[0];
     IntVal strSizePtr = vm->MMU.GP[1];
 
