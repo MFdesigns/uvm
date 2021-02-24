@@ -18,7 +18,7 @@ UVM is a register-based process virtual machine which runs on Windows, macOS and
      - Release
     - `cmake --build .`
 3. Output directory
-   - On Windows: `UVM/build/<build-type>/uvm.exe`\
+   - On Windows: `UVM/build/<build-type>/uvm.exe`
    - On Linux/macOS: `UVM/build/uvm`
 
 ## Generating Documentation
