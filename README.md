@@ -20,3 +20,7 @@ UVM is a register-based process virtual machine which runs on Windows, macOS and
 3. Output directory
    - On Windows: `UVM/build/<build-type>/uvm.exe`\
    - On Linux/macOS: `UVM/build/uvm`
+
+## Generating Documentation
+This project uses Doxygen to generate documentation. To output HTML documentation execute the following command in the project folder:
+ - `doxygen .\Doxyfile`
