@@ -24,7 +24,7 @@
 
 void printCLIUsage() {
     std::cout
-        << "usage: uvm <source file> [<out file name>] [--debug-server]\n";
+        << "usage: uvm <source file> [--debug-server]\n";
 }
 
 int main(int argc, char* argv[]) {
