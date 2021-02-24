@@ -6,6 +6,10 @@ UVM is a register-based process virtual machine which runs on Windows, macOS and
 
 ## Building UVM
 
+### Requirements
+- CMake
+- MSVC / GCC / Clang
+
 1. Getting the source code
    - `git clone https://github.com/MFdesigns/UVM.git`
 2. Building
